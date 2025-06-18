@@ -3,6 +3,8 @@ node_modules
 *.ipynb
 __pycache__
 .local/
+.envrc
+.direnv/
 
 # docs
 __generated__
