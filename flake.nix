@@ -18,7 +18,7 @@
       flake-utils,
       ...
     }@inputs:
-    flake-utils.lib.eachSystem [ "x86_64-linux" "aarch64-linux" "aarch64-darwin" "x86_64-darwin" ] (
+    flake-utils.lib.eachSystem [ "x86_64-linux" "x86_64-darwin" ] (
       system:
       let
         pkgs = import nixpkgs {
@@ -40,15 +40,19 @@
             nodejs
             yarn
             pyright
+            prettierd
+            eslint_d
+            pre-commit
           ];
 
           shellHook = ''
             poetry env use "$(which python)"
-            poetry install 
+            poetry install
             source "$(poetry env info --path)/bin/activate"
           '';
 
           PYRIGHT = "${pkgs.pyright}/bin/pyright";
+          VTSLS_PATH = "${pkgs.vtsls}/bin/vtsls";
         };
       }
     );

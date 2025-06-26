@@ -1,3 +1,6 @@
+# For Development only
+**/*.bak
+
 node_modules
 *.pyc
 *.ipynb

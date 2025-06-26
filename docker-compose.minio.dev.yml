@@ -1,14 +1,17 @@
+x-logging:
+  logging: &default-logging
+    driver: "json-file"
+    options:
+      max-size: "10m"
+      max-file: "3"
+
 services:
   minio:
-    image: "minio/minio:latest"
+    image: "minio/minio:${MINIO_VERSION:-RELEASE.2025-04-22T22-12-26Z}"
     container_name: minio_test
     command: server /data --console-address ":9009"
     restart: unless-stopped
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
+    logging: *default-logging
     ports:
       - "9000:9000"
       - "9009:9009"
@@ -20,4 +23,3 @@ services:
 
 volumes:
   minio-data:
-
