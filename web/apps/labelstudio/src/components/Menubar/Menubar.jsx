@@ -137,7 +137,7 @@ export const Menubar = ({ enabled, defaultOpened, defaultPinned, children, onSid
         <div className={menubarClass}>
           <Dropdown.Trigger dropdown={menuDropdownRef} closeOnClickOutside={!sidebarPinned}>
             <div className={`${menubarClass.elem("trigger")} main-menu-trigger`}>
-              <LSLogo className={`${menubarClass.elem("logo")}`} alt="Label Studio Logo" />
+              {/*<LSLogo className={`${menubarClass.elem("logo")}`} alt="Company Logo" />*/}
               <Hamburger opened={sidebarOpened} />
             </div>
           </Dropdown.Trigger>
@@ -199,32 +199,12 @@ export const Menubar = ({ enabled, defaultOpened, defaultPinned, children, onSid
                 {isFF(FF_HOMEPAGE) && <Menu.Item label="Home" to="/" icon={<IconHome />} data-external exact />}
                 <Menu.Item label="Projects" to="/projects" icon={<IconFolder />} data-external exact />
                 <Menu.Item label="Organization" to="/organization" icon={<IconPersonInCircle />} data-external exact />
+                {}
+                <Menu.Item label="Admin" href="/admin" icon={<IconPersonInCircle />} forceReload/>
 
                 <Menu.Spacer />
 
                 <VersionNotifier showNewVersion />
-
-                <Menu.Item
-                  label="API"
-                  href="https://api.labelstud.io/api-reference/introduction/getting-started"
-                  icon={<IconTerminal />}
-                  target="_blank"
-                />
-                <Menu.Item label="Docs" href="https://labelstud.io/guide" icon={<IconBook />} target="_blank" />
-                <Menu.Item
-                  label="GitHub"
-                  href="https://github.com/HumanSignal/label-studio"
-                  icon={<IconGithub />}
-                  target="_blank"
-                  rel="noreferrer"
-                />
-                <Menu.Item
-                  label="Slack Community"
-                  href="https://slack.labelstud.io/?source=product-menu"
-                  icon={<IconSlack />}
-                  target="_blank"
-                  rel="noreferrer"
-                />
 
                 <VersionNotifier showCurrentVersion />
 

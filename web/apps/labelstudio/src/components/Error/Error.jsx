@@ -1,13 +1,10 @@
 import { Fragment, useCallback, useMemo, useState } from "react";
 import sanitizeHtml from "sanitize-html";
-import { IconSlack } from "@humansignal/icons";
 import { Block, Elem } from "../../utils/bem";
 import { absoluteURL, copyText } from "../../utils/helpers";
 import { Button } from "../Button/Button";
 import { Space } from "../Space/Space";
 import "./Error.scss";
-
-const SLACK_INVITE_URL = "https://slack.labelstud.io/?source=product-error-msg";
 
 export const ErrorWrapper = ({
   title,
@@ -87,10 +84,6 @@ export const ErrorWrapper = ({
 
       <Elem name="actions">
         <Space spread>
-          <Elem tag={Button} name="action-slack" target="_blank" icon={<IconSlack />} href={SLACK_INVITE_URL}>
-            Ask on Slack
-          </Elem>
-
           <Space size="small">
             {preparedStackTrace && (
               <Button disabled={copied} onClick={copyStacktrace} style={{ width: 180 }}>

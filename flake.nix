@@ -24,7 +24,6 @@
         pkgs = import nixpkgs {
           inherit system;
         };
-        oldPkgs = import inputs.old-nixpkgs { inherit system; };
       in
       {
 
@@ -32,14 +31,14 @@
           name = "labelstudio";
 
           packages = with pkgs; [
+            python313
             poetry
-            oldPkgs.python310
-            black
             ruff
+            ty
+            uv
             vtsls
             nodejs
             yarn
-            pyright
             prettierd
             eslint_d
             pre-commit
@@ -51,8 +50,9 @@
             source "$(poetry env info --path)/bin/activate"
           '';
 
-          PYRIGHT = "${pkgs.pyright}/bin/pyright";
           VTSLS_PATH = "${pkgs.vtsls}/bin/vtsls";
+          RUFFPATH = "${pkgs.ruff}/bin/ruff";
+          TYPATH = "${pkgs.ty}/bin/ty";
         };
       }
     );
