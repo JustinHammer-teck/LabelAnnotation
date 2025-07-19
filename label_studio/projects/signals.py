@@ -16,3 +16,5 @@ class ProjectSignals:
     """
 
     post_label_config_and_import_tasks = Signal()
+
+    delete_project = Signal()

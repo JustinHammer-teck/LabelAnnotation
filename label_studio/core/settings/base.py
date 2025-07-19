@@ -233,6 +233,7 @@ INSTALLED_APPS = [
     "ml_model_providers",
     "jwt_auth",
     "session_policy",
+    "guardian"
 ]
 
 MIDDLEWARE = [
@@ -300,6 +301,7 @@ ALLOWED_HOSTS = get_env_list("ALLOWED_HOSTS", default=["*"])
 AUTH_USER_MODEL = "users.User"
 AUTHENTICATION_BACKENDS = [
     "rules.permissions.ObjectPermissionBackend",
+    "guardian.backends.ObjectPermissionBackend",
     "django.contrib.auth.backends.ModelBackend",
 ]
 USE_USERNAME_FOR_LOGIN = False

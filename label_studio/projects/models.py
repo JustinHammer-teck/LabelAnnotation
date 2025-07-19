@@ -19,6 +19,7 @@ from core.label_config import (
     get_sample_task,
     validate_label_config,
 )
+from core.models import ActivityLog
 from core.utils.common import (
     create_hash,
     get_attr_or_item,
@@ -30,6 +31,8 @@ from django.conf import settings
 from django.core.validators import MaxLengthValidator, MinLengthValidator
 from django.db import models, transaction
 from django.db.models import Avg, BooleanField, Case, Count, JSONField, Max, Q, Sum, Value, When
+from django.db.models.signals import post_save
+from django.dispatch.dispatcher import receiver
 from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
 from label_studio_sdk._extensions.label_studio_tools.core.label_config import parse_config
@@ -55,6 +58,7 @@ from tasks.models import (
     Task,
     bulk_update_stats_project_tasks,
 )
+from users.models import User
 
 logger = logging.getLogger(__name__)
 
@@ -1478,3 +1482,27 @@ class ProjectReimport(models.Model):
 
     def has_permission(self, user):
         return self.project.has_permission(user)
+
+@receiver(post_save, sender=Project)
+def create_project(sender, instance, **kwargs):
+    user = User.objects.get(id=instance.created_by_id)
+    ActivityLog.objects.create(
+        user = user,
+        action = 'User #{} "{}" create project #{}'.format(
+            user.id,
+            user.email,
+            instance.id
+        )
+    )
+
+@receiver(ProjectSignals.delete_project)
+def project_audit_log(sender, instance, project_id, **kwargs):
+    user = User.objects.get(id=instance.created_by_id)
+    ActivityLog.objects.create(
+        user = user,
+        action = 'User #{} "{}" deleted project #{}'.format(
+            user.id,
+            user.email,
+            project_id
+        )
+    )

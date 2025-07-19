@@ -5,9 +5,14 @@ from django.core import serializers
 from django.db import models
 from django.db.models import JSONField
 from django.utils.translation import gettext_lazy as _
+from users.models import User
 
 logger = logging.getLogger(__name__)
 
+
+class ActivityLog(models.Model):
+    user = models.ForeignKey(User, null= True, on_delete=models.SET_NULL)
+    action = models.CharField(max_length=300)
 
 class AsyncMigrationStatus(models.Model):
     meta = JSONField(
