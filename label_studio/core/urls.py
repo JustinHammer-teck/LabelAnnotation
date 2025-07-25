@@ -119,5 +119,6 @@ if settings.DEBUG:
         import debug_toolbar
 
         urlpatterns = [path('__debug__/', include(debug_toolbar.urls))] + urlpatterns
+        urlpatterns = [path("silk/", include("silk.urls", namespace="silk"))] + urlpatterns
     except ImportError:
         pass

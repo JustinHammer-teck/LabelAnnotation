@@ -8,6 +8,7 @@ import { MachineLearningSettings } from "./MachineLearningSettings/MachineLearni
 import { PredictionsSettings } from "./PredictionsSettings/PredictionsSettings";
 import { StorageSettings } from "./StorageSettings/StorageSettings";
 import { isInLicense, LF_CLOUD_STORAGE_FOR_MANAGERS } from "../../utils/license-flags";
+import {TaskAssignmentSettings} from "./TaskAssignmentSettings/TaskAssignmentSettings";
 
 const isAllowCloudStorage = !isInLicense(LF_CLOUD_STORAGE_FOR_MANAGERS);
 
@@ -22,6 +23,7 @@ export const MenuLayout = ({ children, ...routeProps }) => {
         PredictionsSettings,
         isAllowCloudStorage && StorageSettings,
         WebhookPage,
+        TaskAssignmentSettings,
         DangerZone,
       ].filter(Boolean)}
       path={routeProps.match.url}
@@ -36,6 +38,7 @@ const pages = {
   MachineLearningSettings,
   PredictionsSettings,
   WebhookPage,
+  TaskAssignmentSettings,
   DangerZone,
 };
 

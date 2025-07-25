@@ -233,7 +233,8 @@ INSTALLED_APPS = [
     "ml_model_providers",
     "jwt_auth",
     "session_policy",
-    "guardian"
+    "guardian",
+    "silk"
 ]
 
 MIDDLEWARE = [
@@ -253,6 +254,7 @@ MIDDLEWARE = [
     "core.middleware.DatabaseIsLockedRetryMiddleware",
     "core.current_request.ThreadLocalMiddleware",
     "jwt_auth.middleware.JWTAuthenticationMiddleware",
+    "silk.middleware.SilkyMiddleware",
 ]
 
 REST_FRAMEWORK = {

@@ -35,7 +35,6 @@ type AdminAction = (typeof adminActions)[number]["type"];
 
 export const HomePage: Page = () => {
   const { user, fetch, isInProgress } = useCurrentUser();
-  const isAdmin = user?.active_organization_meta.title == "researcher";
   const api = useAPI();
   const history = useHistory();
   const [creationDialogOpen, setCreationDialogOpen] = useState(false);

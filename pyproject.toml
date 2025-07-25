@@ -76,7 +76,8 @@ dependencies = [
     ## HumanSignal repo dependencies :start
     "label-studio-sdk @ https://github.com/HumanSignal/label-studio-sdk/archive/bbf2aeafbb4fb534ddc1a1248691d3008b2c6f53.zip",
     ## HumanSignal repo dependencies :end
-    "django-guardian (>=3.0.3,<4.0.0)"
+    "django-guardian (>=3.0.3,<4.0.0)",
+    "django-silk (>=5.4.0,<6.0.0)"
 ]
 
 [project.urls]

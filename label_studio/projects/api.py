@@ -22,6 +22,7 @@ from django.utils.decorators import method_decorator
 from django_filters import CharFilter, FilterSet
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_yasg.utils import swagger_auto_schema
+from guardian.shortcuts import assign_perm, get_objects_for_user, remove_perm
 from label_studio_sdk.label_interface.interface import LabelInterface
 from ml.serializers import MLBackendSerializer
 from projects.functions.next_task import get_next_task
@@ -37,7 +38,9 @@ from projects.serializers import (
     ProjectReimportSerializer,
     ProjectSerializer,
     ProjectSummarySerializer,
+    ProjectUserPermissionSerializer,
 )
+from projects.signals import ProjectSignals
 from rest_framework import filters, generics, status
 from rest_framework.exceptions import NotFound
 from rest_framework.exceptions import ValidationError as RestValidationError
@@ -46,7 +49,7 @@ from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.settings import api_settings
-from rest_framework.views import exception_handler
+from rest_framework.views import APIView, exception_handler
 from tasks.models import Task
 from tasks.serializers import (
     NextTaskSerializer,
@@ -54,6 +57,7 @@ from tasks.serializers import (
     TaskSimpleSerializer,
     TaskWithAnnotationsAndPredictionsAndDraftsSerializer,
 )
+from users.models import User
 from webhooks.models import WebhookAction
 from webhooks.utils import api_webhook, api_webhook_for_delete, emit_webhooks_for_instance
 
@@ -893,3 +897,107 @@ class ProjectModelVersions(generics.RetrieveAPIView):
         count = project.delete_predictions(model_version=model_version)
 
         return Response(data=count)
+
+
+@method_decorator(
+    name='get',
+    decorator=swagger_auto_schema(
+        tags=['Project Assignment'],
+        x_fern_audiences=['internal'],
+        operation_summary='Get User',
+        operation_description='retrieve User Project assignment',
+    ),
+)
+class ProjectAssignmentAPI(APIView):
+
+    def get(self, request, pk, *args, **kwargs):
+        project = generics.get_object_or_404(Project, pk=pk)
+        permission_to_check = 'projects.assigned_to_project'  # Example permission
+
+        if hasattr(project, "organization"):
+            all_relevant_users = project.organization.users.all().order_by("email")
+        else:
+            all_relevant_users = User.objects.filter(is_active=True).order_by("email")
+
+        serializer_context = {
+            "project": project,
+            "permission_codename": permission_to_check,
+        }
+
+        serializer = ProjectUserPermissionSerializer(all_relevant_users, many=True, context=serializer_context)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def post(self, request, pk, *args, **kwargs):
+        project = generics.get_object_or_404(Project, pk=pk)
+
+        if not request.user.has_perm("projects.assign_project", project):
+            return Response(status= status.HTTP_403_FORBIDDEN)
+
+        request_data = self.request.data.get('users')
+        permission = 'projects.assigned_to_project'
+
+        for user in request_data:
+            user_id = user.get('user_id')
+            has_permission = user.get('has_permission')
+            if (has_permission):
+                assign_perm(permission, User.objects.get(pk=user_id), project)
+            else:
+                remove_perm(permission, User.objects.get(pk=user_id), project)
+
+        return Response({"assigned project"}, status.HTTP_200_OK)
+
+
+class ProjectAPIProxy(ProjectAPI):
+    def __init__(self):
+        super()
+
+    def get_queryset(self):
+        serializer = GetFieldsSerializer(data=self.request.query_params)
+        serializer.is_valid(raise_exception=True)
+        fields = serializer.validated_data.get('include')
+
+        projects = (
+            Project.objects
+            .with_counts(fields=fields)
+            .filter(organization=self.request.user.active_organization)
+        )
+
+        return projects
+
+    def perform_destroy(self, instance):
+        to_delete = instance
+        project_id = instance.id
+
+        super().perform_destroy(instance)
+
+        ProjectSignals.delete_project.send(sender=Project, instance=to_delete, project_id=project_id)
+
+
+class ProjectListApiProxy(ProjectListAPI):
+
+    def __init__(self):
+        super()
+
+    def get_queryset(self):
+        serializer = GetFieldsSerializer(data=self.request.query_params)
+        serializer.is_valid(raise_exception=True)
+        fields = serializer.validated_data.get("include")
+        filter = serializer.validated_data.get("filter")
+
+        t_project = get_objects_for_user(self.request.user,['assigned_to_project'], klass=Project.objects.all())
+
+        projects = (t_project
+            .filter(organization=self.request.user.active_organization)
+            .order_by(
+                F("pinned_at").desc(nulls_last=True), "-created_at")
+        )
+
+        if filter in ["pinned_only", "exclude_pinned"]:
+            projects = projects.filter(pinned_at__isnull=filter == "exclude_pinned")
+
+        return (
+            ProjectManager.with_counts_annotate(projects, fields=fields)
+            .prefetch_related(
+                "members", "created_by"
+        ))

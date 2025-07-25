@@ -1113,6 +1113,10 @@ class Project(ProjectMixin, models.Model):
         indexes = [
             models.Index(fields=['pinned_at', 'created_at']),
         ]
+        permissions = [
+            ("assign_project", "Can Assign Project to other People"),
+            ("assigned_to_project", "User is assigned to the Project")
+        ]
 
 
 class ProjectOnboardingSteps(models.Model):
@@ -1486,14 +1490,24 @@ class ProjectReimport(models.Model):
 @receiver(post_save, sender=Project)
 def create_project(sender, instance, **kwargs):
     user = User.objects.get(id=instance.created_by_id)
-    ActivityLog.objects.create(
-        user = user,
-        action = 'User #{} "{}" create project #{}'.format(
-            user.id,
-            user.email,
-            instance.id
+    if (kwargs.get("created") == True):
+        ActivityLog.objects.create(
+            user = user,
+            action = 'User #{} "{}" created project #{}'.format(
+                user.id,
+                user.email,
+                instance.id
+            )
         )
-    )
+    else:
+        ActivityLog.objects.create(
+            user=user,
+            action='User #{} "{}" modify project #{}'.format(
+                user.id,
+                user.email,
+                instance.id
+            )
+        )
 
 @receiver(ProjectSignals.delete_project)
 def project_audit_log(sender, instance, project_id, **kwargs):

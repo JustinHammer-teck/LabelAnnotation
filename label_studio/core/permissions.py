@@ -68,6 +68,65 @@ def make_perm(name, pred, overwrite=False):
             return
     rules.add_perm(name, pred)
 
+# Predicates for each role
+is_annotator = rules.is_group_member('Annotator')
+is_researcher = rules.is_group_member('Researcher')
+is_manager = rules.is_group_member('Manager')
 
-for _, permission_name in all_permissions:
-    make_perm(permission_name, rules.is_authenticated)
+# Role definitions with permission inheritance
+# Annotator permissions
+annotator_permissions = {
+    all_permissions.tasks_view,
+    all_permissions.annotations_create,
+    all_permissions.annotations_view,
+    all_permissions.annotations_change,
+    all_permissions.annotations_delete,
+}
+
+# Researcher permissions inherit from Annotator
+researcher_permissions = annotator_permissions.union({
+    all_permissions.labels_view,
+    all_permissions.labels_change,
+    all_permissions.labels_delete,
+    all_permissions.models_view,
+    all_permissions.model_provider_connection_view,
+    all_permissions.predictions_any,
+})
+
+# Manager permissions inherit from Researcher
+manager_permissions = researcher_permissions.union({
+    all_permissions.organizations_create,
+    all_permissions.organizations_view,
+    all_permissions.organizations_change,
+    all_permissions.organizations_delete,
+    all_permissions.organizations_invite,
+    all_permissions.projects_create,
+    all_permissions.projects_change,
+    all_permissions.projects_delete,
+    all_permissions.tasks_create,
+    all_permissions.tasks_change,
+    all_permissions.tasks_delete,
+    all_permissions.actions_perform,
+    all_permissions.avatar_any,
+    all_permissions.labels_create,
+    all_permissions.models_create,
+    all_permissions.models_change,
+    all_permissions.models_delete,
+    all_permissions.model_provider_connection_create,
+    all_permissions.model_provider_connection_change,
+    all_permissions.model_provider_connection_delete,
+    all_permissions.webhooks_view,
+    all_permissions.webhooks_change,
+})
+
+# Assign permissions to roles
+for permission_name in all_permissions:
+    if permission_name[1] in manager_permissions:
+        make_perm(permission_name[1], is_manager | is_researcher | is_annotator)
+    elif permission_name[1] in researcher_permissions:
+        make_perm(permission_name[1], is_researcher | is_annotator)
+    elif permission_name[1] in annotator_permissions:
+        make_perm(permission_name[1], is_annotator)
+    else:
+        # Default to authenticated user for any permissions not explicitly assigned to a role
+        make_perm(permission_name[1], rules.is_authenticated)
