@@ -8,6 +8,7 @@ import drf_yasg.openapi as openapi
 from core.filters import ListFilter
 from core.label_config import config_essential_data_has_changed
 from core.mixins import GetParentObjectMixin
+from core.models import ActivityLog
 from core.permissions import ViewClassPermission, all_permissions
 from core.redis import start_job_async_or_sync
 from core.utils.common import paginator, paginator_help, temporary_disconnect_all_signals
@@ -936,16 +937,28 @@ class ProjectAssignmentAPI(APIView):
 
         request_data = self.request.data.get('users')
         permission = 'projects.assigned_to_project'
+        request_user = self.request.user
 
         for user in request_data:
-            user_id = user.get('user_id')
             has_permission = user.get('has_permission')
+            assign_user_id = user.get('user_id')
+            assign_user = User.objects.get(pk=assign_user_id)
             if (has_permission):
-                assign_perm(permission, User.objects.get(pk=user_id), project)
+                assign_perm(permission, assign_user, project)
+                ActivityLog.objects.create(
+                    user=request_user,
+                    action='User #{} "{}" assign Project #{} to User #{} "{}"'.format(
+                        request_user.id, request_user.email, project.id, assign_user.id, assign_user.email)
+                )
             else:
-                remove_perm(permission, User.objects.get(pk=user_id), project)
+                remove_perm(permission, assign_user, project)
+                ActivityLog.objects.create(
+                    user=request_user,
+                    action='User #{} "{}" revoke assign Project #{} to User #{} "{}"'.format(
+                        request_user.id, request_user.email, project.id, assign_user.id, assign_user.email)
+                )
 
-        return Response({"assigned project"}, status.HTTP_200_OK)
+        return Response(status=200)
 
 
 class ProjectAPIProxy(ProjectAPI):
