@@ -3,11 +3,6 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
-    old-nixpkgs.url = "github:NixOS/nixpkgs/72bbea9db7d727ed044e60b5f5febc60a3c5c955";
-    poetry2nix = {
-      url = "github:nix-community/poetry2nix";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
     flake-utils.url = "github:numtide/flake-utils";
   };
 
@@ -30,19 +25,24 @@
         devShells.default = pkgs.mkShell {
           name = "labelstudio";
 
-          packages = with pkgs; [
-            python313
-            poetry
-            ruff
-            ty
-            uv
-            vtsls
-            nodejs
-            yarn
-            prettierd
-            eslint_d
-            pre-commit
-          ];
+          packages =
+            with pkgs;
+            [
+              python313
+              poetry
+              ruff
+              ty
+              uv
+              vtsls
+              nodejs
+              yarn
+              prettierd
+              eslint_d
+              pre-commit
+            ]
+            ++ (with pkgs.python313Packages; [
+              python-lsp-server
+            ]);
 
           shellHook = ''
             poetry env use "$(which python)"
@@ -53,6 +53,7 @@
           VTSLS_PATH = "${pkgs.vtsls}/bin/vtsls";
           RUFFPATH = "${pkgs.ruff}/bin/ruff";
           TYPATH = "${pkgs.ty}/bin/ty";
+          PYLSP = "${pkgs.python313Packages.python-lsp-server}/bin/pylsp";
         };
       }
     );

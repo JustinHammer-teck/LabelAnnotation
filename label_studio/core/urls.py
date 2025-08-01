@@ -15,6 +15,7 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+
 from core import views
 from core.utils.common import collect_versions
 from core.utils.static_serve import serve
@@ -107,18 +108,22 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('django-rq/', include('django_rq.urls')),
     path('feature-flags/', views.feature_flags, name='feature_flags'),
-    path('heidi-tips/', views.heidi_tips, name='heidi_tips'),
+    # path('heidi-tips/', views.heidi_tips, name='heidi_tips'),
     path('__lsa/', views.collect_metrics, name='collect_metrics'),
     re_path(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     re_path(r'^', include('jwt_auth.urls')),
     re_path(r'^', include('session_policy.urls')),
+
+    path('silk/', include('silk.urls', namespace='silk')),
 ]
 
 if settings.DEBUG:
     try:
+        print("DEBUG")
+
         import debug_toolbar
 
         urlpatterns = [path('__debug__/', include(debug_toolbar.urls))] + urlpatterns
-        urlpatterns = [path("silk/", include("silk.urls", namespace="silk"))] + urlpatterns
+
     except ImportError:
         pass

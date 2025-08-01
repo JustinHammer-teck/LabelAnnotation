@@ -1,14 +1,14 @@
-"""This file and its contents are licensed under the Apache License 2.0. Please see the included NOTICE for copyright information and LICENSE for a copy of the license.
-"""
+"""This file and its contents are licensed under the Apache License 2.0. Please see the included NOTICE for copyright information and LICENSE for a copy of the license."""
+
 import logging
 import os
 import pathlib
 
 import drf_yasg.openapi as openapi
+from core.audit_log_service import AuditLogService
 from core.filters import ListFilter
 from core.label_config import config_essential_data_has_changed
 from core.mixins import GetParentObjectMixin
-from core.models import ActivityLog
 from core.permissions import ViewClassPermission, all_permissions
 from core.redis import start_job_async_or_sync
 from core.utils.common import paginator, paginator_help, temporary_disconnect_all_signals
@@ -216,9 +216,7 @@ class ProjectFilterSet(FilterSet):
     ```bash
     curl -X GET {}/api/projects/ -H 'Authorization: Token abc123'
     ```
-    """.format(
-            settings.HOSTNAME or 'https://localhost:8080'
-        ),
+    """.format(settings.HOSTNAME or 'https://localhost:8080'),
     ),
 )
 @method_decorator(
@@ -236,9 +234,7 @@ class ProjectFilterSet(FilterSet):
     curl -H Content-Type:application/json -H 'Authorization: Token abc123' -X POST '{}/api/projects' \
     --data '{{"title": "My project", "label_config": "<View></View>"}}'
     ```
-    """.format(
-            settings.HOSTNAME or 'https://localhost:8080'
-        ),
+    """.format(settings.HOSTNAME or 'https://localhost:8080'),
         request_body=_project_schema,
     ),
 )
@@ -722,9 +718,7 @@ class ProjectReimportAPI(generics.RetrieveAPIView):
             ```bash
             curl -X GET {}/api/projects/{{id}}/tasks/?page=1&page_size=10 -H 'Authorization: Token abc123'
             ```
-        """.format(
-            settings.HOSTNAME or 'https://localhost:8080'
-        ),
+        """.format(settings.HOSTNAME or 'https://localhost:8080'),
         manual_parameters=[
             openapi.Parameter(
                 name='id',
@@ -900,29 +894,21 @@ class ProjectModelVersions(generics.RetrieveAPIView):
         return Response(data=count)
 
 
-@method_decorator(
-    name='get',
-    decorator=swagger_auto_schema(
-        tags=['Project Assignment'],
-        x_fern_audiences=['internal'],
-        operation_summary='Get User',
-        operation_description='retrieve User Project assignment',
-    ),
-)
 class ProjectAssignmentAPI(APIView):
+    permission_required = ViewClassPermission(POST=all_permissions.projects_assign)
 
     def get(self, request, pk, *args, **kwargs):
         project = generics.get_object_or_404(Project, pk=pk)
         permission_to_check = 'projects.assigned_to_project'  # Example permission
 
-        if hasattr(project, "organization"):
-            all_relevant_users = project.organization.users.all().order_by("email")
+        if hasattr(project, 'organization'):
+            all_relevant_users = project.organization.users.all().order_by('email')
         else:
-            all_relevant_users = User.objects.filter(is_active=True).order_by("email")
+            all_relevant_users = User.objects.filter(is_active=True).order_by('email')
 
         serializer_context = {
-            "project": project,
-            "permission_codename": permission_to_check,
+            'project': project,
+            'permission_codename': permission_to_check,
         }
 
         serializer = ProjectUserPermissionSerializer(all_relevant_users, many=True, context=serializer_context)
@@ -932,30 +918,32 @@ class ProjectAssignmentAPI(APIView):
     def post(self, request, pk, *args, **kwargs):
         project = generics.get_object_or_404(Project, pk=pk)
 
-        if not request.user.has_perm("projects.assign_project", project):
-            return Response(status= status.HTTP_403_FORBIDDEN)
+        if not request.user.has_perm('projects.assign_project', project):
+            return Response(status=status.HTTP_403_FORBIDDEN)
 
         request_data = self.request.data.get('users')
         permission = 'projects.assigned_to_project'
         request_user = self.request.user
 
         for user in request_data:
-            has_permission = user.get('has_permission')
+            new_perm = user.get('has_permission')
             assign_user_id = user.get('user_id')
             assign_user = User.objects.get(pk=assign_user_id)
-            if (has_permission):
+            if new_perm:
                 assign_perm(permission, assign_user, project)
-                ActivityLog.objects.create(
+                AuditLogService.create(
                     user=request_user,
                     action='User #{} "{}" assign Project #{} to User #{} "{}"'.format(
-                        request_user.id, request_user.email, project.id, assign_user.id, assign_user.email)
+                        request_user.id, request_user.email, project.id, assign_user.id, assign_user.email
+                    ),
                 )
             else:
                 remove_perm(permission, assign_user, project)
-                ActivityLog.objects.create(
-                    user=request_user,
-                    action='User #{} "{}" revoke assign Project #{} to User #{} "{}"'.format(
-                        request_user.id, request_user.email, project.id, assign_user.id, assign_user.email)
+                AuditLogService.create(
+                    request_user,
+                    'User #{} "{}" revoke assign Project #{} to User #{} "{}"'.format(
+                        request_user.id, request_user.email, project.id, assign_user.id, assign_user.email
+                    ),
                 )
 
         return Response(status=200)
@@ -970,10 +958,8 @@ class ProjectAPIProxy(ProjectAPI):
         serializer.is_valid(raise_exception=True)
         fields = serializer.validated_data.get('include')
 
-        projects = (
-            Project.objects
-            .with_counts(fields=fields)
-            .filter(organization=self.request.user.active_organization)
+        projects = Project.objects.with_counts(fields=fields).filter(
+            organization=self.request.user.active_organization
         )
 
         return projects
@@ -988,29 +974,22 @@ class ProjectAPIProxy(ProjectAPI):
 
 
 class ProjectListApiProxy(ProjectListAPI):
-
     def __init__(self):
         super()
 
     def get_queryset(self):
         serializer = GetFieldsSerializer(data=self.request.query_params)
         serializer.is_valid(raise_exception=True)
-        fields = serializer.validated_data.get("include")
-        filter = serializer.validated_data.get("filter")
+        fields = serializer.validated_data.get('include')
+        filter = serializer.validated_data.get('filter')
 
-        t_project = get_objects_for_user(self.request.user,['assigned_to_project'], klass=Project.objects.all())
+        t_project = get_objects_for_user(self.request.user, ['assigned_to_project'], klass=Project.objects.all())
 
-        projects = (t_project
-            .filter(organization=self.request.user.active_organization)
-            .order_by(
-                F("pinned_at").desc(nulls_last=True), "-created_at")
+        projects = t_project.filter(organization=self.request.user.active_organization).order_by(
+            F('pinned_at').desc(nulls_last=True), '-created_at'
         )
 
-        if filter in ["pinned_only", "exclude_pinned"]:
-            projects = projects.filter(pinned_at__isnull=filter == "exclude_pinned")
+        if filter in ['pinned_only', 'exclude_pinned']:
+            projects = projects.filter(pinned_at__isnull=filter == 'exclude_pinned')
 
-        return (
-            ProjectManager.with_counts_annotate(projects, fields=fields)
-            .prefetch_related(
-                "members", "created_by"
-        ))
+        return ProjectManager.with_counts_annotate(projects, fields=fields).prefetch_related('members', 'created_by')

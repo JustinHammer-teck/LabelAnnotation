@@ -1,6 +1,6 @@
-"""This file and its contents are licensed under the Apache License 2.0. Please see the included NOTICE for copyright information and LICENSE for a copy of the license.
-"""
-import logging   # noqa: I001
+"""This file and its contents are licensed under the Apache License 2.0. Please see the included NOTICE for copyright information and LICENSE for a copy of the license."""
+
+import logging  # noqa: I001
 from typing import Optional
 
 from pydantic import BaseModel, ConfigDict
@@ -22,6 +22,7 @@ class AllPermissions(BaseModel):
     projects_view: str = 'projects.view'
     projects_change: str = 'projects.change'
     projects_delete: str = 'projects.delete'
+    projects_assign: str = 'projects.assign'
     tasks_create: str = 'tasks.create'
     tasks_view: str = 'tasks.view'
     tasks_change: str = 'tasks.change'
@@ -68,7 +69,7 @@ def make_perm(name, pred, overwrite=False):
             return
     rules.add_perm(name, pred)
 
-# Predicates for each role
+
 is_annotator = rules.is_group_member('Annotator')
 is_researcher = rules.is_group_member('Researcher')
 is_manager = rules.is_group_member('Manager')
@@ -84,40 +85,46 @@ annotator_permissions = {
 }
 
 # Researcher permissions inherit from Annotator
-researcher_permissions = annotator_permissions.union({
-    all_permissions.labels_view,
-    all_permissions.labels_change,
-    all_permissions.labels_delete,
-    all_permissions.models_view,
-    all_permissions.model_provider_connection_view,
-    all_permissions.predictions_any,
-})
+researcher_permissions = annotator_permissions.union(
+    {
+        all_permissions.labels_view,
+        all_permissions.labels_change,
+        all_permissions.labels_delete,
+        all_permissions.models_view,
+        all_permissions.model_provider_connection_view,
+        all_permissions.predictions_any,
+    }
+)
 
 # Manager permissions inherit from Researcher
-manager_permissions = researcher_permissions.union({
-    all_permissions.organizations_create,
-    all_permissions.organizations_view,
-    all_permissions.organizations_change,
-    all_permissions.organizations_delete,
-    all_permissions.organizations_invite,
-    all_permissions.projects_create,
-    all_permissions.projects_change,
-    all_permissions.projects_delete,
-    all_permissions.tasks_create,
-    all_permissions.tasks_change,
-    all_permissions.tasks_delete,
-    all_permissions.actions_perform,
-    all_permissions.avatar_any,
-    all_permissions.labels_create,
-    all_permissions.models_create,
-    all_permissions.models_change,
-    all_permissions.models_delete,
-    all_permissions.model_provider_connection_create,
-    all_permissions.model_provider_connection_change,
-    all_permissions.model_provider_connection_delete,
-    all_permissions.webhooks_view,
-    all_permissions.webhooks_change,
-})
+manager_permissions = researcher_permissions.union(
+    {
+        all_permissions.organizations_create,
+        all_permissions.organizations_view,
+        all_permissions.organizations_change,
+        all_permissions.organizations_delete,
+        all_permissions.organizations_invite,
+        all_permissions.projects_create,
+        all_permissions.projects_view,
+        all_permissions.projects_change,
+        all_permissions.projects_delete,
+        all_permissions.projects_assign,
+        all_permissions.tasks_create,
+        all_permissions.tasks_change,
+        all_permissions.tasks_delete,
+        all_permissions.actions_perform,
+        all_permissions.avatar_any,
+        all_permissions.labels_create,
+        all_permissions.models_create,
+        all_permissions.models_change,
+        all_permissions.models_delete,
+        all_permissions.model_provider_connection_create,
+        all_permissions.model_provider_connection_change,
+        all_permissions.model_provider_connection_delete,
+        all_permissions.webhooks_view,
+        all_permissions.webhooks_change,
+    }
+)
 
 # Assign permissions to roles
 for permission_name in all_permissions:
@@ -130,3 +137,4 @@ for permission_name in all_permissions:
     else:
         # Default to authenticated user for any permissions not explicitly assigned to a role
         make_perm(permission_name[1], rules.is_authenticated)
+

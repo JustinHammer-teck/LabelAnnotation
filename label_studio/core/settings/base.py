@@ -51,7 +51,7 @@ LOGGING = {
         "pykwalify": {"level": "ERROR", "propagate": False},
         "tavern": {"level": "ERROR", "propagate": False},
         "asyncio": {"level": "WARNING"},
-        "rules": {"level": "WARNING"},
+        "rules": {"level": "INFO"},
         "django": {
             "handlers": ["console"],
             # 'propagate': True,
@@ -234,7 +234,7 @@ INSTALLED_APPS = [
     "jwt_auth",
     "session_policy",
     "guardian",
-    "silk"
+    "silk",
 ]
 
 MIDDLEWARE = [
