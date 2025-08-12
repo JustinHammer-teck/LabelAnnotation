@@ -1,6 +1,9 @@
 # For Development only
 **/*.bak
 
+
+.ropeproject/
+
 node_modules
 *.pyc
 *.ipynb

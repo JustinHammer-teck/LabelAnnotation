@@ -5,7 +5,6 @@ import logging
 from typing import Any, Mapping, Optional
 
 from annoying.fields import AutoOneToOneField
-from core.audit_log_service import AuditLogService
 from core.label_config import (
     check_control_in_config_by_regex,
     check_toname_in_config_by_regex,
@@ -20,6 +19,7 @@ from core.label_config import (
     get_sample_task,
     validate_label_config,
 )
+from core.services.audit_log_service import AuditLogService
 from core.utils.common import (
     create_hash,
     get_attr_or_item,

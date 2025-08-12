@@ -77,7 +77,8 @@ dependencies = [
     "label-studio-sdk @ https://github.com/HumanSignal/label-studio-sdk/archive/bbf2aeafbb4fb534ddc1a1248691d3008b2c6f53.zip",
     ## HumanSignal repo dependencies :end
     "django-guardian (>=3.0.3,<4.0.0)",
-    "django-silk (>=5.4.0,<6.0.0)"
+    "django-silk (>=5.4.0,<6.0.0)",
+    "daphne (>=4.2.1,<5.0.0)"
 ]
 
 [project.urls]
@@ -149,6 +150,11 @@ target-version = "py38"
 
 [tool.ruff.format]
 quote-style = 'single'
+
+exclude= [
+    "label_studio/core/settings/*.py",
+    "**/migrations/*.py",
+]
 
 [tool.ruff.per-file-ignores]
 # Ignore deleting imports in __init__.py files as they're actually being used.

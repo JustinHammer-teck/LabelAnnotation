@@ -39,9 +39,11 @@
               prettierd
               eslint_d
               pre-commit
+              valkey
             ]
             ++ (with pkgs.python313Packages; [
               python-lsp-server
+              pylsp-rope
             ]);
 
           shellHook = ''

@@ -113,14 +113,13 @@ urlpatterns = [
     re_path(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     re_path(r'^', include('jwt_auth.urls')),
     re_path(r'^', include('session_policy.urls')),
-
-    path('silk/', include('silk.urls', namespace='silk')),
+    # Support new notifications application
+    re_path(r'^', include('notifications.urls')),
+    # path('silk/', include('silk.urls', namespace='silk')),
 ]
 
 if settings.DEBUG:
     try:
-        print("DEBUG")
-
         import debug_toolbar
 
         urlpatterns = [path('__debug__/', include(debug_toolbar.urls))] + urlpatterns

@@ -5,12 +5,12 @@ import os
 import pathlib
 
 import drf_yasg.openapi as openapi
-from core.audit_log_service import AuditLogService
 from core.filters import ListFilter
 from core.label_config import config_essential_data_has_changed
 from core.mixins import GetParentObjectMixin
 from core.permissions import ViewClassPermission, all_permissions
 from core.redis import start_job_async_or_sync
+from core.services.audit_log_service import AuditLogService
 from core.utils.common import paginator, paginator_help, temporary_disconnect_all_signals
 from core.utils.exceptions import LabelStudioDatabaseException, ProjectExistException
 from core.utils.io import find_dir, find_file, read_yaml
@@ -20,12 +20,14 @@ from django.db import IntegrityError
 from django.db.models import F
 from django.http import Http404
 from django.utils.decorators import method_decorator
+from django.utils.timezone import now
 from django_filters import CharFilter, FilterSet
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_yasg.utils import swagger_auto_schema
 from guardian.shortcuts import assign_perm, get_objects_for_user, remove_perm
 from label_studio_sdk.label_interface.interface import LabelInterface
 from ml.serializers import MLBackendSerializer
+from notifications.urls import send_notification
 from projects.functions.next_task import get_next_task
 from projects.functions.stream_history import get_label_stream_history
 from projects.functions.utils import recalculate_created_annotations_and_labels_from_scratch
@@ -930,29 +932,46 @@ class ProjectAssignmentAPI(APIView):
             assign_user_id = user.get('user_id')
             assign_user = User.objects.get(pk=assign_user_id)
             if new_perm:
-                assign_perm(permission, assign_user, project)
-                AuditLogService.create(
-                    user=request_user,
-                    action='User #{} "{}" assign Project #{} to User #{} "{}"'.format(
-                        request_user.id, request_user.email, project.id, assign_user.id, assign_user.email
-                    ),
-                )
+                self.__assign_permission(permission, request_user, project, assign_user)
             else:
-                remove_perm(permission, assign_user, project)
-                AuditLogService.create(
-                    request_user,
-                    'User #{} "{}" revoke assign Project #{} to User #{} "{}"'.format(
-                        request_user.id, request_user.email, project.id, assign_user.id, assign_user.email
-                    ),
-                )
+                self.__revoke_permission(permission, request_user, project, assign_user)
 
         return Response(status=200)
 
+    def __assign_permission(self, permission, request_user, project, assign_user):
+        assign_perm(permission, assign_user, project)
+        AuditLogService.create(
+            user=request_user,
+            action='User #{} "{}" assign Project #{} to User #{} "{}"'.format(
+                request_user.id, request_user.email, project.id, assign_user.id, assign_user.email
+            ),
+        )
+
+        send_notification(
+            event='notifications',
+            subject='Permission Assigned',
+            message=f'User {request_user.email} has assign you to Project: {project.id}',
+            ts=now(),
+        )
+
+    def __revoke_permission(self, permission, request_user, project, assign_user):
+        remove_perm(permission, assign_user, project)
+        AuditLogService.create(
+            request_user,
+            'User #{} "{}" revoke assign Project #{} to User #{} "{}"'.format(
+                request_user.id, request_user.email, project.id, assign_user.id, assign_user.email
+            ),
+        )
+
+        send_notification(
+            event='notifications',
+            subject='Permission Revoke',
+            message=f'User {request_user.email} has revoke you from Project: {project.id}',
+            ts=now(),
+        )
+
 
 class ProjectAPIProxy(ProjectAPI):
-    def __init__(self):
-        super()
-
     def get_queryset(self):
         serializer = GetFieldsSerializer(data=self.request.query_params)
         serializer.is_valid(raise_exception=True)
@@ -974,9 +993,6 @@ class ProjectAPIProxy(ProjectAPI):
 
 
 class ProjectListApiProxy(ProjectListAPI):
-    def __init__(self):
-        super()
-
     def get_queryset(self):
         serializer = GetFieldsSerializer(data=self.request.query_params)
         serializer.is_valid(raise_exception=True)

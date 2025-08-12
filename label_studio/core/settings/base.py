@@ -131,6 +131,7 @@ WINDOWS_SQLITE_BINARY_HOST_PREFIX = get_env("WINDOWS_SQLITE_BINARY_HOST_PREFIX",
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+print(f"the base dir {BASE_DIR}")
 
 # Base path for media root and other uploaded files
 BASE_DATA_DIR = get_env("BASE_DATA_DIR")
@@ -198,7 +199,10 @@ if get_bool_env("GOOGLE_LOGGING_ENABLED", False):
     except GoogleAuthError:
         logger.exception("Google Cloud Logging handler could not be setup.")
 
+REDIS_HOST = get_env("REDIS_HOST", "redis://xucxich.hydra-everest.ts.net:6380")
+
 INSTALLED_APPS = [
+    "daphne",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -234,10 +238,14 @@ INSTALLED_APPS = [
     "jwt_auth",
     "session_policy",
     "guardian",
-    "silk",
+    #"silk",
+    "notifications",
+    # "debug_toolbar",
 ]
 
+#WARN: Debug Tool Bar is a synchronous Middle it's conflicted with ASGI run time
 MIDDLEWARE = [
+    # "debug_toolbar.middleware.DebugToolbarMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -254,7 +262,7 @@ MIDDLEWARE = [
     "core.middleware.DatabaseIsLockedRetryMiddleware",
     "core.current_request.ThreadLocalMiddleware",
     "jwt_auth.middleware.JWTAuthenticationMiddleware",
-    "silk.middleware.SilkyMiddleware",
+    #"silk.middleware.SilkyMiddleware",
 ]
 
 REST_FRAMEWORK = {
@@ -414,6 +422,7 @@ SENTRY_IGNORED_EXCEPTIONS = [
 
 ROOT_URLCONF = "core.urls"
 WSGI_APPLICATION = "core.wsgi.application"
+ASGI_APPLICATION = "core.asgi.application"
 GRAPHIQL = True
 
 # Internationalization

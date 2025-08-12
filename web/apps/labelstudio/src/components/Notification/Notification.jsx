@@ -1,63 +1,134 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Dropdown } from '../Dropdown/Dropdown'; // Adjust path if needed
-import { Menu } from '../Menu/Menu'; // Adjust path if needed
-import { IconBell } from '@humansignal/icons'; // Using the icon from your library
+import { Dropdown } from '../Dropdown/Dropdown';
+import { Menu } from '../Menu/Menu';
+import { IconBell, IconSettings } from '@humansignal/icons'; // Assuming IconSettings is available
 import './Notification.scss';
 
+// NEW: A helper function to check if the Notification API is supported.
+const isBrowserNotificationSupported = () => {
+  return 'Notification' in window;
+};
+
 export const NotificationBell = () => {
-  // State to hold the array of notification objects
   const [notifications, setNotifications] = useState([]);
 
-  // Effect to connect to the Server-Sent Events stream
+  // NEW: State to track the browser notification permission status.
+  // We initialize it with the current permission state.
+  const [permission, setPermission] = useState(
+    isBrowserNotificationSupported() ? Notification.permission : 'unsupported'
+  );
+
+  // NEW: This function will be called to show the actual browser notification.
+  const showBrowserNotification = useCallback(notificationData => {
+    const { id, subject, message, path } = notificationData;
+
+    const notification = new Notification(subject, {
+      body: message,
+      // You should host a small icon for your notifications
+      icon: '/favicon.ico'
+    });
+
+    // NEW: Handle clicks on the browser notification.
+    notification.onclick = () => {
+      // Bring the user back to our app's window/tab.
+      window.focus();
+      // Mark the corresponding in-app notification as read.
+      handleNotificationClick(id, path);
+      // Close the notification.
+      notification.close();
+    };
+  }, []); // We'll define handleNotificationClick next.
+
+  // The SSE connection logic remains the same.
   useEffect(() => {
-    const sse = new EventSource('http://localhost:8080/events/toasts');
+    const sse = new EventSource('http://localhost:8080/events/notifications');
 
-    // Handle incoming messages
     sse.onmessage = event => {
-      console.log('SSE received');
-      // Assuming the backend sends a valid JSON string
-      const newNotification = JSON.parse(event.data);
-
-      // Assign a unique client-side ID for the key prop if backend doesn't provide one
-      if (!newNotification.id) {
-        newNotification.id = new Date().getTime();
+      console.log('Received SSE');
+      const newNotificationData = JSON.parse(event.data);
+      if (!newNotificationData.id) {
+        newNotificationData.id = new Date().getTime();
       }
 
-      // Add the new notification to the top of the list, preventing duplicates
+      // Add to the in-app list
       setNotifications(prev => {
-        if (prev.some(n => n.id === newNotification.id)) return prev;
-        return [newNotification, ...prev];
+        if (prev.some(n => n.id === newNotificationData.id)) return prev;
+        return [newNotificationData, ...prev];
       });
+
+      // NEW: If permission is granted, also show a browser notification.
+      if (
+        isBrowserNotificationSupported() &&
+        Notification.permission === 'granted'
+      ) {
+        showBrowserNotification(newNotificationData);
+      }
     };
 
-    // Handle any errors with the connection
     sse.onerror = error => {
       console.error('Notification SSE failed:', error);
       sse.close();
     };
 
-    // Cleanup: Close the connection when the component unmounts
     return () => sse.close();
-  }, []); // The empty dependency array ensures this runs only once
+  }, [showBrowserNotification]); // Add the new dependency
 
-  // Handler for when a user clicks on a notification item
   const handleNotificationClick = useCallback((id, path) => {
-    // Mark the clicked notification as read
     setNotifications(prev =>
       prev.map(n => (n.id === id ? { ...n, read: true } : n))
     );
 
     if (path) {
-      console.log(`Navigating to: ${path}`);
-      // In a real app with react-router: history.push(path);
-      // For now, simple navigation for demonstration
       window.location.href = path;
     }
   }, []);
 
+  const requestNotificationPermission = async () => {
+    if (!isBrowserNotificationSupported()) return;
+
+    const newPermission = await Notification.requestPermission();
+    setPermission(newPermission);
+  };
+
   const unreadCount = notifications.filter(n => !n.read).length;
 
-  // The content of the dropdown menu
+  const permissionMenuItem = () => {
+    if (permission === 'granted') {
+      return (
+        <Menu.Item disabled className="bg-green-200">
+          <div className="notification-permission-status">
+            <span>Browser notifications enabled</span>
+          </div>
+        </Menu.Item>
+      );
+    }
+
+    if (permission === 'denied') {
+      return (
+        <Menu.Item disabled className="bg-red-100">
+          <div className="notification-permission-status">
+            <span>Browser notifications are blocked</span>
+            <small>You must enable them in your browser settings.</small>
+          </div>
+        </Menu.Item>
+      );
+    }
+
+    if (permission === 'default') {
+      return (
+        <Menu.Item
+          onClick={requestNotificationPermission}
+          className="bg-gray-200"
+        >
+          <IconSettings style={{ marginRight: '8px' }} />
+          Enable Browser Notifications
+        </Menu.Item>
+      );
+    }
+
+    return null;
+  };
+
   const notificationMenu = (
     <Menu className="notification-menu">
       <div className="notification-menu__header">
@@ -74,7 +145,6 @@ export const NotificationBell = () => {
                 ? 'notification-item--unread'
                 : 'notification-item'
             }
-            // The Dropdown will handle closing the menu on item click
             onClick={() =>
               handleNotificationClick(notification.id, notification.path)
             }
@@ -98,24 +168,27 @@ export const NotificationBell = () => {
           </div>
         </Menu.Item>
       )}
+
+      <Menu.Divider />
+      {permissionMenuItem()}
     </Menu>
   );
+
   return (
     <Dropdown.Trigger align="right" content={notificationMenu}>
       <button
-        className="notification-bell relative mx-5"
+        className="notification-bell relative mx-2"
         aria-label={`Notifications (${unreadCount} unread)`}
       >
         <IconBell />
         {unreadCount > 0 && (
           <span
-            className="
-            notification-bell__badge
-            absolute inline-flex
-            items-center justify-center
-            w-6 h-6 text-xs font-bold
-            text-white bg-red-500 rounded-full
-            -top-0.5 -end-3"
+            className="notification-bell__badge
+            absolute inline-flex items-center justify-center
+            w-6 h-6 text-xs font-bold text-white
+            bg-red-500 border-2 border-black rounded-full
+            -top-0.5 -end-2
+            "
           >
             {unreadCount}
           </span>
