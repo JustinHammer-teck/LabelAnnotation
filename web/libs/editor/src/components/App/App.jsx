@@ -9,7 +9,6 @@ import { observer, Provider } from "mobx-react";
 /**
  * Core
  */
-import Tree from "../../core/Tree";
 import { CommentsOverlay } from "../InteractiveOverlays/CommentsOverlay";
 import { TreeValidation } from "../TreeValidation/TreeValidation";
 
@@ -24,7 +23,7 @@ import "../../tags/visual";
  * Utils and common components
  */
 import { Space } from "../../common/Space/Space";
-import { Button } from "../../common/Button/Button";
+import { Button } from "@humansignal/ui";
 import { Block, Elem } from "../../utils/bem";
 import { isSelfServe } from "../../utils/billing";
 import {
@@ -49,7 +48,6 @@ import { BottomBar } from "../BottomBar/BottomBar";
 import Debug from "../Debug";
 import { InstructionsModal } from "../InstructionsModal/InstructionsModal";
 import { RelationsOverlay } from "../InteractiveOverlays/RelationsOverlay";
-import Segment from "../Segment/Segment";
 import Settings from "../Settings/Settings";
 import { SidePanels } from "../SidePanels/SidePanels";
 import { SideTabsPanels } from "../SidePanels/TabPanels/SideTabsPanels";
@@ -104,7 +102,12 @@ class App extends Component {
         <Result status="success" title={getEnv(this.props.store).messages.NO_NEXT_TASK} />
         <Block name="sub__result">All tasks in the queue have been completed</Block>
         {store.taskHistory.length > 0 && (
-          <Button onClick={(e) => store.prevTask(e, true)} look="outlined" style={{ margin: "16px 0" }}>
+          <Button
+            onClick={(e) => store.prevTask(e, true)}
+            variant="neutral"
+            className="mx-0 my-4"
+            aria-label="Previous task"
+          >
             Go to Previous Task
           </Button>
         )}
@@ -133,21 +136,6 @@ class App extends Component {
 
   renderLoader() {
     return <Result icon={<Spin size="large" />} />;
-  }
-
-  _renderAll(obj) {
-    if (obj.length === 1) return <Segment annotation={obj[0]}>{[Tree.renderItem(obj[0].root)]}</Segment>;
-    const renderAllClassName = cn("renderall").toClassName();
-    const fadeClassName = cn("fade").toClassName();
-    return (
-      <div className={renderAllClassName}>
-        {obj.map((c, i) => (
-          <div key={`all-${i}`} className={fadeClassName}>
-            <Segment annotation={c}>{[Tree.renderItem(c.root)]}</Segment>
-          </div>
-        ))}
-      </div>
-    );
   }
 
   _renderUI(root, as) {
@@ -262,9 +250,10 @@ class App extends Component {
             ) : (
               <>
                 {store.showingDescription && (
-                  <Segment>
+                  <div className="p-base mb-base">
+                    {/* biome-ignore lint/security/noDangerouslySetInnerHtml: we need html here and it's sanitized */}
                     <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(store.description) }} />
-                  </Segment>
+                  </div>
                 )}
               </>
             )}
