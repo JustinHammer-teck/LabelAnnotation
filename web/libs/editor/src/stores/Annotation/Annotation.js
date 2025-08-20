@@ -1,5 +1,6 @@
 import throttle from "lodash.throttle";
 import { destroy, detach, flow, getEnv, getParent, getRoot, isAlive, onSnapshot, types } from "mobx-state-tree";
+import { ff } from "@humansignal/core";
 import { errorBuilder } from "../../core/DataValidator/ConfigValidator";
 import { guidGenerator } from "../../core/Helpers";
 import { Hotkey } from "../../core/Hotkey";
@@ -80,18 +81,47 @@ const hotkeys = Hotkey("Annotations", "Annotations");
  * @param value {Object} object to fix
  * @returns {Object} new object without value fields
  */
-function omitValueFields(value) {
-  const newValue = { ...value };
+const omitValueFields = ff.isActive(ff.FF_CUSTOM_TAGS)
+  ? (value) => {
+      // @todo describe that we only omit `text` from TextArea
+      if (Array.isArray(value.text)) {
+        const { text: _, ...newValue } = value;
+        return newValue;
+      }
 
-  Result.properties.value.propertyNames.forEach((propName) => {
-    delete newValue[propName];
-  });
-  return newValue;
-}
+      return value;
+    }
+  : (value) => {
+      const newValue = { ...value };
+      Result.properties.value.propertyNames.forEach((propName) => {
+        delete newValue[propName];
+      });
+      return newValue;
+    };
 
 const TrackedState = types.model("TrackedState", {
   areas: types.map(Area),
   relationStore: types.optional(RelationStore, {}),
+});
+
+// Create a union type that can handle both user references and frozen user objects
+const UserOrReference = types.union({
+  dispatcher: (snapshot) => {
+    // If it's a number, it's a reference to a user ID
+    if (typeof snapshot === "number") {
+      return types.safeReference(UserExtended);
+    }
+    // If it's a full user object, store it as frozen to avoid duplicate instances
+    if (snapshot && typeof snapshot === "object" && (snapshot.firstName || snapshot.email || snapshot.username)) {
+      return types.frozen();
+    }
+    // Default to reference for any other case
+    return types.safeReference(UserExtended);
+  },
+  cases: {
+    frozen: types.frozen(),
+    reference: types.safeReference(UserExtended),
+  },
 });
 
 const _Annotation = types
@@ -109,7 +139,7 @@ const _Annotation = types
     createdDate: types.optional(types.string, Utils.UDate.currentISODate()),
     createdAgo: types.maybeNull(types.string),
     createdBy: types.optional(types.string, "Admin"),
-    user: types.optional(types.maybeNull(types.safeReference(UserExtended)), null),
+    user: types.optional(types.maybeNull(UserOrReference), null),
     score: types.maybeNull(types.number),
 
     parent_prediction: types.maybeNull(types.integer),
@@ -169,29 +199,26 @@ const _Annotation = types
   }))
   .preProcessSnapshot((sn) => {
     // sn.draft = Boolean(sn.draft);
-    let user = sn.user ?? sn.completed_by ?? undefined;
+    const user = sn.user ?? sn.completed_by ?? undefined;
     let root;
 
     const updateIds = (item) => {
       const children = item.children?.map(updateIds);
       const imageEntities = item.imageEntities?.map(updateIds);
+      let updatedItem = item;
 
-      if (children) item = { ...item, children };
-      if (imageEntities) item = { ...item, imageEntities };
-      if (item.id) item = { ...item, id: `${item.name ?? item.id}@${sn.id}` };
+      if (children) updatedItem = { ...updatedItem, children };
+      if (imageEntities) updatedItem = { ...updatedItem, imageEntities };
+      if (updatedItem.id) updatedItem = { ...updatedItem, id: `${updatedItem.name ?? updatedItem.id}@${sn.id}` };
       // @todo fallback for tags with name as id:
       // if (item.name) item = { ...item, name: item.name + "@" + sn.id };
       // @todo soon no such tags should left
 
-      return item;
+      return updatedItem;
     };
 
     if (isFF(FF_DEV_3391)) {
       root = updateIds(sn.root.toJSON());
-    }
-
-    if (user && typeof user !== "number") {
-      user = user.id;
     }
 
     const getCreatedBy = (snapshot) => {
@@ -387,7 +414,7 @@ const _Annotation = types
   .actions((self) => ({
     reinitHistory(force = true) {
       self.history.reinit(force);
-      self.autosave && self.autosave.cancel();
+      self.autosave?.cancel();
       if (self.type === "annotation") self.setInitialValues();
     },
 
@@ -489,20 +516,26 @@ const _Annotation = types
       self.regionStore.clearSelection();
     },
 
+    lockSelectedRegions() {
+      for (const region of self.selectedRegions) {
+        region.setLocked(!region.locked);
+      }
+    },
+
     hideSelectedRegions() {
-      self.selectedRegions.forEach((region) => {
+      for (const region of self.selectedRegions) {
         region.toggleHidden();
-      });
+      }
     },
 
     deleteSelectedRegions() {
-      self.selectedRegions.forEach((region) => {
+      for (const region of self.selectedRegions) {
         region.deleteRegion();
-      });
+      }
     },
 
     unselectStates() {
-      self.names.forEach((tag) => tag.unselectAll && tag.unselectAll());
+      self.names.forEach((tag) => tag.unselectAll?.());
     },
 
     /**
@@ -528,10 +561,10 @@ const _Annotation = types
         self.setIsDrawing(false);
         self.relationStore.deleteAllRelations();
 
-        regions.forEach((r) => {
+        for (const r of regions) {
           r.destroyRegion?.();
           destroy(r);
-        });
+        }
 
         self.updateObjects();
 
@@ -540,7 +573,9 @@ const _Annotation = types
 
       if (deleteReadOnly === false) regions = regions.filter((r) => r.readonly === false);
 
-      regions.forEach((r) => r.deleteRegion());
+      for (const r of regions) {
+        r.deleteRegion();
+      }
       self.updateObjects();
     },
 
@@ -551,16 +586,6 @@ const _Annotation = types
         self.addLinkedRegion(reg);
         self.stopLinkingMode();
       }
-    },
-
-    unloadRegionState(region) {
-      region.states &&
-        region.states.forEach((s) => {
-          const mainViewTag = self.names.get(s.name);
-
-          mainViewTag.unselectAll && mainViewTag.unselectAll();
-          mainViewTag.perRegionCleanup && mainViewTag.perRegionCleanup();
-        });
     },
 
     validate() {
@@ -586,9 +611,7 @@ const _Annotation = types
      */
     beforeSend() {
       self.traverseTree((node) => {
-        if (node && node.beforeSend) {
-          node.beforeSend();
-        }
+        node?.beforeSend?.();
       });
 
       self.stopLinkingMode();
@@ -606,7 +629,11 @@ const _Annotation = types
       // move all children into the parent region of the given one
       const children = regions.filter((r) => r.parentID === region.id);
 
-      children && children.forEach((r) => r.setParentID(region.parentID));
+      if (children) {
+        for (const r of children) {
+          r.setParentID(region.parentID);
+        }
+      }
 
       if (!region.classification) getEnv(self).events.invoke("entityDelete", region);
 
@@ -630,7 +657,7 @@ const _Annotation = types
     undo() {
       const { history, regionStore } = self;
 
-      if (history && history.canUndo) {
+      if (history?.canUndo) {
         let stopDrawingAfterNextUndo = false;
         const selectedIds = regionStore.selectedIds;
         const currentRegion = regionStore.findRegion(
@@ -656,7 +683,7 @@ const _Annotation = types
     redo() {
       const { history, regionStore } = self;
 
-      if (history && history.canRedo) {
+      if (history?.canRedo) {
         const selectedIds = regionStore.selectedIds;
 
         history.redo();
@@ -673,7 +700,7 @@ const _Annotation = types
       // Some async or lazy mode operations (ie. Images lazy load) need to reinitHistory without removing state selections
       if (force) self.unselectAll();
 
-      self.names.forEach((tag) => tag.needsUpdate && tag.needsUpdate());
+      self.names.forEach((tag) => tag.needsUpdate?.());
       self.updateAppearenceFromState();
       const areas = Array.from(self.areas.values());
       // It should find just one unfinished region, but just in case we work with array
@@ -816,7 +843,7 @@ const _Annotation = types
     },
 
     beforeDestroy() {
-      self.autosave && self.autosave.cancel && self.autosave.cancel();
+      self.autosave?.cancel?.();
     },
 
     setDraftId(id) {
@@ -1014,14 +1041,14 @@ const _Annotation = types
       const prevSize = self.regionStore.regions.length;
 
       // Generate new ids to prevent collisions
-      results.forEach((result) => {
+      for (const result of results) {
         const regionId = result.id;
 
         if (!regionIdMap[regionId]) {
           regionIdMap[regionId] = guidGenerator();
         }
         result.id = regionIdMap[regionId];
-      });
+      }
 
       self.deserializeResults(results);
       self.updateObjects();
@@ -1183,7 +1210,9 @@ const _Annotation = types
           classificationAreasByControlName[controlName][itemIndex] = a.id;
         }
       });
-      duplicateAreaIds.forEach((id) => self.areas.delete(id));
+      for (const id of duplicateAreaIds) {
+        self.areas.delete(id);
+      }
     },
 
     /**
@@ -1200,21 +1229,26 @@ const _Annotation = types
 
         self._initialAnnotationObj = objAnnotation;
 
-        objAnnotation.forEach((obj) => {
+        for (const obj of objAnnotation) {
           self.deserializeSingleResult(
             obj,
             (id) => areas.get(id),
             (snapshot) => areas.put(snapshot),
           );
-        });
+        }
 
         // It's not necessary, but it's calmer with this
         self.cleanClassificationAreas();
 
-        !hidden &&
-          self.results.filter((r) => r.area.classification).forEach((r) => r.from_name.updateFromResult?.(r.mainValue));
+        if (!hidden) {
+          for (const r of self.results) {
+            if (r.area.classification) {
+              r.from_name.updateFromResult?.(r.mainValue);
+            }
+          }
+        }
 
-        objAnnotation.forEach((obj) => {
+        for (const obj of objAnnotation) {
           if (obj.type === "relation") {
             self.relationStore.deserializeRelation(
               `${obj.from_id}#${self.id}`,
@@ -1223,7 +1257,7 @@ const _Annotation = types
               obj.labels,
             );
           }
-        });
+        }
       } catch (e) {
         console.error(e);
         self.list.addErrors([errorBuilder.generalError(e)]);
@@ -1341,21 +1375,21 @@ const _Annotation = types
     },
 
     acceptAllSuggestions() {
-      Array.from(self.suggestions.keys()).forEach((id) => {
+      for (const id of self.suggestions.keys()) {
         self.acceptSuggestion(id);
-      });
+      }
       self.deleteAllDynamicregions(isFF(FF_DEV_1284));
     },
 
     rejectAllSuggestions() {
-      Array.from(self.suggestions.keys()).forEach((id) => {
+      for (const id of self.suggestions.keys()) {
         self.suggestions.delete(id);
-      });
+      }
       self.deleteAllDynamicregions(isFF(FF_DEV_1284));
     },
 
     deleteAllDynamicregions(silent = false) {
-      self.regions.forEach((r) => {
+      for (const r of self.regions) {
         if (r.dynamic) {
           if (silent) {
             // dirty hack to prevent sending regionFinishedDrawing notification
@@ -1363,7 +1397,7 @@ const _Annotation = types
           }
           r.deleteRegion();
         }
-      });
+      }
     },
 
     acceptSuggestion(id) {
@@ -1411,9 +1445,9 @@ const _Annotation = types
       const area = self.areas.get(itemId);
       const activeStates = area.object.activeStates();
 
-      activeStates.forEach((state) => {
+      for (const state of activeStates) {
         area.setValue(state);
-      });
+      }
       self.suggestions.delete(id);
     },
 
@@ -1422,8 +1456,8 @@ const _Annotation = types
     },
 
     resetReady() {
-      self.objects.forEach((object) => object.setReady && object.setReady(false));
-      self.areas.forEach((area) => area.setReady && area.setReady(false));
+      self.objects.forEach((object) => object.setReady?.(false));
+      self.areas.forEach((area) => area.setReady?.(false));
     },
   }));
 
