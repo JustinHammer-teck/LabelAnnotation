@@ -20,14 +20,12 @@ from django.db import IntegrityError
 from django.db.models import F
 from django.http import Http404
 from django.utils.decorators import method_decorator
-from django.utils.timezone import now
 from django_filters import CharFilter, FilterSet
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_yasg.utils import swagger_auto_schema
 from guardian.shortcuts import assign_perm, get_objects_for_user, remove_perm
 from label_studio_sdk.label_interface.interface import LabelInterface
 from ml.serializers import MLBackendSerializer
-from notifications.urls import send_notification
 from projects.functions.next_task import get_next_task
 from projects.functions.stream_history import get_label_stream_history
 from projects.functions.utils import recalculate_created_annotations_and_labels_from_scratch
@@ -947,12 +945,12 @@ class ProjectAssignmentAPI(APIView):
             ),
         )
 
-        send_notification(
-            event='notifications',
-            subject='Permission Assigned',
-            message=f'User {request_user.email} has assign you to Project: {project.id}',
-            ts=now(),
-        )
+        # send_notification(
+        #     event='notifications',
+        #     subject='Permission Assigned',
+        #     message=f'User {request_user.email} has assign you to Project: {project.id}',
+        #     ts=now(),
+        # )
 
     def __revoke_permission(self, permission, request_user, project, assign_user):
         remove_perm(permission, assign_user, project)
@@ -963,12 +961,12 @@ class ProjectAssignmentAPI(APIView):
             ),
         )
 
-        send_notification(
-            event='notifications',
-            subject='Permission Revoke',
-            message=f'User {request_user.email} has revoke you from Project: {project.id}',
-            ts=now(),
-        )
+        # send_notification(
+        #     event='notifications',
+        #     subject='Permission Revoke',
+        #     message=f'User {request_user.email} has revoke you from Project: {project.id}',
+        #     ts=now(),
+        # )
 
 
 class ProjectAPIProxy(ProjectAPI):

@@ -4,6 +4,9 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 
+class NotificationChannel():
+    NOTIFICATION = 'notification'
+
 class NotificationEventType(models.TextChoices):
     PROJECT_ASSIGNED = 'project_assigned', _('Project Assigned')
     PROJECT_COMMENTED = 'project_commented', _('Project Task Commented')
@@ -31,19 +34,20 @@ class NotificationTarget(models.Model):
         return f'{self.get_target_type_display()}: {self.identifier}'
 
 
+""" 
+TODO: Redesign the Notification send_notification implementation 
+for easy sourcing action
+"""
 class Notification(models.Model):
     class Status(models.TextChoices):
         CREATED = 'created', _('Created')
         DISPATHED_FAILED = 'failed', _('Dispatch Failed')
         DISPATHED = 'dispatched', _('Dispatched')
 
-    source = models.TextField(null=False)
-    recipient_channel = models.CharField(max_length=255, db_index=True)
+    source = models.TextField(null=False) # The Action that trigger this Notification e.g: Permission Grant, etc.
+    channel = models.CharField(max_length=255, db_index=True) # Could be long channel name
     event_type = models.CharField(max_length=64, choices=NotificationEventType.choices, null=False)
     content = models.TextField(null=False, blank=True)
     status = models.CharField(max_length=64, choices=Status.choices, default=Status.CREATED)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return f'Notification for {self.recipient_channel}'

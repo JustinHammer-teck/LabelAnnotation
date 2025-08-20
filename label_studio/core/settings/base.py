@@ -131,7 +131,6 @@ WINDOWS_SQLITE_BINARY_HOST_PREFIX = get_env("WINDOWS_SQLITE_BINARY_HOST_PREFIX",
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-print(f"the base dir {BASE_DIR}")
 
 # Base path for media root and other uploaded files
 BASE_DATA_DIR = get_env("BASE_DATA_DIR")
