@@ -5,7 +5,6 @@ import { ToggleItems } from "../../components";
 import { Button } from "@humansignal/ui";
 import { Modal } from "../../components/Modal/Modal";
 import { Space } from "../../components/Space/Space";
-import { HeidiTips } from "../../components/HeidiTips/HeidiTips";
 import { useAPI } from "../../providers/ApiProvider";
 import { cn } from "../../utils/bem";
 import { ConfigPage } from "./Config/Config";
@@ -79,7 +78,6 @@ const ProjectName = ({ name, setName, onSaveName, onSubmit, error, description, 
               Learn more
             </a>
           </Typography>
-          <HeidiTips collection="projectCreation" />
         </div>
       )}
     </form>

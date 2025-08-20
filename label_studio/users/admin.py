@@ -20,12 +20,13 @@ class UserAdminShort(UserAdmin):
         self.list_display = (
             'email',
             'username',
+            'get_groups',
             'active_organization',
             'organization',
             'is_staff',
             'is_superuser',
         )
-        self.list_filter = ('is_staff', 'is_superuser', 'is_active')
+        self.list_filter = ('is_staff', 'is_superuser', 'is_active', 'groups')
         self.search_fields = (
             'username',
             'first_name',
@@ -37,20 +38,24 @@ class UserAdminShort(UserAdmin):
         self.ordering = ('email',)
 
         self.fieldsets = (
-            (None, {'fields': ('password',)}),
-            ('Personal info', {'fields': ('email', 'username', 'first_name', 'last_name')}),
+            (None, {"fields": ("password",)}),
+            ("Personal info", {"fields": ("email", "username", "first_name", "last_name")}),
             (
-                'Permissions',
-                {
-                    'fields': (
-                        'is_active',
-                        'is_staff',
-                        'is_superuser',
-                    )
-                },
+                "Permissions",
+                {"fields": ("is_active", "is_staff", "is_superuser", "groups", "user_permissions")},
             ),
-            ('Important dates', {'fields': ('last_login', 'date_joined')}),
+            ("Important dates", {"fields": ("last_login", "date_joined")}),
         )
+
+        self.filter_horizontal = ('groups', 'user_permissions',)
+
+    # --- Method added for Modification 1 ---
+    def get_groups(self, obj):
+        """Returns a comma-separated list of groups for the list_display."""
+        return ", ".join([g.name for g in obj.groups.all()])
+
+    # Set the column header name in the admin list view
+    get_groups.short_description = 'Groups'
 
 
 class AsyncMigrationStatusAdmin(admin.ModelAdmin):

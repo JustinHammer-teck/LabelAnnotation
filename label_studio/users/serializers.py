@@ -116,6 +116,12 @@ class UserSimpleSerializer(BaseUserSerializer):
         model = User
         fields = ('id', 'first_name', 'last_name', 'email', 'avatar')
 
+class UserWithPermissionSerializer(serializers.ModelSerializer):
+    has_view_permission = serializers.BooleanField()
+
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'email', 'has_view_permission']
 
 class HotkeysSerializer(serializers.Serializer):
     custom_hotkeys = serializers.DictField(required=True)

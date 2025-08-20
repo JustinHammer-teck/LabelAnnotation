@@ -2798,7 +2798,7 @@
     },
     "fflag_feat_front_lsdv_e_297_increase_oss_to_enterprise_adoption_short": {
       "key": "fflag_feat_front_lsdv_e_297_increase_oss_to_enterprise_adoption_short",
-      "on": true,
+      "on": false,
       "prerequisites": [],
       "targets": [],
       "contextTargets": [],

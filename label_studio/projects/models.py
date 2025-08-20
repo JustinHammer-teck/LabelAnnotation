@@ -1,10 +1,11 @@
-"""This file and its contents are licensed under the Apache License 2.0. Please see the included NOTICE for copyright information and LICENSE for a copy of the license.
-"""
+"""This file and its contents are licensed under the Apache License 2.0. Please see the included NOTICE for copyright information and LICENSE for a copy of the license."""
+
 import json
 import logging
 from typing import Any, Mapping, Optional
 
 from annoying.fields import AutoOneToOneField
+from core.audit_log_service import AuditLogService
 from core.label_config import (
     check_control_in_config_by_regex,
     check_toname_in_config_by_regex,
@@ -19,7 +20,6 @@ from core.label_config import (
     get_sample_task,
     validate_label_config,
 )
-from core.models import ActivityLog
 from core.utils.common import (
     create_hash,
     get_attr_or_item,
@@ -36,7 +36,7 @@ from django.db.models.expressions import RawSQL
 from django.db import models, transaction
 from django.db.models import Avg, BooleanField, Case, Count, JSONField, Max, Q, Sum, Value, When
 from django.db.models.signals import post_save
-from django.dispatch.dispatcher import receiver
+from django.dispatch import receiver
 from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
 from label_studio_sdk._extensions.label_studio_tools.core.label_config import parse_config
@@ -838,7 +838,6 @@ class Project(ProjectMixin, models.Model):
 
     def annotators(self):
         """Annotators connected to this project including team members"""
-        from users.models import User
 
         member_ids = self.get_member_ids()
         team_members = User.objects.filter(id__in=member_ids).order_by('email')
@@ -1226,7 +1225,6 @@ class ProjectOnboarding(models.Model):
 
 
 class LabelStreamHistory(models.Model):
-
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='histories', help_text='User ID'
     )
@@ -1238,7 +1236,6 @@ class LabelStreamHistory(models.Model):
 
 
 class ProjectMember(models.Model):
-
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='project_memberships', help_text='User ID'
     )
@@ -1249,7 +1246,6 @@ class ProjectMember(models.Model):
 
 
 class ProjectSummary(models.Model):
-
     project = AutoOneToOneField(Project, primary_key=True, on_delete=models.CASCADE, related_name='summary')
     created_at = models.DateTimeField(_('created at'), auto_now_add=True, help_text='Creation time')
 
@@ -1547,26 +1543,32 @@ class ProjectReimport(models.Model):
     def has_permission(self, user):
         return self.project.has_permission(user)
 
+
+class ProjectProxy(Project):
+    class Meta:
+        proxy = True
+        permissions = [
+            ('assign_project', 'Can Assign Project to other People'),
+            ('assigned_to_project', 'User is assigned to the Project'),
+        ]
+
+
 @receiver(post_save, sender=Project)
 def create_project(sender, instance, **kwargs):
     user = User.objects.get(id=instance.created_by_id)
-    ActivityLog.objects.create(
-        user = user,
-        action = 'User #{} "{}" create project #{}'.format(
-            user.id,
-            user.email,
-            instance.id
+    if kwargs.get('created'):
+        AuditLogService.create(
+            user=user, action='User #{} "{}" created project #{}'.format(user.id, user.email, instance.id)
         )
-    )
+    else:
+        AuditLogService.create(
+            user=user, action='User #{} "{}" modify project #{}'.format(user.id, user.email, instance.id)
+        )
+
 
 @receiver(ProjectSignals.delete_project)
 def project_audit_log(sender, instance, project_id, **kwargs):
     user = User.objects.get(id=instance.created_by_id)
-    ActivityLog.objects.create(
-        user = user,
-        action = 'User #{} "{}" deleted project #{}'.format(
-            user.id,
-            user.email,
-            project_id
-        )
+    AuditLogService.create(
+        user=user, action='User #{} "{}" deleted project #{}'.format(user.id, user.email, project_id)
     )

@@ -1,38 +1,14 @@
-import { IconExternal, IconFolderAdd, IconHumanSignal, IconUserAdd, IconFolderOpen } from "@humansignal/icons";
+import { IconFolderAdd, IconFolderOpen } from "@humansignal/icons";
 import { Button, SimpleCard, Spinner, Typography } from "@humansignal/ui";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { HeidiTips } from "../../components/HeidiTips/HeidiTips";
 import { useAPI } from "../../providers/ApiProvider";
 import { CreateProject } from "../CreateProject/CreateProject";
 import { InviteLink } from "../Organization/PeoplePage/InviteLink";
 import type { Page } from "../types/Page";
 
-const PROJECTS_TO_SHOW = 10;
-
-const resources = [
-  {
-    title: "Documentation",
-    url: "https://labelstud.io/guide/",
-  },
-  {
-    title: "API Documentation",
-    url: "https://api.labelstud.io/api-reference/introduction/getting-started",
-  },
-  {
-    title: "Release Notes",
-    url: "https://labelstud.io/learn/categories/release-notes/",
-  },
-  {
-    title: "LabelStud.io Blog",
-    url: "https://labelstud.io/blog/",
-  },
-  {
-    title: "Slack Community",
-    url: "https://slack.labelstud.io",
-  },
-];
+const PROJECTS_TO_SHOW = 20;
 
 const actions = [
   {
@@ -40,11 +16,7 @@ const actions = [
     icon: IconFolderAdd,
     type: "createProject",
   },
-  {
-    title: "Invite People",
-    icon: IconUserAdd,
-    type: "invitePeople",
-  },
+
 ] as const;
 
 type Action = (typeof actions)[number]["type"];
@@ -68,9 +40,6 @@ export const HomePage: Page = () => {
         case "createProject":
           setCreationDialogOpen(true);
           break;
-        case "invitePeople":
-          setInvitationOpen(true);
-          break;
       }
     };
   };
@@ -79,10 +48,6 @@ export const HomePage: Page = () => {
     <main className="p-6">
       <div className="grid grid-cols-[minmax(0,1fr)_450px] gap-6">
         <section className="flex flex-col gap-6">
-          <div className="flex flex-col gap-1">
-            <Heading size={1}>Welcome 👋</Heading>
-            <Sub>Let's get you started.</Sub>
-          </div>
           <div className="flex justify-start gap-4">
             {actions.map((action) => {
               return (
@@ -94,19 +59,6 @@ export const HomePage: Page = () => {
                   onClick={handleActions(action.type)}
                   leading={<action.icon />}
                 >
-                  {action.title}
-                </Button>
-              );
-            })}
-            {
-              adminActions.map((action) => {
-              return (
-                <Button
-                  key={action.title}
-                  rawClassName="flex-grow-0 text-16/24 gap-2 text-primary-content text-left min-w-[250px] [&_svg]:w-6 [&_svg]:h-6 pl-2"
-                  onClick={handleAdminActions(action.type)}
-                >
-                  <action.icon className="text-primary-icon" />
                   {action.title}
                 </Button>
               );

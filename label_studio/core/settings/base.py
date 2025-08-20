@@ -193,9 +193,9 @@ if get_bool_env('GOOGLE_LOGGING_ENABLED', False):
             'class': 'google.cloud.logging.handlers.CloudLoggingHandler',
             'client': client,
         }
-        LOGGING['root']['handlers'].append('google_cloud_logging')
+        LOGGING["root"]["handlers"].append("google_cloud_logging")
     except GoogleAuthError:
-        logger.exception('Google Cloud Logging handler could not be setup.')
+        logger.exception("Google Cloud Logging handler could not be setup.")
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -233,6 +233,7 @@ INSTALLED_APPS = [
     "jwt_auth",
     "session_policy",
     "guardian",
+    "silk",
 ]
 
 MIDDLEWARE = [
@@ -750,14 +751,14 @@ if get_env('STORAGE_TYPE') == 'azure':
     AZURE_URL_EXPIRATION_SECS = int(get_env('STORAGE_AZURE_URL_EXPIRATION_SECS', '86400'))
     AZURE_LOCATION = get_env('STORAGE_AZURE_FOLDER', default='')
 
-if get_env('STORAGE_TYPE') == 'gcs':
+if get_env("STORAGE_TYPE") == "gcs":
     CLOUD_FILE_STORAGE_ENABLED = True
-    STORAGES['default']['BACKEND'] = 'core.storage.AlternativeGoogleCloudStorage'
-    GS_PROJECT_ID = get_env('STORAGE_GCS_PROJECT_ID')
-    GS_BUCKET_NAME = get_env('STORAGE_GCS_BUCKET_NAME')
-    GS_EXPIRATION = timedelta(seconds=int(get_env('STORAGE_GCS_EXPIRATION_SECS', '86400')))
-    GS_LOCATION = get_env('STORAGE_GCS_FOLDER', default='')
-    GS_CUSTOM_ENDPOINT = get_env('STORAGE_GCS_ENDPOINT')
+    STORAGES["default"]["BACKEND"] = "core.storage.AlternativeGoogleCloudStorage"
+    GS_PROJECT_ID = get_env("STORAGE_GCS_PROJECT_ID")
+    GS_BUCKET_NAME = get_env("STORAGE_GCS_BUCKET_NAME")
+    GS_EXPIRATION = timedelta(seconds=int(get_env("STORAGE_GCS_EXPIRATION_SECS", "86400")))
+    GS_LOCATION = get_env("STORAGE_GCS_FOLDER", default="")
+    GS_CUSTOM_ENDPOINT = get_env("STORAGE_GCS_ENDPOINT")
 
 CSRF_TRUSTED_ORIGINS = get_env('CSRF_TRUSTED_ORIGINS', [])
 if CSRF_TRUSTED_ORIGINS:

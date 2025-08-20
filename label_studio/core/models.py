@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 class ActivityLog(models.Model):
     user = models.ForeignKey(User, null= True, on_delete=models.SET_NULL)
     action = models.CharField(max_length=300)
+    created_at = models.DateTimeField(_('created at'), auto_now_add=True)
 
 class AsyncMigrationStatus(models.Model):
     meta = JSONField(

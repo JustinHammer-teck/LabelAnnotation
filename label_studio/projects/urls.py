@@ -1,5 +1,5 @@
-"""This file and its contents are licensed under the Apache License 2.0. Please see the included NOTICE for copyright information and LICENSE for a copy of the license.
-"""
+"""This file and its contents are licensed under the Apache License 2.0. Please see the included NOTICE for copyright information and LICENSE for a copy of the license."""
+
 from django.urls import include, path
 
 from . import api, views
@@ -16,8 +16,8 @@ _urlpatterns = [
 # reverse for projects:api:name
 _api_urlpatterns = [
     # CRUD
-    path('', api.ProjectListAPI.as_view(), name='project-list'),
-    path('<int:pk>/', api.ProjectAPI.as_view(), name='project-detail'),
+    path('', api.ProjectListApiProxy.as_view(), name='project-list'),
+    path('<int:pk>/', api.ProjectAPIProxy.as_view(), name='project-detail'),
     path('counts/', api.ProjectCountsListAPI.as_view(), name='project-counts-list'),
     # Get next task
     path('<int:pk>/next/', api.ProjectNextTaskAPI.as_view(), name='project-next'),
@@ -45,6 +45,8 @@ _api_urlpatterns = [
     path('<int:pk>/sample-task/', api.ProjectSampleTask.as_view(), name='project-sample-task'),
     # List available model versions
     path('<int:pk>/model-versions/', api.ProjectModelVersions.as_view(), name='project-model-versions'),
+    # Project permission
+    path('<int:pk>/assignment', api.ProjectAssignmentAPI.as_view(), name='project-assignment'),
 ]
 
 _api_urlpatterns_templates = [
