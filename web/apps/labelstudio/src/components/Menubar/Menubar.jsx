@@ -1,19 +1,14 @@
 import { createContext, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { StaticContent } from "../../app/StaticContent/StaticContent";
 import {
-  IconBook,
   IconFolder,
   IconHome,
   IconHotkeys,
   IconPersonInCircle,
   IconPin,
-  IconTerminal,
   IconDoor,
-  IconGithub,
   IconSettings,
-  IconSlack,
 } from "@humansignal/icons";
-import { LSLogo } from "../../assets/images";
 import { Button, Userpic, ThemeToggle } from "@humansignal/ui";
 import { useConfig } from "../../providers/ConfigProvider";
 import { useContextComponent, useFixedLocation } from "../../providers/RoutesProvider";
@@ -25,6 +20,7 @@ import { Dropdown } from "../Dropdown/Dropdown";
 import { Hamburger } from "../Hamburger/Hamburger";
 import { Menu } from "../Menu/Menu";
 import { VersionNotifier, VersionProvider } from "../VersionNotifier/VersionNotifier";
+import { NotificationBell } from '../Notification/Notification';
 import "./Menubar.scss";
 import "./MenuContent.scss";
 import "./MenuSidebar.scss";
@@ -174,6 +170,7 @@ export const Menubar = ({ enabled, defaultOpened, defaultPinned, children, onSid
             </div>
           </div>
 
+          <NotificationBell></NotificationBell>
           {ff.isActive(ff.FF_THEME_TOGGLE) && <ThemeToggle />}
 
           <Dropdown.Trigger

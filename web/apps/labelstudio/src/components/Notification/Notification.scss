@@ -1,0 +1,98 @@
+// --- Styles for the Trigger Button ---
+
+.notification-bell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0 8px;
+  color: #5A5A5A;
+  position: relative;
+
+  &:hover {
+    opacity: 0.8;
+  }
+
+  &__badge {
+    position: absolute;
+    top: 0;
+    right: 4px;
+    background-color: #d94c4c;
+    color: white;
+    border-radius: 50%;
+    width: 16px;
+    height: 16px;
+    font-size: 10px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid white;
+    transform: translate(50%, -50%);
+  }
+}
+
+// --- Styles for the Dropdown Menu Itself ---
+
+.notification-menu {
+  width: 420px;
+  max-height: 450px;
+  overflow-y: auto;
+
+  // ** CHANGE 1: ADD SPACING BETWEEN ITEMS (using CSS Flexbox Gap) **
+  // This is the standard CSS way to create space between items in a container.
+  display: flex;
+  flex-direction: column;
+  gap: 4px; // This adds a 4px space between each notification item.
+
+  &__header {
+    padding: 12px 16px;
+    position: sticky;
+    top: 0;
+    background: white;
+    z-index: 1;
+
+    h3 {
+      margin: 0;
+      font-size: 16px;
+    }
+  }
+}
+
+// --- Styles for Individual Notification Items ---
+
+.notification-item {
+  // Add some padding inside each item for better spacing.
+  white-space: nowrap;
+  padding: 8px 16px;
+  text-overflow: ellipsis;
+
+  &__content {
+    white-space: normal;
+  }
+
+  &__subject {
+    font-size: 14px;
+    color: #1f2937; // Equivalent to Tailwind's `text-gray-800`
+  }
+
+  &__message {
+    font-size: 13px;
+    color: #4b5563; // Equivalent to Tailwind's `text-gray-600`
+    margin-top: 4px;
+  }
+}
+
+// Style for unread notifications to make them stand out.
+.notification-item--unread {
+  // ** CHANGE 2: SET UNREAD BACKGROUND TO LIGHT GREY (using CSS Hex Code) **
+  // #f3f4f6 is the hex code for Tailwind's `bg-gray-100`.
+  background-color: #f3f4f6;
+
+  .notification-item__subject {
+    // Make the subject bold for unread items.
+    font-weight: 600; // Equivalent to Tailwind's `font-semibold`
+  }
+}

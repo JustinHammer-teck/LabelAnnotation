@@ -193,47 +193,50 @@ if get_bool_env('GOOGLE_LOGGING_ENABLED', False):
             'class': 'google.cloud.logging.handlers.CloudLoggingHandler',
             'client': client,
         }
-        LOGGING["root"]["handlers"].append("google_cloud_logging")
+        LOGGING['root']['handlers'].append('google_cloud_logging')
     except GoogleAuthError:
-        logger.exception("Google Cloud Logging handler could not be setup.")
+        logger.exception('Google Cloud Logging handler could not be setup.')
+
+REDIS_HOST = get_env("REDIS_HOST", "redis://xucxich.hydra-everest.ts.net:6380")
 
 INSTALLED_APPS = [
-    "django.contrib.admin",
-    "django.contrib.auth",
-    "django.contrib.contenttypes",
-    "django.contrib.sessions",
-    "django.contrib.messages",
-    "django.contrib.staticfiles",
-    "django.contrib.humanize",
-    "drf_spectacular",
-    "corsheaders",
-    "django_extensions",
-    "django_rq",
-    "django_filters",
-    "rules",
-    "annoying",
-    "rest_framework",
-    "rest_framework.authtoken",
-    "rest_framework_simplejwt.token_blacklist",
-    "drf_generators",
-    "core",
-    "users",
-    "organizations",
-    "data_import",
-    "data_export",
-    "projects",
-    "tasks",
-    "data_manager",
-    "io_storages",
-    "ml",
-    "webhooks",
-    "labels_manager",
-    "ml_models",
-    "ml_model_providers",
-    "jwt_auth",
-    "session_policy",
-    "guardian",
-    "silk",
+    'daphne',
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    'django.contrib.humanize',
+    'drf_spectacular',
+    'corsheaders',
+    'django_extensions',
+    'django_rq',
+    'django_filters',
+    'rules',
+    'annoying',
+    'rest_framework',
+    'rest_framework.authtoken',
+    'rest_framework_simplejwt.token_blacklist',
+    'drf_generators',
+    'core',
+    'users',
+    'organizations',
+    'data_import',
+    'data_export',
+    'projects',
+    'tasks',
+    'data_manager',
+    'io_storages',
+    'ml',
+    'webhooks',
+    'labels_manager',
+    'ml_models',
+    'ml_model_providers',
+    'jwt_auth',
+    'session_policy',
+    'guardian',
+    'notifications',
 ]
 
 MIDDLEWARE = [
@@ -416,8 +419,9 @@ SENTRY_IGNORED_EXCEPTIONS = [
     'KeyboardInterrupt',
 ]
 
-ROOT_URLCONF = 'core.urls'
-WSGI_APPLICATION = 'core.wsgi.application'
+ROOT_URLCONF = "core.urls"
+WSGI_APPLICATION = "core.wsgi.application"
+ASGI_APPLICATION = "core.asgi.application"
 GRAPHIQL = True
 
 # Internationalization
@@ -751,14 +755,14 @@ if get_env('STORAGE_TYPE') == 'azure':
     AZURE_URL_EXPIRATION_SECS = int(get_env('STORAGE_AZURE_URL_EXPIRATION_SECS', '86400'))
     AZURE_LOCATION = get_env('STORAGE_AZURE_FOLDER', default='')
 
-if get_env("STORAGE_TYPE") == "gcs":
+if get_env('STORAGE_TYPE') == 'gcs':
     CLOUD_FILE_STORAGE_ENABLED = True
-    STORAGES["default"]["BACKEND"] = "core.storage.AlternativeGoogleCloudStorage"
-    GS_PROJECT_ID = get_env("STORAGE_GCS_PROJECT_ID")
-    GS_BUCKET_NAME = get_env("STORAGE_GCS_BUCKET_NAME")
-    GS_EXPIRATION = timedelta(seconds=int(get_env("STORAGE_GCS_EXPIRATION_SECS", "86400")))
-    GS_LOCATION = get_env("STORAGE_GCS_FOLDER", default="")
-    GS_CUSTOM_ENDPOINT = get_env("STORAGE_GCS_ENDPOINT")
+    STORAGES['default']['BACKEND'] = 'core.storage.AlternativeGoogleCloudStorage'
+    GS_PROJECT_ID = get_env('STORAGE_GCS_PROJECT_ID')
+    GS_BUCKET_NAME = get_env('STORAGE_GCS_BUCKET_NAME')
+    GS_EXPIRATION = timedelta(seconds=int(get_env('STORAGE_GCS_EXPIRATION_SECS', '86400')))
+    GS_LOCATION = get_env('STORAGE_GCS_FOLDER', default='')
+    GS_CUSTOM_ENDPOINT = get_env('STORAGE_GCS_ENDPOINT')
 
 CSRF_TRUSTED_ORIGINS = get_env('CSRF_TRUSTED_ORIGINS', [])
 if CSRF_TRUSTED_ORIGINS:

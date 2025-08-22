@@ -4,12 +4,12 @@ import logging
 import os
 import pathlib
 
-from core.audit_log_service import AuditLogService
 from core.filters import ListFilter
 from core.label_config import config_essential_data_has_changed
 from core.mixins import GetParentObjectMixin
 from core.permissions import ViewClassPermission, all_permissions
 from core.redis import start_job_async_or_sync
+from core.services.audit_log_service import AuditLogService
 from core.utils.common import paginator, paginator_help, temporary_disconnect_all_signals
 from core.utils.exceptions import LabelStudioDatabaseException, ProjectExistException
 from core.utils.io import find_dir, find_file, read_yaml
@@ -829,7 +829,6 @@ def read_templates_and_groups():
 class TemplateListAPI(generics.ListAPIView):
     parser_classes = (JSONParser, FormParser, MultiPartParser)
     permission_required = all_permissions.projects_view
-    swagger_schema = None
     # load this once in memory for performance
     templates_and_groups = read_templates_and_groups()
 
@@ -948,29 +947,46 @@ class ProjectAssignmentAPI(APIView):
             assign_user_id = user.get('user_id')
             assign_user = User.objects.get(pk=assign_user_id)
             if new_perm:
-                assign_perm(permission, assign_user, project)
-                AuditLogService.create(
-                    user=request_user,
-                    action='User #{} "{}" assign Project #{} to User #{} "{}"'.format(
-                        request_user.id, request_user.email, project.id, assign_user.id, assign_user.email
-                    ),
-                )
+                self.__assign_permission(permission, request_user, project, assign_user)
             else:
-                remove_perm(permission, assign_user, project)
-                AuditLogService.create(
-                    request_user,
-                    'User #{} "{}" revoke assign Project #{} to User #{} "{}"'.format(
-                        request_user.id, request_user.email, project.id, assign_user.id, assign_user.email
-                    ),
-                )
+                self.__revoke_permission(permission, request_user, project, assign_user)
 
         return Response(status=200)
 
+    def __assign_permission(self, permission, request_user, project, assign_user):
+        assign_perm(permission, assign_user, project)
+        AuditLogService.create(
+            user=request_user,
+            action='User #{} "{}" assign Project #{} to User #{} "{}"'.format(
+                request_user.id, request_user.email, project.id, assign_user.id, assign_user.email
+            ),
+        )
+
+        # send_notification(
+        #     event='notifications',
+        #     subject='Permission Assigned',
+        #     message=f'User {request_user.email} has assign you to Project: {project.id}',
+        #     ts=now(),
+        # )
+
+    def __revoke_permission(self, permission, request_user, project, assign_user):
+        remove_perm(permission, assign_user, project)
+        AuditLogService.create(
+            request_user,
+            'User #{} "{}" revoke assign Project #{} to User #{} "{}"'.format(
+                request_user.id, request_user.email, project.id, assign_user.id, assign_user.email
+            ),
+        )
+
+        # send_notification(
+        #     event='notifications',
+        #     subject='Permission Revoke',
+        #     message=f'User {request_user.email} has revoke you from Project: {project.id}',
+        #     ts=now(),
+        # )
+
 
 class ProjectAPIProxy(ProjectAPI):
-    def __init__(self):
-        super()
-
     def get_queryset(self):
         serializer = GetFieldsSerializer(data=self.request.query_params)
         serializer.is_valid(raise_exception=True)
@@ -992,9 +1008,6 @@ class ProjectAPIProxy(ProjectAPI):
 
 
 class ProjectListApiProxy(ProjectListAPI):
-    def __init__(self):
-        super()
-
     def get_queryset(self):
         serializer = GetFieldsSerializer(data=self.request.query_params)
         serializer.is_valid(raise_exception=True)
