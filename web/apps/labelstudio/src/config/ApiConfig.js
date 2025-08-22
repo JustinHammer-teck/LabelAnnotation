@@ -24,8 +24,8 @@ export const API_CONFIG = {
     deleteProject: "DELETE:/projects/:pk",
     projectResetCache: "POST:/projects/:pk/summary/reset",
     // Project Assignment
-    assignProject: 'POST:/projects/:pk/assignment',
-    userPermission: 'GET:/projects/:pk/assignment',
+    assignProject: "POST:/projects/:pk/assignment",
+    userPermission: "GET:/projects/:pk/assignment",
 
     // Presigning
     presignUrlForTask: "/../tasks/:taskID/presign",
