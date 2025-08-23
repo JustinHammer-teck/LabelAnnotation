@@ -15,6 +15,7 @@ import { Input, TextArea } from "../../components/Form";
 import { Caption } from "../../components/Caption/Caption";
 import { FF_LSDV_E_297, isFF } from "../../utils/feature-flags";
 import { createURL } from "../../components/HeidiTips/utils";
+import {useTranslation} from "react-i18next";
 
 const ProjectName = ({ name, setName, onSaveName, onSubmit, error, description, setDescription, show = true }) =>
   !show ? null : (
@@ -83,6 +84,7 @@ const ProjectName = ({ name, setName, onSaveName, onSubmit, error, description, 
   );
 
 export const CreateProject = ({ onClose }) => {
+  const {t} = useTranslation();
   const [step, _setStep] = React.useState("name"); // name | import | config
   const [waiting, setWaitingStatus] = React.useState(false);
 
@@ -114,8 +116,8 @@ export const CreateProject = ({ onClose }) => {
   const rootClass = cn("create-project");
   const tabClass = rootClass.elem("tab");
   const steps = {
-    name: <span className={tabClass.mod({ disabled: !!error })}>Project Name</span>,
-    import: <span className={tabClass.mod({ disabled: uploadDisabled })}>Data Import</span>,
+    name: <span className={tabClass.mod({ disabled: !!error })}>{t("create_project_page.tab.project_name")}</span>,
+    import: <span className={tabClass.mod({ disabled: uploadDisabled })}>{t("create_project_page.tab.data_import")}</span>,
     config: "Labeling Setup",
   };
 
@@ -195,7 +197,7 @@ export const CreateProject = ({ onClose }) => {
     <Modal onHide={onDelete} closeOnClickOutside={false} allowToInterceptEscape fullscreen visible bare>
       <div className={rootClass}>
         <Modal.Header>
-          <h1>Create Project</h1>
+          <h1>{t("project_page.create_button")}</h1>
           <ToggleItems items={steps} active={step} onSelect={setStep} />
 
           <Space>

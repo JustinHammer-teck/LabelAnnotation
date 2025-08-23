@@ -420,7 +420,7 @@ SENTRY_IGNORED_EXCEPTIONS = [
 ]
 
 ROOT_URLCONF = "core.urls"
-WSGI_APPLICATION = "core.wsgi.application"
+# WSGI_APPLICATION = "core.wsgi.application"
 ASGI_APPLICATION = "core.asgi.application"
 GRAPHIQL = True
 

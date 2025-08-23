@@ -7,6 +7,7 @@ import { Userpic } from "@humansignal/ui";
 import { Button, Dropdown, Menu, Pagination } from "../../components";
 import { Block, Elem } from "../../utils/bem";
 import { absoluteURL } from "../../utils/helpers";
+import {useTranslation} from "react-i18next";
 
 const DEFAULT_CARD_COLORS = ["#FFFFFF", "#FDFDFC"];
 
@@ -35,21 +36,20 @@ export const ProjectsList = ({ projects, currentPage, totalItems, loadNextPage, 
 };
 
 export const EmptyProjectsList = ({ openModal }) => {
+  const {t} = useTranslation();
   return (
     <Block name="empty-projects-page">
-      <Elem name="heidi" tag="img" src={absoluteURL("/static/images/opossum_looking.png")} />
-      <Elem name="header" tag="h1">
-        Heidi doesn’t see any projects here!
-      </Elem>
       <p>Create one and start labeling your data.</p>
       <Elem name="action" tag={Button} onClick={openModal} look="primary">
-        Create Project
+        {t("project_page.create_button")}
       </Elem>
     </Block>
   );
 };
 
 const ProjectCard = ({ project }) => {
+  const {t} = useTranslation();
+
   const color = useMemo(() => {
     return DEFAULT_CARD_COLORS.includes(project.color) ? null : project.color;
   }, [project]);
@@ -86,8 +86,8 @@ const ProjectCard = ({ project }) => {
               <Dropdown.Trigger
                 content={
                   <Menu contextual>
-                    <Menu.Item href={`/projects/${project.id}/settings`}>Settings</Menu.Item>
-                    <Menu.Item href={`/projects/${project.id}/data?labeling=1`}>Label</Menu.Item>
+                    <Menu.Item href={`/projects/${project.id}/settings`}>{t("project_page.setting_button")}</Menu.Item>
+                    <Menu.Item href={`/projects/${project.id}/data?labeling=1`}>{t("project_page.labeling_setting")}</Menu.Item>
                   </Menu>
                 }
               >

@@ -13,6 +13,7 @@ import { SettingsPage } from "../Settings";
 import "./Projects.scss";
 import { EmptyProjectsList, ProjectsList } from "./ProjectsList";
 import { useAbortController } from "@humansignal/core";
+import {useTranslation} from "react-i18next";
 
 const getCurrentPage = () => {
   const pageNumberFromURL = new URLSearchParams(location.search).get("page");
@@ -159,9 +160,12 @@ ProjectsPage.routes = ({ store }) => [
 ];
 ProjectsPage.context = ({ openModal, showButton }) => {
   if (!showButton) return null;
+
+  const { t } = useTranslation();
+
   return (
     <Button onClick={openModal} look="primary" size="compact">
-      Create
+      {t("project_page.create_button")}
     </Button>
   );
 };

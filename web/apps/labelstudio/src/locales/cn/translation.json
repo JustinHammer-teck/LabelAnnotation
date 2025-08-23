@@ -1,0 +1,48 @@
+{
+  "page": {
+    "project": "项目"
+  },
+  "menu_bar": {
+    "create_project": "创建项目",
+    "side_bar": {
+      "home_title": "首页",
+      "organization_title": "组织",
+      "projects_title": "项目列表",
+      "admin_title": "管理页面"
+    }
+  },
+  "project_page": {
+    "title": "Project Page CN",
+    "create_button" : "Create Project CN",
+    "setting_button": "Settings CN",
+    "labeling_setting": "Labeling Settings CN"
+  },
+  "create_project_page": {
+    "tab": {
+      "project_name": "Project Name CN",
+      "data_import": "Data Import CN",
+      "labeling_setup": "Labeling Setup CN"
+    }
+  },
+  "home_page": {
+    "title": "首页",
+    "recent_projects": "最近的项目",
+    "view_all": "查看全部",
+    "action" : {
+      "create_project": "Create Project CN",
+      "invite_people": "Invite People CN"
+    }
+  },
+  "organization_page": {
+    "created_projects": "Created Projects CN",
+    "contributed_to": "Contributed To CN",
+    "last_activity": "Last Activity CN on"
+  },
+  "notification": {
+    "menu_bar" : {
+      "notification_title": "Notification CN",
+      "enable_browser_notification": "Enable Browser Notification CN",
+      "no_new_notification": "You have no new notifications CN"
+    }
+  }
+}

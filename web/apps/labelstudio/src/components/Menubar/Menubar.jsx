@@ -8,18 +8,13 @@ import {
 } from 'react';
 import { StaticContent } from '../../app/StaticContent/StaticContent';
 import {
-  IconBook,
   IconFolder,
   IconHome,
   IconPersonInCircle,
   IconPin,
-  IconTerminal,
   IconDoor,
-  IconGithub,
   IconSettings,
-  IconSlack
 } from '@humansignal/icons';
-import { LSLogo } from '../../assets/images';
 import { Userpic, ThemeToggle } from '@humansignal/ui';
 import { useConfig } from '../../providers/ConfigProvider';
 import {
@@ -38,6 +33,7 @@ import {
   VersionProvider
 } from '../VersionNotifier/VersionNotifier';
 import { NotificationBell } from '../Notification/Notification';
+import { LanguageSwitcher } from '../LanguageSwitcher/LanguageSwitcher';
 import './Menubar.scss';
 import './MenuContent.scss';
 import './MenuSidebar.scss';
@@ -163,7 +159,6 @@ export const Menubar = ({
             <div
               className={`${menubarClass.elem('trigger')} main-menu-trigger`}
             >
-              {/*<LSLogo className={`${menubarClass.elem("logo")}`} alt="Company Logo" />*/}
               <Hamburger opened={sidebarOpened} />
             </div>
           </Dropdown.Trigger>
@@ -177,6 +172,7 @@ export const Menubar = ({
           <div className={menubarClass.elem('spacer').toString()} />
 
           <NotificationBell></NotificationBell>
+          <LanguageSwitcher></LanguageSwitcher>
 
           {ff.isActive(ff.FF_THEME_TOGGLE) && <ThemeToggle />}
 

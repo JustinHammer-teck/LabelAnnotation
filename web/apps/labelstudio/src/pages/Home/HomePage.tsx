@@ -7,36 +7,32 @@ import { useState } from "react";
 import { CreateProject } from "../CreateProject/CreateProject";
 import { InviteLink } from "../Organization/PeoplePage/InviteLink";
 import { Heading, Sub } from "@humansignal/typography";
-import { useHistory } from "react-router";
 import { Link } from "react-router-dom";
 import { Button } from "../../components";
-import { useCurrentUser } from "../../providers/CurrentUser";
+import {useTranslation} from "react-i18next";
 
 const PROJECTS_TO_SHOW = 20;
 
 const actions = [
   {
-    title: "Create Project",
+    title: "home_page.action.create_project",
     icon: IconFolderAdd,
     type: "createProject",
   },
+  {
+    title: "home_page.action.invite_people",
+    icon: IconUserAdd,
+    type: "invitePeople",
+  }
 
 ] as const;
 
-const adminActions = [{
-    title: "Invite People",
-    icon: IconUserAdd,
-    type: "invitePeople",
-  }] as const;
-
-
 type Action = (typeof actions)[number]["type"];
-type AdminAction = (typeof adminActions)[number]["type"];
 
 export const HomePage: Page = () => {
-  const { user, fetch, isInProgress } = useCurrentUser();
+  const { t } = useTranslation();
+
   const api = useAPI();
-  const history = useHistory();
   const [creationDialogOpen, setCreationDialogOpen] = useState(false);
   const [invitationOpen, setInvitationOpen] = useState(false);
   const { data, isFetching, isSuccess, isError } = useQuery({
@@ -54,16 +50,8 @@ export const HomePage: Page = () => {
         case "createProject":
           setCreationDialogOpen(true);
           break;
-      }
-    };
-  };
-
-
-  const handleAdminActions = (action: AdminAction) => {
-    return () => {
-      switch (action) {
         case "invitePeople":
-          setCreationDialogOpen(true);
+          setInvitationOpen(true);
           break;
       }
     };
@@ -82,20 +70,7 @@ export const HomePage: Page = () => {
                   onClick={handleActions(action.type)}
                 >
                   <action.icon className="text-primary-icon" />
-                  {action.title}
-                </Button>
-              );
-            })}
-            {
-              adminActions.map((action) => {
-              return (
-                <Button
-                  key={action.title}
-                  rawClassName="flex-grow-0 text-16/24 gap-2 text-primary-content text-left min-w-[250px] [&_svg]:w-6 [&_svg]:h-6 pl-2"
-                  onClick={handleAdminActions(action.type)}
-                >
-                  <action.icon className="text-primary-icon" />
-                  {action.title}
+                  {t(action.title)}
                 </Button>
               );
             })}
@@ -105,9 +80,9 @@ export const HomePage: Page = () => {
             title={
               data && data?.count > 0 ? (
                 <>
-                  Recent Projects{" "}
+                  {t("home_page.recent_projects")}{" "}
                   <a href="/projects" className="text-lg font-normal hover:underline">
-                    View All
+                    {t("home_page.view_all")}
                   </a>
                 </>
               ) : null

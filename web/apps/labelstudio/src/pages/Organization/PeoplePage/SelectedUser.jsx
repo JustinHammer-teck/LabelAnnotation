@@ -5,6 +5,7 @@ import { Userpic } from "@humansignal/ui";
 import { Button } from "../../../components";
 import { Block, Elem } from "../../../utils/bem";
 import "./SelectedUser.scss";
+import {useTranslation} from "react-i18next";
 
 const UserProjectsLinks = ({ projects }) => {
   return (
@@ -25,6 +26,8 @@ const UserProjectsLinks = ({ projects }) => {
 };
 
 export const SelectedUser = ({ user, onClose }) => {
+  const { t } = useTranslation();
+
   const fullName = [user.first_name, user.last_name]
     .filter((n) => !!n)
     .join(" ")
@@ -54,7 +57,7 @@ export const SelectedUser = ({ user, onClose }) => {
 
       {!!user.created_projects.length && (
         <Elem name="section">
-          <Elem name="section-title">Created Projects</Elem>
+          <Elem name="section-title">{t("organization_page.created_projects")}</Elem>
 
           <UserProjectsLinks projects={user.created_projects} />
         </Elem>
@@ -62,14 +65,14 @@ export const SelectedUser = ({ user, onClose }) => {
 
       {!!user.contributed_to_projects.length && (
         <Elem name="section">
-          <Elem name="section-title">Contributed to</Elem>
+          <Elem name="section-title">{t("organization_page.contributed_to")}</Elem>
 
           <UserProjectsLinks projects={user.contributed_to_projects} />
         </Elem>
       )}
 
       <Elem tag="p" name="last-active">
-        Last activity on: {format(new Date(user.last_activity), "dd MMM yyyy, KK:mm a")}
+        {t("organization_page.last_activity")}: {format(new Date(user.last_activity), "dd MMM yyyy, KK:mm a")}
       </Elem>
     </Block>
   );

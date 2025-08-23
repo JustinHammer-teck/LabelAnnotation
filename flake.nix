@@ -25,26 +25,16 @@
         devShells.default = pkgs.mkShell {
           name = "labelstudio";
 
-          packages =
-            with pkgs;
-            [
-              python313
-              poetry
-              ruff
-              ty
-              uv
-              vtsls
-              nodejs
-              yarn
-              prettierd
-              eslint_d
-              pre-commit
-              valkey
-            ]
-            ++ (with pkgs.python313Packages; [
-              python-lsp-server
-              pylsp-rope
-            ]);
+          packages = with pkgs; [
+            python313
+            poetry
+            ruff
+            ty
+            vtsls
+            nodejs
+            yarn
+            pre-commit
+          ];
 
           shellHook = ''
             poetry env use "$(which python)"
@@ -55,7 +45,6 @@
           VTSLS_PATH = "${pkgs.vtsls}/bin/vtsls";
           RUFFPATH = "${pkgs.ruff}/bin/ruff";
           TYPATH = "${pkgs.ty}/bin/ty";
-          PYLSP = "${pkgs.python313Packages.python-lsp-server}/bin/pylsp";
         };
       }
     );

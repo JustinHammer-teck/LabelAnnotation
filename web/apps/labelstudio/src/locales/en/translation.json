@@ -1,0 +1,48 @@
+{
+  "page" : {
+    "project" : "Project"
+  },
+  "menu_bar": {
+    "create_project": "Create",
+    "side_bar": {
+      "home_title": "Home",
+      "organization_title": "Organization",
+      "projects_title": "Projects",
+      "admin_title": "Admin Page"
+    }
+  },
+  "project_page": {
+    "title": "Project Page",
+    "create_button" : "Create Project",
+    "setting_button": "Settings",
+    "labeling_setting": "Labeling Settings"
+  },
+  "create_project_page": {
+    "tab": {
+      "project_name": "Project Name",
+      "data_import": "Data Import",
+      "labeling_setup": "Labeling Setup"
+    }
+  },
+  "home_page": {
+    "title": "Home",
+    "recent_projects": "Recent Projects",
+    "view_all": "View All",
+    "action" : {
+      "create_project": "Create Project",
+      "invite_people": "Invite People"
+    }
+  },
+  "organization_page": {
+    "created_projects": "Created Projects",
+    "contributed_to": "Contributed To",
+    "last_activity": "Last Activity on"
+  },
+  "notification": {
+    "menu_bar" : {
+      "notification_title": "Notification",
+      "enable_browser_notification": "Enable Browser Notification",
+      "no_new_notification": "You have no new notifications"
+    }
+  }
+}

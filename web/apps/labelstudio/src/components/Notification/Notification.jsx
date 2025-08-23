@@ -3,6 +3,8 @@ import { Dropdown } from '../Dropdown/Dropdown';
 import { Menu } from '../Menu/Menu';
 import { IconBell, IconSettings } from '@humansignal/icons'; // Assuming IconSettings is available
 import './Notification.scss';
+import {useTranslation} from "react-i18next";
+
 
 // NEW: A helper function to check if the Notification API is supported.
 const isBrowserNotificationSupported = () => {
@@ -10,6 +12,7 @@ const isBrowserNotificationSupported = () => {
 };
 
 export const NotificationBell = () => {
+  const { t } = useTranslation();
   const [notifications, setNotifications] = useState([]);
 
   // NEW: State to track the browser notification permission status.
@@ -44,7 +47,6 @@ export const NotificationBell = () => {
     const sse = new EventSource('http://localhost:8080/events/notifications');
 
     sse.onmessage = event => {
-      console.log('Received SSE');
       const newNotificationData = JSON.parse(event.data);
       if (!newNotificationData.id) {
         newNotificationData.id = new Date().getTime();
@@ -121,7 +123,7 @@ export const NotificationBell = () => {
           className="bg-gray-200"
         >
           <IconSettings style={{ marginRight: '8px' }} />
-          Enable Browser Notifications
+          {t("notification.menu_bar.enable_browser_notification")}
         </Menu.Item>
       );
     }
@@ -132,7 +134,7 @@ export const NotificationBell = () => {
   const notificationMenu = (
     <Menu className="notification-menu">
       <div className="notification-menu__header">
-        <h3>Notifications</h3>
+        <h3>{t("notification.menu_bar.notification_title")}</h3>
       </div>
       <Menu.Divider />
 
