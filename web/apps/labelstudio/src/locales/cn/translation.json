@@ -12,16 +12,16 @@
     }
   },
   "project_page": {
-    "title": "Project Page CN",
-    "create_button" : "Create Project CN",
-    "setting_button": "Settings CN",
-    "labeling_setting": "Labeling Settings CN"
+    "title": "项目页面",
+    "create_button" : "创建项目",
+    "setting_button": "设置",
+    "labeling_setting": "标注设定"
   },
   "create_project_page": {
     "tab": {
-      "project_name": "Project Name CN",
-      "data_import": "Data Import CN",
-      "labeling_setup": "Labeling Setup CN"
+      "project_name": "项目名称",
+      "data_import": "数据导入",
+      "labeling_setup": "label设置"
     }
   },
   "home_page": {
@@ -29,20 +29,20 @@
     "recent_projects": "最近的项目",
     "view_all": "查看全部",
     "action" : {
-      "create_project": "Create Project CN",
-      "invite_people": "Invite People CN"
+      "create_project": "创建项目",
+      "invite_people": "邀请其他人进入"
     }
   },
   "organization_page": {
-    "created_projects": "Created Projects CN",
-    "contributed_to": "Contributed To CN",
-    "last_activity": "Last Activity CN on"
+    "created_projects": "创建项目",
+    "contributed_to": "贡献到",
+    "last_activity": "最后的活动"
   },
   "notification": {
     "menu_bar" : {
-      "notification_title": "Notification CN",
-      "enable_browser_notification": "Enable Browser Notification CN",
-      "no_new_notification": "You have no new notifications CN"
+      "notification_title": "提醒",
+      "enable_browser_notification": "启动浏览器提醒功能",
+      "no_new_notification": "你没有新的提醒"
     }
   }
 }
