@@ -1,52 +1,41 @@
-import {
-  createContext,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState
-} from 'react';
-import { StaticContent } from '../../app/StaticContent/StaticContent';
+import { createContext, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { StaticContent } from "../../app/StaticContent/StaticContent";
 import {
   IconFolder,
   IconHome,
+  IconHotkeys,
   IconPersonInCircle,
   IconPin,
   IconDoor,
   IconSettings,
-} from '@humansignal/icons';
-import { Userpic, ThemeToggle } from '@humansignal/ui';
-import { useConfig } from '../../providers/ConfigProvider';
-import {
-  useContextComponent,
-  useFixedLocation
-} from '../../providers/RoutesProvider';
-import { useCurrentUser } from '../../providers/CurrentUser';
-import { cn } from '../../utils/bem';
-import { absoluteURL, isDefined } from '../../utils/helpers';
-import { Breadcrumbs } from '../Breadcrumbs/Breadcrumbs';
-import { Dropdown } from '../Dropdown/Dropdown';
-import { Hamburger } from '../Hamburger/Hamburger';
-import { Menu } from '../Menu/Menu';
-import {
-  VersionNotifier,
-  VersionProvider
-} from '../VersionNotifier/VersionNotifier';
+} from "@humansignal/icons";
+import { Button, Userpic, ThemeToggle } from "@humansignal/ui";
+import { useConfig } from "../../providers/ConfigProvider";
+import { useContextComponent, useFixedLocation } from "../../providers/RoutesProvider";
+import { useCurrentUser } from "../../providers/CurrentUser";
+import { cn } from "../../utils/bem";
+import { absoluteURL, isDefined } from "../../utils/helpers";
+import { Breadcrumbs } from "../Breadcrumbs/Breadcrumbs";
+import { Dropdown } from "../Dropdown/Dropdown";
+import { Hamburger } from "../Hamburger/Hamburger";
+import { Menu } from "../Menu/Menu";
+import { VersionNotifier, VersionProvider } from "../VersionNotifier/VersionNotifier";
 import { NotificationBell } from '../Notification/Notification';
 import { LanguageSwitcher } from '../LanguageSwitcher/LanguageSwitcher';
-import './Menubar.scss';
-import './MenuContent.scss';
-import './MenuSidebar.scss';
-import { FF_HOMEPAGE } from '../../utils/feature-flags';
-import { pages } from '@humansignal/app-common';
-import { isFF } from '../../utils/feature-flags';
-import { ff } from '@humansignal/core';
+import "./Menubar.scss";
+import "./MenuContent.scss";
+import "./MenuSidebar.scss";
+import { FF_HOMEPAGE } from "../../utils/feature-flags";
+import { pages } from "@humansignal/app-common";
+import { isFF } from "../../utils/feature-flags";
+import { ff } from "@humansignal/core";
+import { openHotkeyHelp } from "@humansignal/app-common/pages/AccountSettings/sections/Hotkeys/Help";
 
 export const MenubarContext = createContext();
 
 const LeftContextMenu = ({ className }) => (
   <StaticContent id="context-menu-left" className={className}>
-    {template => <Breadcrumbs fromTemplate={template} />}
+    {(template) => <Breadcrumbs fromTemplate={template} />}
   </StaticContent>
 );
 
@@ -62,14 +51,7 @@ const RightContextMenu = ({ className, ...props }) => {
   );
 };
 
-export const Menubar = ({
-  enabled,
-  defaultOpened,
-  defaultPinned,
-  children,
-  onSidebarToggle,
-  onSidebarPin
-}) => {
+export const Menubar = ({ enabled, defaultOpened, defaultPinned, children, onSidebarToggle, onSidebarPin }) => {
   const menuDropdownRef = useRef();
   const useMenuRef = useRef();
   const { user, fetch, isInProgress } = useCurrentUser();
@@ -80,18 +62,18 @@ export const Menubar = ({
   const [sidebarPinned, setSidebarPinned] = useState(defaultPinned ?? false);
   const [PageContext, setPageContext] = useState({
     Component: null,
-    props: {}
+    props: {},
   });
 
-  const menubarClass = cn('menu-header');
-  const menubarContext = menubarClass.elem('context');
-  const sidebarClass = cn('sidebar');
-  const contentClass = cn('content-wrapper');
-  const contextItem = menubarClass.elem('context-item');
+  const menubarClass = cn("menu-header");
+  const menubarContext = menubarClass.elem("context");
+  const sidebarClass = cn("sidebar");
+  const contentClass = cn("content-wrapper");
+  const contextItem = menubarClass.elem("context-item");
   const showNewsletterDot = !isDefined(user?.allow_newsletters);
 
   const sidebarPin = useCallback(
-    e => {
+    (e) => {
       e.preventDefault();
 
       const newState = !sidebarPinned;
@@ -99,17 +81,17 @@ export const Menubar = ({
       setSidebarPinned(newState);
       onSidebarPin?.(newState);
     },
-    [sidebarPinned]
+    [sidebarPinned],
   );
 
   const sidebarToggle = useCallback(
-    visible => {
+    (visible) => {
       const newState = visible;
 
       setSidebarOpened(newState);
       onSidebarToggle?.(newState);
     },
-    [sidebarOpened]
+    [sidebarOpened],
   );
 
   const providerValue = useMemo(
@@ -120,7 +102,7 @@ export const Menubar = ({
         setTimeout(() => {
           setPageContext({
             ...PageContext,
-            Component: ctx
+            Component: ctx,
           });
         });
       },
@@ -129,16 +111,16 @@ export const Menubar = ({
         setTimeout(() => {
           setPageContext({
             ...PageContext,
-            props
+            props,
           });
         });
       },
 
       contextIsSet(ctx) {
         return PageContext.Component === ctx;
-      }
+      },
     }),
-    [PageContext]
+    [PageContext],
   );
 
   useEffect(() => {
@@ -152,24 +134,42 @@ export const Menubar = ({
     <div className={contentClass}>
       {enabled && (
         <div className={menubarClass}>
-          <Dropdown.Trigger
-            dropdown={menuDropdownRef}
-            closeOnClickOutside={!sidebarPinned}
-          >
-            <div
-              className={`${menubarClass.elem('trigger')} main-menu-trigger`}
-            >
+          <Dropdown.Trigger dropdown={menuDropdownRef} closeOnClickOutside={!sidebarPinned}>
+            <div className={`${menubarClass.elem("trigger")} main-menu-trigger`}>
+              {/*<LSLogo className={`${menubarClass.elem("logo")}`} alt="Company Logo" />*/}
               <Hamburger opened={sidebarOpened} />
             </div>
           </Dropdown.Trigger>
 
           <div className={menubarContext}>
             <LeftContextMenu className={contextItem.mod({ left: true })} />
-
             <RightContextMenu className={contextItem.mod({ right: true })} />
           </div>
 
-          <div className={menubarClass.elem('spacer').toString()} />
+          <div className={menubarClass.elem("hotkeys")}>
+            <div className={menubarClass.elem("hotkeys-button")}>
+              <Button
+                variant="neutral"
+                look="outlined"
+                tooltip="Keyboard Shortcuts"
+                data-testid="hotkeys-button"
+                size="small"
+                onClick={() => {
+                  openHotkeyHelp([
+                    "annotation",
+                    "data_manager",
+                    "regions",
+                    "tools",
+                    "audio",
+                    "video",
+                    "timeseries",
+                    "image_gallery",
+                  ]);
+                }}
+                icon={<IconHotkeys />}
+              />
+            </div>
+          </div>
 
           <NotificationBell></NotificationBell>
           <LanguageSwitcher></LanguageSwitcher>
@@ -187,87 +187,44 @@ export const Menubar = ({
                   href={pages.AccountSettingsPage.path}
                 />
                 {/* <Menu.Item label="Dark Mode"/> */}
-                <Menu.Item
-                  icon={<IconDoor />}
-                  label="Log Out"
-                  href={absoluteURL('/logout')}
-                  data-external
-                />
+                <Menu.Item icon={<IconDoor />} label="Log Out" href={absoluteURL("/logout")} data-external />
                 {showNewsletterDot && (
                   <>
                     <Menu.Divider />
-                    <Menu.Item
-                      className={cn('newsletter-menu-item')}
-                      href={pages.AccountSettingsPage.path}
-                    >
-                      <span>
-                        Please check new notification settings in the Account &
-                        Settings page
-                      </span>
-                      <span className={cn('newsletter-menu-badge')} />
+                    <Menu.Item className={cn("newsletter-menu-item")} href={pages.AccountSettingsPage.path}>
+                      <span>Please check new notification settings in the Account & Settings page</span>
+                      <span className={cn("newsletter-menu-badge")} />
                     </Menu.Item>
                   </>
                 )}
               </Menu>
             }
           >
-            <div title={user?.email} className={menubarClass.elem('user')}>
+            <div title={user?.email} className={menubarClass.elem("user")}>
               <Userpic user={user} isInProgress={isInProgress} />
-              {showNewsletterDot && (
-                <div className={menubarClass.elem('userpic-badge')} />
-              )}
+              {showNewsletterDot && <div className={menubarClass.elem("userpic-badge")} />}
             </div>
           </Dropdown.Trigger>
         </div>
       )}
 
       <VersionProvider>
-        <div className={contentClass.elem('body')}>
+        <div className={contentClass.elem("body")}>
           {enabled && (
             <Dropdown
               ref={menuDropdownRef}
               onToggle={sidebarToggle}
-              onVisibilityChanged={() =>
-                window.dispatchEvent(new Event('resize'))
-              }
+              onVisibilityChanged={() => window.dispatchEvent(new Event("resize"))}
               visible={sidebarOpened}
-              className={[
-                sidebarClass,
-                sidebarClass.mod({ floating: !sidebarPinned })
-              ].join(' ')}
+              className={[sidebarClass, sidebarClass.mod({ floating: !sidebarPinned })].join(" ")}
               style={{ width: 240 }}
             >
               <Menu>
-                {isFF(FF_HOMEPAGE) && (
-                  <Menu.Item
-                    label="Home"
-                    to="/"
-                    icon={<IconHome />}
-                    data-external
-                    exact
-                  />
-                )}
-                <Menu.Item
-                  label="Projects"
-                  to="/projects"
-                  icon={<IconFolder />}
-                  data-external
-                  exact
-                />
-                <Menu.Item
-                  label="Organization"
-                  to="/organization"
-                  icon={<IconPersonInCircle />}
-                  data-external
-                  exact
-                />
+                {isFF(FF_HOMEPAGE) && <Menu.Item label="Home" to="/" icon={<IconHome />} data-external exact />}
+                <Menu.Item label="Projects" to="/projects" icon={<IconFolder />} data-external exact />
+                <Menu.Item label="Organization" to="/organization" icon={<IconPersonInCircle />} data-external exact />
                 {}
-                <Menu.Item
-                  label="Admin"
-                  href="/admin"
-                  icon={<IconPersonInCircle />}
-                  forceReload
-                />
+                <Menu.Item label="Admin" href="/admin" icon={<IconPersonInCircle />} forceReload/>
 
                 <Menu.Spacer />
 
@@ -279,22 +236,18 @@ export const Menubar = ({
 
                 <Menu.Item
                   icon={<IconPin />}
-                  className={sidebarClass.elem('pin')}
+                  className={sidebarClass.elem("pin")}
                   onClick={sidebarPin}
                   active={sidebarPinned}
                 >
-                  {sidebarPinned ? 'Unpin menu' : 'Pin menu'}
+                  {sidebarPinned ? "Unpin menu" : "Pin menu"}
                 </Menu.Item>
               </Menu>
             </Dropdown>
           )}
 
           <MenubarContext.Provider value={providerValue}>
-            <div
-              className={contentClass
-                .elem('content')
-                .mod({ withSidebar: sidebarPinned && sidebarOpened })}
-            >
+            <div className={contentClass.elem("content").mod({ withSidebar: sidebarPinned && sidebarOpened })}>
               {children}
             </div>
           </MenubarContext.Provider>

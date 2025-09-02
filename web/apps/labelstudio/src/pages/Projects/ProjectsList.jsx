@@ -3,11 +3,10 @@ import { format } from "date-fns";
 import { useMemo } from "react";
 import { NavLink } from "react-router-dom";
 import { IconCheck, IconEllipsis, IconMinus, IconSparks } from "@humansignal/icons";
-import { Userpic } from "@humansignal/ui";
-import { Button, Dropdown, Menu, Pagination } from "../../components";
+import { Userpic, Button } from "@humansignal/ui";
+import { Dropdown, Menu, Pagination } from "../../components";
 import { Block, Elem } from "../../utils/bem";
 import { absoluteURL } from "../../utils/helpers";
-import {useTranslation} from "react-i18next";
 
 const DEFAULT_CARD_COLORS = ["#FFFFFF", "#FDFDFC"];
 
@@ -40,9 +39,9 @@ export const EmptyProjectsList = ({ openModal }) => {
   return (
     <Block name="empty-projects-page">
       <p>Create one and start labeling your data.</p>
-      <Elem name="action" tag={Button} onClick={openModal} look="primary">
+      <Button onClick={openModal} className="my-8" aria-label="Create new project">
         {t("project_page.create_button")}
-      </Elem>
+      </Button>
     </Block>
   );
 };
@@ -91,7 +90,9 @@ const ProjectCard = ({ project }) => {
                   </Menu>
                 }
               >
-                <Button size="small" type="text" icon={<IconEllipsis />} />
+                <Button size="smaller" look="string" aria-label="Project options">
+                  <IconEllipsis />
+                </Button>
               </Dropdown.Trigger>
             </Elem>
           </Elem>

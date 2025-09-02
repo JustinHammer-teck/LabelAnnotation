@@ -8,7 +8,7 @@ import * as d3 from "d3";
 import TimeSeriesVisualizer from "../../../components/TimeSeries/TimeSeriesVisualizer";
 import Registry from "../../../core/Registry";
 import Types from "../../../core/Types";
-import { cloneNode, guidGenerator } from "../../../core/Helpers";
+import { guidGenerator } from "../../../core/Helpers";
 import { checkD3EventLoop, getOptimalWidth, getRegionColor, sparseValues } from "./helpers";
 import { markerSymbol } from "./symbols";
 import { errorBuilder } from "../../../core/DataValidator/ConfigValidator";
@@ -199,7 +199,7 @@ class ChannelD3 extends React.Component {
     } = this.props;
 
     const activeStates = parent?.activeStates();
-    const statesSelected = activeStates && activeStates.length;
+    const statesSelected = activeStates?.length;
     const readonly = parent?.annotation?.isReadOnly();
 
     // skip if event fired by .move() - prevent recursion and bugs
@@ -210,17 +210,19 @@ class ChannelD3 extends React.Component {
       const x = d3.mouse(d3.event.sourceEvent.target)[0];
       const newRegion = this.newRegion;
 
+      // double click handler to create instant region
       // when 2nd click happens during 300ms after 1st click and in the same place
       if (newRegion && Math.abs(newRegion.x - x) < 4) {
         clearTimeout(this.newRegionTimer);
-        parent?.regionChanged(newRegion.range, ranges.length, newRegion.states);
+        if (!readonly) {
+          parent?.regionChanged(newRegion.range, ranges.length);
+        }
         this.newRegion = null;
         this.newRegionTimer = null;
       } else if (statesSelected) {
         // 1st click - store the data
         this.newRegion = {
           range: this.getRegion([x, x]),
-          states: activeStates.map((s) => cloneNode(s)),
           x,
         };
         // clear it in 300ms if there no 2nd click
@@ -364,7 +366,7 @@ class ChannelD3 extends React.Component {
     const block = this.gCreator;
     const getRegion = this.getRegion;
     const x = this.x;
-    const brush = (this.brushCreator = d3
+    const brush = d3
       .brushX()
       .extent([
         [0, 0],
@@ -381,7 +383,9 @@ class ChannelD3 extends React.Component {
       // replacing default filter to allow ctrl-click action
       .filter(() => {
         return !d3.event.button;
-      }));
+      });
+
+    this.brushCreator = brush;
 
     this.gCreator.call(this.brushCreator);
   }
