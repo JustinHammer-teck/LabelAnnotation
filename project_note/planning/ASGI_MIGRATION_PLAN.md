@@ -290,7 +290,7 @@ version: '3.8'
 services:
   app:
     build:
-      context: .
+      context: ../..
       dockerfile: Dockerfile.asgi
     ports:
       - "8080:8080"
@@ -303,7 +303,7 @@ services:
       - postgres
     volumes:
       - ./data:/label-studio/data
-    command: ["supervisord", "-c", "/etc/supervisor/supervisord.conf"]
+    command: [ "supervisord", "-c", "/etc/supervisor/supervisord.conf" ]
 
   redis:
     image: redis:7-alpine

@@ -77,7 +77,6 @@ dependencies = [
     "label-studio-sdk @ https://github.com/HumanSignal/label-studio-sdk/archive/bbf2aeafbb4fb534ddc1a1248691d3008b2c6f53.zip",
     ## HumanSignal repo dependencies :end
     "django-guardian (>=3.0.3,<4.0.0)",
-    "django-silk (>=5.4.0,<6.0.0)",
     "daphne (>=4.2.1,<5.0.0)"
 ]
 
@@ -226,7 +225,14 @@ exclude = [
 requires-poetry = '>=2.0.0,<3.0.0'
 
 [tool.poetry.dependencies]
-python = ">=3.10,<4"
+python = ">=3.10,<3.14"
+torch = [
+    { version = "^2.0.0", source = "pytorch-cpu", markers = "sys_platform == 'darwin'" }
+]
+torchvision = [
+    { version = "^0.15.0", source = "pytorch-cpu", markers = "sys_platform == 'darwin'" }
+]
+easyocr = "==1.7.2"
 
 [tool.poetry.group.test.dependencies]
 pytest = "7.2.2"
@@ -250,6 +256,13 @@ factory-boy = "^3.3.3"
 [tool.poetry.group.build.dependencies]
 twine = ">=6.1.0"
 packaging = ">=24.2"
+
+
+
+[[tool.poetry.source]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+priority = "explicit"
 
 [build-system]
 requires = ['poetry-core (>=2.0.0,<3.0.0)']
