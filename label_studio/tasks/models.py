@@ -46,6 +46,39 @@ logger = logging.getLogger(__name__)
 TaskMixin = load_func(settings.TASK_MIXIN)
 
 
+class OCRCharacterExtraction(models.Model):
+    """Store OCR character extraction results"""
+    
+    task = models.ForeignKey(
+        'Task',
+        on_delete=models.CASCADE,
+        related_name='ocr_extractions',
+        db_index=True
+    )
+    
+    character = models.CharField(max_length=10, db_index=True)
+    confidence = models.FloatField()
+    
+    x = models.FloatField()
+    y = models.FloatField()
+    width = models.FloatField()
+    height = models.FloatField()
+    
+    image_width = models.IntegerField()
+    image_height = models.IntegerField()
+    
+    page_number = models.IntegerField(default=1, db_index=True)
+    
+    extraction_timestamp = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        db_table = 'tasks_ocr_character_extraction'
+        indexes = [
+            models.Index(fields=['task', 'page_number']),
+        ]
+        ordering = ['page_number', 'y', 'x']
+
+
 class Task(TaskMixin, models.Model):
     """Business tasks from project"""
 

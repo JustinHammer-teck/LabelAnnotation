@@ -29,6 +29,9 @@ lbstudio
 ```
 ## Tech Stack
 
+I manage some of package via Nix flake at @flake.nix, most of the python package is manager via poetry
+but there are some exception such as easyocr was install via nix flake. 
+
 ### Backend
 - **Framework**: Django 5.1.x with Django REST Framework
 - **Database**: PostgreSQL (production) / SQLite (development)

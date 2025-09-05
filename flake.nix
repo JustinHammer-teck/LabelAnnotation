@@ -34,7 +34,10 @@
             nodejs
             yarn
             pre-commit
-          ];
+          ] ++ (with pkgs.python313Packages; [
+            pip
+            easyocr
+          ]);
 
           shellHook = ''
             poetry env use "$(which python)"

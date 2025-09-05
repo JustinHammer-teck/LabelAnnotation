@@ -221,3 +221,101 @@ def _old_vs_new_data_keys_inconsistency_message(new_data_keys, old_data_keys, cu
                 current_file, new_data_keys_list, old_data_keys_list
             )
         )
+
+
+class PDFImageRelationship(models.Model):
+    """Model to track relationships between PDF documents and their extracted images"""
+    
+    pdf_file = models.ForeignKey(
+        FileUpload, 
+        related_name='pdf_images', 
+        on_delete=models.CASCADE,
+        help_text='Reference to the original PDF file upload'
+    )
+    
+    image_file = models.ForeignKey(
+        FileUpload,
+        related_name='source_pdf',
+        on_delete=models.CASCADE,
+        help_text='Reference to the extracted image file upload'
+    )
+    
+    page_number = models.IntegerField(
+        help_text='Page number in the PDF document (1-indexed)'
+    )
+    
+    image_format = models.CharField(
+        max_length=10,
+        default='png',
+        help_text='Format of the extracted image'
+    )
+    
+    resolution_dpi = models.IntegerField(
+        default=300,
+        help_text='DPI resolution used for image extraction'
+    )
+    
+    extraction_params = models.JSONField(
+        null=True,
+        blank=True,
+        default=dict,
+        help_text='Additional parameters used during extraction'
+    )
+    
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        help_text='When the relationship was created'
+    )
+    
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        help_text='When the relationship was last updated'
+    )
+    
+    class Meta:
+        db_table = 'data_import_pdf_image_relationship'
+        verbose_name = 'PDF Image Relationship'
+        verbose_name_plural = 'PDF Image Relationships'
+        unique_together = [['pdf_file', 'page_number']]
+        indexes = [
+            models.Index(fields=['pdf_file', 'page_number']),
+            models.Index(fields=['image_file']),
+            models.Index(fields=['created_at']),
+        ]
+        ordering = ['pdf_file', 'page_number']
+    
+    def __str__(self):
+        return f'PDF {self.pdf_file.file_name} - Page {self.page_number} -> {self.image_file.file_name}'
+    
+    @property
+    def pdf_file_name(self):
+        return self.pdf_file.file_name
+    
+    @property
+    def image_file_name(self):
+        return self.image_file.file_name
+    
+    @cached_property
+    def pdf_total_pages(self):
+        """Get total pages in the PDF document"""
+        return self.pdf_file.pdf_images.count()
+    
+    def get_next_page_image(self):
+        """Get the next page image relationship if exists"""
+        return PDFImageRelationship.objects.filter(
+            pdf_file=self.pdf_file,
+            page_number=self.page_number + 1
+        ).first()
+    
+    def get_previous_page_image(self):
+        """Get the previous page image relationship if exists"""
+        return PDFImageRelationship.objects.filter(
+            pdf_file=self.pdf_file,
+            page_number=self.page_number - 1
+        ).first()
+    
+    def get_all_pages_for_pdf(self):
+        """Get all page relationships for the same PDF"""
+        return PDFImageRelationship.objects.filter(
+            pdf_file=self.pdf_file
+        ).order_by('page_number')

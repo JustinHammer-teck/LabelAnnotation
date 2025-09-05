@@ -79,6 +79,15 @@ def create_file_upload(user, project, file):
             instance.file.write(clean_xml.encode())
             instance.file.truncate()
     instance.save()
+    
+    # Process PDF to images if needed
+    if hasattr(settings, 'OCR_ENABLED') and settings.OCR_ENABLED:
+        try:
+            from data_import.services import process_pdf_if_needed
+            process_pdf_if_needed(instance)
+        except Exception as e:
+            logger.error(f'PDF processing failed for {instance.file_name}: {e}', exc_info=True)
+    
     return instance
 
 

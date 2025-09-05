@@ -18,6 +18,7 @@ from django.conf import settings
 from django.db import transaction
 from django.http import HttpResponse
 from django.utils.decorators import method_decorator
+from django.utils.timezone import now
 from drf_yasg.utils import swagger_auto_schema
 from projects.models import Project, ProjectImport, ProjectReimport
 from ranged_fileresponse import RangedFileResponse
@@ -442,6 +443,54 @@ class ReImportAPI(ImportAPI):
         with transaction.atomic():
             project.remove_tasks_by_file_uploads(file_upload_ids)
             tasks, serializer = self._save(tasks)
+            
+            # Mark tasks that need OCR processing
+            if settings.OCR_ENABLED and tasks:
+                ocr_tasks = []
+                for task in tasks:
+                    # Check if task has PDF or image files that need OCR
+                    if (task.file_upload and 
+                        (task.file_upload.file_name.lower().endswith('.pdf') or
+                         task.file_upload.file_name.lower().endswith(('.png', '.jpg', '.jpeg', '.tiff', '.bmp')))):
+                        
+                        # Initialize meta if needed
+                        if not task.meta:
+                            task.meta = {}
+                        
+                        # Mark as OCR processing
+                        task.meta['ocr_status'] = 'processing'
+                        task.meta['ocr_started_at'] = now().isoformat()
+                        ocr_tasks.append(task)
+                
+                # Bulk update OCR status in same transaction
+                if ocr_tasks:
+                    for task in ocr_tasks:
+                        task.save(update_fields=['meta'])
+                    logger.info(f'Marked {len(ocr_tasks)} tasks for OCR processing')
+                        
+        # Queue OCR processing as background job after transaction commits
+        if settings.OCR_ENABLED and tasks:
+            try:
+                from data_import.services import process_ocr_for_tasks_background
+                
+                # Only process tasks that actually need OCR
+                ocr_task_ids = [task.id for task in tasks 
+                               if task.file_upload and 
+                               (task.file_upload.file_name.lower().endswith('.pdf') or
+                                task.file_upload.file_name.lower().endswith(('.png', '.jpg', '.jpeg', '.tiff', '.bmp')))]
+                
+                if ocr_task_ids:
+                    logger.info(f'Queuing OCR background job for {len(ocr_task_ids)} tasks')
+                    
+                    start_job_async_or_sync(
+                        process_ocr_for_tasks_background,
+                        ocr_task_ids
+                    )
+                    logger.info('OCR background job queued successfully')
+                else:
+                    logger.info('No tasks require OCR processing')
+            except Exception as e:
+                logger.error(f'Failed to queue OCR background job: {e}', exc_info=True)
         duration = time.time() - start
 
         task_count = len(tasks)
