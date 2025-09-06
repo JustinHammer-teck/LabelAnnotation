@@ -21,6 +21,8 @@ _api_urlpatterns = [
         api.AnnotationDraftListAPI.as_view(),
         name='task-annotations-drafts',
     ),
+    # OCR
+    path('<int:pk>/ocr-extractions/', api.TaskOCRExtractionsAPI.as_view(), name='task-ocr-extractions'),
 ]
 
 _api_annotations_urlpatterns = [

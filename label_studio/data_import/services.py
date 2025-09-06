@@ -342,6 +342,18 @@ def process_ocr_for_tasks_after_import(tasks) -> int:
             if pdf_relationships.exists():
                 logger.info(f"Task {task.id} has PDF with {pdf_relationships.count()} converted pages")
                 
+                # Update task data with pages array for valueList
+                page_urls = []
+                for relationship in pdf_relationships:
+                    page_urls.append(relationship.image_file.url)
+                
+                # Update task data to include pages array
+                if not task.data:
+                    task.data = {}
+                task.data['pages'] = page_urls
+                task.save(update_fields=['data'])
+                logger.info(f"Task {task.id}: Updated data with {len(page_urls)} page URLs")
+                
                 # Process OCR for each page image
                 for relationship in pdf_relationships:
                     image_file_upload = relationship.image_file

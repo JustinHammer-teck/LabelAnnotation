@@ -1,7 +1,7 @@
 # OCR Service Implementation
 
 **Date**: September 3, 2025  
-**Last Updated**: September 5, 2025
+**Last Updated**: September 5, 2025 (Documentation aligned with actual implementation)
 
 ## Implementation Status
 
@@ -77,17 +77,7 @@
 - Compatible with MinIO/S3 storage backends
 - Uses `file.read()` instead of `file.path`
 
-#### 5. Frontend State Management Fix
-**Problem**: React warning about state updates during render in ImportPage component.
-
-**Solution**: Deferred state update using setTimeout:
-```javascript
-if (could_be_tasks_list && !csvHandling) {
-  setTimeout(() => setCsvHandling("choose"), 0);
-}
-```
-
-#### 6. Configuration Management
+#### 5. Configuration Management
 **Added**: `OCR_ENABLED` setting in `label_studio/core/settings/label_studio.py`:
 ```python
 # OCR Configuration  
@@ -111,17 +101,38 @@ with transaction.atomic():
     project.remove_tasks_by_file_uploads(file_upload_ids)
     tasks, serializer = self._save(tasks)
     
-    # Mark tasks that need OCR processing  
+    # Mark tasks that need OCR processing
     if settings.OCR_ENABLED and tasks:
+        ocr_tasks = []
         for task in tasks:
-            if task.file_upload and needs_ocr(task.file_upload):
+            # Check if task has PDF or image files that need OCR
+            if (task.file_upload and 
+                (task.file_upload.file_name.lower().endswith('.pdf') or
+                 task.file_upload.file_name.lower().endswith(('.png', '.jpg', '.jpeg', '.tiff', '.bmp')))):
+                
+                # Initialize meta if needed
+                if not task.meta:
+                    task.meta = {}
+                
+                # Mark as OCR processing
                 task.meta['ocr_status'] = 'processing'
                 task.meta['ocr_started_at'] = now().isoformat()
+                ocr_tasks.append(task)
+        
+        # Bulk update OCR status in same transaction
+        if ocr_tasks:
+            for task in ocr_tasks:
                 task.save(update_fields=['meta'])
 
 # Queue OCR processing as background job after transaction commits
 if settings.OCR_ENABLED and tasks:
-    start_job_async_or_sync(process_ocr_for_tasks_background, task_ids)
+    ocr_task_ids = [task.id for task in tasks 
+                   if task.file_upload and 
+                   (task.file_upload.file_name.lower().endswith('.pdf') or
+                    task.file_upload.file_name.lower().endswith(('.png', '.jpg', '.jpeg', '.tiff', '.bmp')))]
+    
+    if ocr_task_ids:
+        start_job_async_or_sync(process_ocr_for_tasks_background, ocr_task_ids)
 ```
 
 #### Background Processing Pipeline
@@ -171,37 +182,15 @@ def process_ocr_for_tasks_after_import(tasks) -> int:
 - ✅ **Frontend warnings** resolved for ImportPage component
 - ✅ **Request processing time** acceptable (~63 seconds for complex operations)
 
-### ✅ **Implementation Complete** (September 5, 2025 - Final Status)
-
-#### Final Status Analysis
-**Result**: HTTP requests are completing successfully with proper status codes.
-
-**Log Confirmation**:
-```
-[23:10:03,378] OCR background job queued successfully  ✅
-[23:10:03,397] Starting _update_tasks_states            ✅ (Normal operation)
-[23:10:08,374] HTTP 201 response started               ✅ (Success)
-[23:10:08,375] HTTP response complete                  ✅ (Normal close)
-[23:10:08,376] HTTP POST /api/projects/46/reimport 201 ✅ (Successful completion)
-```
-
-**Key Understanding**:
-- HTTP 201 = Successful creation/processing
-- "HTTP close" = Normal connection termination after successful response
-- 63-second processing time is acceptable for complex import operations
-- Counter updates are necessary for project consistency
-
-### ✅ **Production Ready Status**
-The OCR integration is **complete and production ready**:
-- ✅ **Successful HTTP responses** with proper status codes
-- ✅ **Background OCR processing** prevents blocking
-- ✅ **Atomic transaction safety** maintained
-- ✅ **Status tracking** provides visibility
-- ✅ **Error handling** ensures reliability
-- ✅ **MinIO integration** supports cloud storage
+### 📈 **Next Phase: Frontend Multi-Page OCR-Assisted Labeling**
+- [ ] Character overlay component for click-to-annotate functionality
+- [ ] Multi-page navigation integration with OCR character display
+- [ ] Word-level grouping from character-level extractions
+- [ ] Auto-bounding box generation from clicked OCR regions
+- [ ] OCR status indicators per page in multi-page view
+- [ ] Performance optimization for character rendering on large documents
 
 ### 📈 **Future Enhancement Opportunities**
-- [ ] OCR progress indicators in frontend UI
 - [ ] OCR retry mechanism for failed tasks
 - [ ] Batch OCR processing optimization
 - [ ] OCR quality metrics and reporting
@@ -210,19 +199,20 @@ The OCR integration is **complete and production ready**:
 
 ## Implementation Summary
 
-OCR Service focusing exclusively on PDF-to-images conversion for OCR processing:
+OCR Service for PDF-to-images conversion supporting multi-page labeling workflow:
 - **EasyOCR only** for simplified Chinese character extraction (no PaddleOCR)
 - **PyMuPDF** for PDF processing (no pdf2image/poppler dependencies)
 - **PDFImageRelationship model** to track PDF-to-image conversions
+- **Multi-page display integration** with Label Studio's existing pagination system
+- **Click-to-annotate support** via character-level bounding box data
 - **MinIO-only storage** for all files (no local server storage)
 - **Poetry** for all package management (no pip)
-- **Standalone CLI** for testing without database dependencies
 
 ## Architecture Overview
 
 ### File Import & PDF Processing Flow
 
-**CRITICAL**: The OCR service depends on successful file import to Label Studio project before character extraction can begin. PDF files are converted to images using PyMuPDF and tracked via PDFImageRelationship model.
+**CRITICAL**: The OCR service integrates with Label Studio's existing multi-page support via `valueList` parameter. PDF files are converted to individual page images for OCR-assisted labeling workflow.
 
 ```
 Frontend File Upload → File Import Service → MinIO Storage → Task Creation
@@ -238,6 +228,12 @@ Frontend File Upload → File Import Service → MinIO Storage → Task Creation
                                         Create PDFImageRelationship records
                                                         ↓
                                             OCR Processing on page images
+                                                        ↓
+                                          Task.data populated with converted_images[]
+                                                        ↓
+                                     Frontend uses Label Studio's valueList multi-page system
+                                                        ↓
+                                 Character overlays enable click-to-annotate functionality
 ```
 
 #### References and Method Mapping
@@ -245,6 +241,8 @@ Frontend File Upload → File Import Service → MinIO Storage → Task Creation
 ```
 @project_note 
 ├── project-creation-import-flow.md (Frontend)
+├── multi-page-pdf-display-investigation.md (Frontend)
+├── labeling-interface-template.md (Frontend)
 ├── task-assignment-flow.md (Backend)
 ```
 
@@ -281,197 +279,112 @@ Database (PostgreSQL/SQLite)
 
 #### 2. OCR Processing Workflow
 ```
-OCR Service Queue Trigger
-├── File successfully stored in MinIO ✅ (Task.file_upload reference exists)
-├── Task created in database ✅ (Task.save() completed)
-└── OCR extraction job queued
+Background OCR Job Triggered (data_import/services.py)
+├── process_ocr_for_tasks_background(task_ids) - Background job entry point
+├── Filter tasks by ID and process each task individually
+└── OCR extraction job processing
     ↓
-ChineseOCRService Processing (tasks/services/ocr_service.py)
-├── extract_characters() - Main extraction method
-├── _validate_file_import() - Check file import completion
-├── _resolve_file_path() - Get MinIO file path from Task.data
-├── File format detection via is_file_supported()
-├── Route to appropriate processor based on file type:
-│   ├── PDF Files → PDFOCRProcessor (PDF-to-Image conversion required)
-│   └── Image Files → ImageOCRProcessor (Direct processing)
+Task-Level OCR Processing (process_ocr_for_tasks_after_import)
+├── Check task.file_upload exists and is accessible
+├── Query PDFImageRelationship for converted PDF pages
+├── Route to appropriate processing based on file type:
+│   ├── PDF Files → Process via PDFImageRelationship records
+│   └── Image Files → Direct image processing
 └── Character extraction pipeline
     ↓
-PDF Processing Branch (PDFOCRProcessor)
-├── Convert PDF to images using PyMuPDF (fitz)
-├── Create FileUpload for each page image
-├── Create PDFImageRelationship for each page
-├── Store page images in MinIO via FileUpload
-├── Route to ImageOCRProcessor for each page image
-└── Aggregate results from all pages with page numbers
+PDF Processing Branch
+├── convert_pdf_to_images_simple(pdf_file_upload) - Convert PDF to page images
+├── Create FileUpload for each page image via ContentFile
+├── Create PDFImageRelationship for each page (atomic transaction)
+├── Store page images in MinIO via FileUpload.file.save()
+├── extract_characters_from_image_content() for each page
+└── save_ocr_extractions_for_task() with page numbers
     ↓
-Image Processing Branch (ImageOCRProcessor)
-├── OCRProcessor.extract_characters() - Process image file
-├── PaddleOCR/EasyOCR engine processing
-├── Character-level parsing via OCRCharacter class
-├── Coordinate normalization (0.0-1.0) in OCRCharacter.__init__()
-├── Chinese character filtering via is_chinese_character()
-└── Confidence scoring
+Image Processing Branch
+├── extract_characters_from_image_content(image_content, page_number)
+├── EasyOCR processing with ['ch_sim', 'en'] languages
+├── Character-level coordinate calculation from text regions
+├── Coordinate normalization (0.0-1.0) 
+├── Chinese character detection via Unicode range check
+└── save_ocr_extractions_for_task() - Atomic database storage
     ↓
-Database Storage (Atomic Transaction) (tasks/ocr_models.py)
-├── OCRCharacterExtraction.objects.filter().delete() - Clear existing
-├── OCRCharacterExtraction.objects.create() - Bulk insert new extractions
-├── Update task OCR processing status
-└── transaction.atomic() commit
+Database Storage (Atomic Transaction) (data_import/services.py:242-294)
+├── OCRCharacterExtraction.objects.filter().delete() - Clear existing for page
+├── OCRCharacterExtraction.objects.bulk_create() - Bulk insert new extractions
+├── Update task.meta['ocr_summary'] with statistics
+├── Update task.meta['ocr_status'] = 'completed'
+└── task.save(update_fields=['meta'])
 ```
 
-### Composite Pattern Implementation
-
-```
-OCRService
-├── File Import Dependency Check
-│   ├── Validate task has imported file
-│   ├── Confirm MinIO storage accessibility
-│   └── Verify file format support
-├── ImageOCRProcessor (handles .jpg, .png, .tiff, etc.)
-│   └── EasyOCR (single engine for simplicity)
-└── PDFOCRProcessor (handles .pdf files)
-    ├── PyMuPDF (converts PDF to images - no external deps)
-    ├── PDFImageRelationship (tracks parent-child files)
-    └── Uses ImageOCRProcessor for actual OCR
-```
+## Actual Service Functions
 
 ### Key Design Principles
 
-1. **Standalone Architecture**: CLI tool for quick testing and character extraction
+1. **Service-Based Architecture**: Functions in `data_import/services.py` handle all OCR processing
 2. **MinIO-Only Storage**: All files and converted images stored exclusively in MinIO
-3. **Simplified OCR Engine**: EasyOCR only for reduced complexity and dependencies
-4. **Direct File Processing**: Accepts direct file paths without database dependencies
+3. **EasyOCR Engine**: Single OCR engine for reduced complexity and dependencies
+4. **Background Processing**: Asynchronous OCR to prevent HTTP timeouts
 5. **PDF-to-Image Conversion**: Uses PyMuPDF (no external system dependencies)
 6. **Multi-Page Support**: Built-in support for multi-page PDFs with page tracking
 7. **FileUpload Integration**: Leverages existing Django FileUpload model for MinIO storage
 
-## Core Components
+### Core Service Functions
 
-### 1. OCRCharacter Data Class
+**File**: `data_import/services.py`
 
-**File**: `tasks/services/ocr_processors.py`
-
+#### 1. PDF to Image Conversion
 ```python
-class OCRCharacter:
-    """Data class for extracted character with normalized coordinates."""
-
-    def __init__(self, character, confidence, x, y, width, height,
-                 image_width, image_height, page_number=1):
-        # Normalized coordinates (0.0-1.0)
-        self.x = x
-        self.y = y
-        self.width = width
-        self.height = height
-        # Metadata
-        self.character = character
-        self.confidence = confidence
-        self.image_width = image_width
-        self.image_height = image_height
-        self.page_number = page_number
-
-    @property
-    def absolute_bbox(self):
-        """Convert to absolute pixel coordinates."""
-        return {
-            'x': int(self.x * self.image_width),
-            'y': int(self.y * self.image_height),
-            'width': int(self.width * self.image_width),
-            'height': int(self.height * self.image_height),
-        }
-
-    def is_chinese_character(self):
-        """Detect Chinese characters."""
-        return '\u4e00' <= self.character <= '\u9fff'
+def convert_pdf_to_images_simple(pdf_file_upload: FileUpload) -> List[Dict]:
+    """Convert PDF to images and create FileUpload/PDFImageRelationship records"""
+    # Returns: List of {page_number, file_upload_id, relationship_id, image_filename, image_url}
 ```
 
-### 2. OCR Processor Interface
-
-**File**: `tasks/services/ocr_processors.py`
-
+#### 2. Character Extraction Functions
 ```python
-class OCRProcessor(ABC):
-    """Abstract base for OCR processors."""
+def extract_characters_from_image_content(image_content: bytes, page_number: int = 1) -> List[Dict]:
+    """Extract characters from image bytes using EasyOCR (for MinIO compatibility)"""
+    # Returns: List of character dictionaries with normalized coordinates
 
-    @abstractmethod
-    def can_process(self, file_path: Union[str, Path]) -> bool:
-        """Check if processor can handle the file type."""
-        pass
-
-    @abstractmethod
-    def extract_characters(self, file_path: Union[str, Path],
-                          language: str = 'ch') -> List[OCRCharacter]:
-        """Extract characters from file."""
-        pass
-```
-### 4. PDF OCR Processor
-
-**Features**:
-- **Multi-Page Support**: Processes all PDF pages automatically using PyMuPDF
-- **No External Dependencies**: Uses PyMuPDF (no poppler required)
-- **Page Tracking**: Maintains page number for each character
-- **MinIO Integration**: Uploads converted images directly to MinIO storage
-- **PDFImageRelationship**: Tracks parent PDF to child image relationships
-- **FileUpload Integration**: Uses Django's FileUpload model for seamless storage
-- **Memory Efficient**: Processes pages sequentially to manage memory usage
-
-**Task Data Update for PDF Conversion**:
-```python
-def _update_task_data(self, task, converted_image_paths):
-    """
-    Updates Task.data with converted image paths after PDF-to-image conversion.
-
-    Before PDF processing:
-    task.data = {"ocr": "/path/to/document.pdf"}
-
-    After PDF conversion:
-    task.data = {
-        "ocr": "/path/to/document.pdf",  # Original PDF reference
-        "converted_images": [            # Added converted image references
-            "/path/to/relate_image_1_abc123.png",
-            "/path/to/relate_image_2_def456.png",
-            "/path/to/relate_image_3_ghi789.png"
-        ],
-        "conversion_metadata": {
-            "total_pages": 3,
-            "conversion_timestamp": "2025-09-04T10:30:00Z",
-            "dpi": 300,
-            "format": "PNG"
-        }
-    }
-    """
-    task.data["converted_images"] = converted_image_paths
-    task.data["conversion_metadata"] = {
-        "total_pages": len(converted_image_paths),
-        "conversion_timestamp": timezone.now().isoformat(),
-        "dpi": self.config.OCR_PDF_DPI,
-        "format": self.config.OCR_PDF_FORMAT
-    }
-    task.save(update_fields=['data'])
+def extract_characters_from_image(image_path: str, page_number: int = 1) -> List[Dict]:
+    """Extract characters from image file path using EasyOCR (for local files)"""
+    # Returns: List of character dictionaries with normalized coordinates
 ```
 
-**File Import Validation Process**:
+#### 3. Database Storage Function  
 ```python
-def extract_characters(self, task):
-    # Step 1: Validate file import prerequisite
-    if not self._validate_file_import(task):
-        raise OCRProcessingError("File must be successfully imported before OCR processing")
-
-    # Step 2: Check MinIO storage accessibility
-    file_path = self._resolve_file_path(task)
-    if not self._verify_storage_access(file_path):
-        raise OCRProcessingError("File not accessible in storage")
-
-    # Step 3: Proceed with OCR processing
-    # ... existing extraction logic
+def save_ocr_extractions_for_task(task, file_upload: FileUpload, characters: List[Dict]):
+    """Save OCR character extractions to database with atomic transactions"""
+    # Creates OCRCharacterExtraction records and updates task.meta
 ```
 
-**File Path Resolution Methods**:
-- **_validate_file_import()**: Requires successful file import to Label Studio project
-- **_resolve_file_path()**: Validates file accessibility in MinIO/S3 storage
-- **_verify_storage_access()**: Verifies task import completion before processing
-- **Task.data field parsing**: Handles Label Studio's MinIO storage structure
-- **Multiple Field Detection**: Searches `image`, `ocr`, `url`, `file` fields in Task.data
-- **Fallback Handling**: Graceful failure if file import incomplete via OCRProcessingError
+#### 4. Background Processing Functions
+```python
+def process_ocr_for_tasks_background(task_ids):
+    """Background job entry point - processes tasks by IDs"""
+    # Filters Task objects and delegates to process_ocr_for_tasks_after_import()
+
+def process_ocr_for_tasks_after_import(tasks) -> int:
+    """Main OCR processing logic for PDF and image tasks"""
+    # Handles both PDF conversion + OCR and direct image OCR
+    # Updates task.meta with status and error handling
+```
+
+### Data Flow Architecture
+
+**Multi-Page PDF Processing**:
+1. `convert_pdf_to_images_simple()` → Creates page images in MinIO
+2. `PDFImageRelationship` records created for each page
+3. `extract_characters_from_image_content()` → OCR on each page image
+4. `save_ocr_extractions_for_task()` → Atomic database storage per page
+
+**Direct Image Processing**:
+1. `extract_characters_from_image_content()` → Direct OCR on uploaded image  
+2. `save_ocr_extractions_for_task()` → Atomic database storage
+
+**Frontend Data Access**:
+- Query `PDFImageRelationship` to get page images for multi-page PDFs
+- Query `OCRCharacterExtraction` filtered by task and page_number
+- Access character coordinates (normalized 0.0-1.0) for overlay rendering
 
 ## Database Integration
 
@@ -492,8 +405,7 @@ with transaction.atomic():
                 width=char.width, height=char.height,
                 image_width=char.image_width,
                 image_height=char.image_height,
-                page_number=char.page_number,
-                extraction_version='1.0'
+                page_number=char.page_number
             )
 ```
 
@@ -517,15 +429,18 @@ with transaction.atomic():
 **Model Structure** (`./label_studio/data_import/models.py`):
 ```python
 class PDFImageRelationship(models.Model):
-    pdf_file = ForeignKey(FileUpload, related_name='page_images')
-    page_image = ForeignKey(FileUpload, related_name='source_pdf')
-    page_number = IntegerField(db_index=True)
-    total_pages = IntegerField()
-    image_width = IntegerField()
-    image_height = IntegerField()
-    dpi = IntegerField(default=300)
-    format = CharField(default='png')
+    pdf_file = ForeignKey(FileUpload, related_name='pdf_images')
+    image_file = ForeignKey(FileUpload, related_name='source_pdf')
+    page_number = IntegerField()
+    image_format = CharField(max_length=10, default='png')
+    resolution_dpi = IntegerField(default=300)
+    extraction_params = JSONField(null=True, blank=True, default=dict)
     created_at = DateTimeField(auto_now_add=True)
+    updated_at = DateTimeField(auto_now=True)
+    
+    class Meta:
+        db_table = 'data_import_pdf_image_relationship'
+        unique_together = [['pdf_file', 'page_number']]
 ```
 
 **Usage Pattern**:

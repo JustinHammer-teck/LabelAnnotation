@@ -818,3 +818,56 @@ class AnnotationConvertAPI(generics.RetrieveAPIView):
         emit_webhooks_for_instance(organization, project, WebhookAction.ANNOTATIONS_DELETED, [pk])
         data = AnnotationDraftSerializer(instance=draft).data
         return Response(status=201, data=data)
+
+
+class TaskOCRExtractionsAPI(generics.RetrieveAPIView):
+    """API endpoint to fetch OCR character extractions for a task"""
+    permission_required = ViewClassPermission(GET=all_permissions.tasks_view)
+    queryset = Task.objects.all()
+
+    def get(self, request, pk):
+        task = self.get_object()
+        page_number = request.GET.get('page')
+        
+        # Query OCR extractions
+        queryset = task.ocr_extractions.all()
+        if page_number:
+            try:
+                page_number = int(page_number)
+                queryset = queryset.filter(page_number=page_number)
+            except ValueError:
+                return Response(
+                    {'error': 'Invalid page number'}, 
+                    status=400
+                )
+        
+        # Get OCR status from task meta
+        ocr_status = task.meta.get('ocr_status', 'unknown') if task.meta else 'unknown'
+        ocr_summary = task.meta.get('ocr_summary', {}) if task.meta else {}
+        
+        # Serialize character data
+        characters = []
+        for extraction in queryset:
+            characters.append({
+                'id': extraction.id,
+                'character': extraction.character,
+                'confidence': extraction.confidence,
+                'x': extraction.x,
+                'y': extraction.y,
+                'width': extraction.width,
+                'height': extraction.height,
+                'page_number': extraction.page_number,
+            })
+        
+        response_data = {
+            'task_id': task.id,
+            'ocr_status': ocr_status,
+            'ocr_summary': ocr_summary,
+            'total_characters': len(characters),
+            'characters': characters,
+        }
+        
+        if page_number:
+            response_data['page_number'] = page_number
+            
+        return Response(response_data)

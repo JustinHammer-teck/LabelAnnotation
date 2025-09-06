@@ -94,7 +94,10 @@ export const API_CONFIG = {
     accessTokenUpdateSettings: 'POST:/jwt/settings',
 
     // Notifcations
-    sendNotification: 'POST:/notifications/send'
+    sendNotification: 'POST:/notifications/send',
+
+    // OCR
+    taskOCRExtractions: 'GET:/tasks/:pk/ocr-extractions'
   },
   alwaysExpectJSON: false
 };

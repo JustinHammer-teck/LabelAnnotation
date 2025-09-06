@@ -32,6 +32,7 @@ import {
 } from "../../utils/feature-flags";
 import { Pagination } from "../../common/Pagination/Pagination";
 import { Image } from "./Image";
+import OCROverlay from "./OCROverlay";
 
 Konva.showWarnings = false;
 
@@ -1157,6 +1158,11 @@ const StageContent = observer(({ item, store, state, crosshairRef }) => {
         </Layer>
       )}
       {item.grid && item.sizeUpdated && <ImageGrid item={item} />}
+
+      {/* OCR overlay layer */}
+      <Layer name="ocr-overlay-layer">
+        <OCROverlay item={item} store={store} />
+      </Layer>
 
       {isFF(FF_LSDV_4930) ? <TransformerBack item={item} /> : null}
 
