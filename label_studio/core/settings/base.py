@@ -56,7 +56,7 @@ LOGGING = {
             "handlers": ["console"],
             # 'propagate': True,
         },
-        "django_auth_ldap": {"level": os.environ.get("LOG_LEVEL", "DEBUG")},
+        "django_auth_ldap": {"level": os.environ.get("LOG_LEVEL", "INFO")},
         "rq.worker": {
             "handlers": ["console"],
             "level": os.environ.get("LOG_LEVEL", "INFO"),
@@ -420,7 +420,7 @@ SENTRY_IGNORED_EXCEPTIONS = [
 ]
 
 ROOT_URLCONF = "core.urls"
-WSGI_APPLICATION = "core.wsgi.application"
+# WSGI_APPLICATION = "core.wsgi.application"
 ASGI_APPLICATION = "core.asgi.application"
 GRAPHIQL = True
 

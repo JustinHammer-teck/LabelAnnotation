@@ -16,7 +16,6 @@ redis_client = RedisClient()
 
 async def streamed_events(event_name: str, request: HttpRequest) -> AsyncGenerator[str, None]:
     """Listen for events and generate an SSE message for each event"""
-    print("Something here")
     try:
         async with redis_client.get_pubsub_client() as pubsub:
             await pubsub.subscribe(event_name)

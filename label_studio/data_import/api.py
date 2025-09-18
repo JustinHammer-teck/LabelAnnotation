@@ -14,6 +14,7 @@ from core.redis import start_job_async_or_sync
 from core.utils.common import retry_database_locked, timeit
 from core.utils.params import bool_from_request, list_of_strings_from_request
 from csp.decorators import csp
+from data_import.services import process_ocr_for_tasks_background
 from django.conf import settings
 from django.db import transaction
 from django.http import HttpResponse
@@ -434,6 +435,15 @@ class TasksBulkCreateAPI(ImportAPI):
 class ReImportAPI(ImportAPI):
     permission_required = all_permissions.projects_change
 
+    @staticmethod
+    def is_support_document(task):
+        return (
+                task.file_upload and (
+                task.file_upload.file_name.lower().endswith('.pdf') or
+                task.file_upload.file_name.lower().endswith(('.png', '.jpg', '.jpeg', '.tiff', '.bmp'))
+            )
+        )
+
     def sync_reimport(self, project, file_upload_ids, files_as_tasks_list):
         start = time.time()
         tasks, found_formats, data_columns = FileUpload.load_tasks_from_uploaded_files(
@@ -443,49 +453,35 @@ class ReImportAPI(ImportAPI):
         with transaction.atomic():
             project.remove_tasks_by_file_uploads(file_upload_ids)
             tasks, serializer = self._save(tasks)
-            
-            # Mark tasks that need OCR processing
+
             if settings.OCR_ENABLED and tasks:
                 ocr_tasks = []
                 for task in tasks:
-                    # Check if task has PDF or image files that need OCR
-                    if (task.file_upload and 
-                        (task.file_upload.file_name.lower().endswith('.pdf') or
-                         task.file_upload.file_name.lower().endswith(('.png', '.jpg', '.jpeg', '.tiff', '.bmp')))):
-                        
-                        # Initialize meta if needed
+                    if ReImportAPI.is_support_document(task):
                         if not task.meta:
                             task.meta = {}
                         
-                        # Mark as OCR processing
                         task.meta['ocr_status'] = 'processing'
                         task.meta['ocr_started_at'] = now().isoformat()
                         ocr_tasks.append(task)
                 
-                # Bulk update OCR status in same transaction
                 if ocr_tasks:
                     for task in ocr_tasks:
                         task.save(update_fields=['meta'])
                     logger.info(f'Marked {len(ocr_tasks)} tasks for OCR processing')
                         
-        # Queue OCR processing as background job after transaction commits
         if settings.OCR_ENABLED and tasks:
             try:
-                from data_import.services import process_ocr_for_tasks_background
-                
-                # Only process tasks that actually need OCR
-                ocr_task_ids = [task.id for task in tasks 
-                               if task.file_upload and 
-                               (task.file_upload.file_name.lower().endswith('.pdf') or
-                                task.file_upload.file_name.lower().endswith(('.png', '.jpg', '.jpeg', '.tiff', '.bmp')))]
-                
+
+                ocr_task_ids = [task.id for task in tasks if ReImportAPI.is_support_document(task)]
+
                 if ocr_task_ids:
                     logger.info(f'Queuing OCR background job for {len(ocr_task_ids)} tasks')
-                    
-                    start_job_async_or_sync(
-                        process_ocr_for_tasks_background,
-                        ocr_task_ids
-                    )
+
+                    from django_rq import get_queue
+                    queue = get_queue('default')
+                    queue.enqueue(process_ocr_for_tasks_background, ocr_task_ids)
+
                     logger.info('OCR background job queued successfully')
                 else:
                     logger.info('No tasks require OCR processing')

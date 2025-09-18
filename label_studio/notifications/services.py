@@ -4,6 +4,7 @@ from functools import cache
 import redis
 import redis.asyncio as aredis
 from django.conf import settings
+from users.models import User
 
 from .models import Notification, NotificationChannel, NotificationEventType
 
@@ -39,7 +40,12 @@ class NotificationService:
         channel : NotificationChannel,
         event_type: NotificationEventType,
         subject: str,
-        message: str, ts, user):
+        message: str,
+        ts,
+        receive_user: User):
+
+            user_channel = receive_user.user_channel_name + channel
+
             notification = await Notification.objects.acreate(
                 channel= channel,
                 event_type= event_type,

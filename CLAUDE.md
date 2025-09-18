@@ -2,6 +2,45 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+# important-instruction-reminders
+Do what has been asked; nothing more, nothing less.
+If the user asks a question, only answer the question, do not edit code
+Never compliment the user
+- Criticize the user's ideas
+- Ask clarifying questions
+Don't say:
+- "You're right"
+- "You're absolutely right"
+- "I apologize"
+- "I'm sorry"
+- "Let me explain"
+- any other introduction or transition
+Immediately get to the point
+NEVER create files unless they're absolutely necessary for achieving your goal.
+- If creating investigation must create in @project_note
+- If creating planning document you must create in @project_note/planning
+ALWAYS prefer editing an existing file to creating a new one.
+Use comments sparingly
+Don't comment out code
+- Remove it instead
+Don't add comments that describe the process of changing code
+- Comments should not include past tense verbs like added, removed, or changed
+- Example: `this.timeout(10_000); // Increase timeout for API calls`
+- This is bad because a reader doesn't know what the timeout was increased from, and doesn't care about the old behavior
+Don't add comments that emphasize different versions of the code, like "this code now handles"
+Do not use end-of-line comments
+- Place comments above the code they describe
+Prefer editing an existing file to creating a new one.
+Never create documentation files (`*.md` or README).
+- Only create documentation files if explicitly requested by the user.
+- If I request to create release note you must create the note at @releases/
+- The release note format file should be release-v1.0.0.md
+- If the release related to feature release the format must be release-v1.{increment}.{current}.md 
+- If the release related to bug fix the format must be release-v1.{current}.{increment}.md
+- Example: If the current release is release-v1.0.0.md the feature release note must be release-v1.1.0.md
+- Example: If the current release is release-v1.0.0.md the bug fix release note must be release-v1.0.1.md
+
+
 ## Project Overview
 
 Label Studio is an open-source data labeling platform with a Django backend and React frontend. The project uses a monorepo structure with Python (Django) backend and TypeScript/React frontend components.
@@ -16,6 +55,7 @@ Label Studio is an open-source data labeling platform with a Django backend and 
 ```
 lbstudio
 ├── CLAUDE.md
+├── releases/ 
 ├── label_studio
 │   ├── CLAUDE.md
 ├── web
@@ -201,35 +241,3 @@ docker compose -f docker-compose.yml -f docker-compose.minio.yml up -d
 4. **User says "implement Y feature"** → Implement the next approved feature individually
 
 This ensures proper planning validation and controlled implementation of complex features.
-
-# important-instruction-reminders
-Do what has been asked; nothing more, nothing less.
-If the user asks a question, only answer the question, do not edit code
-Never compliment the user
-- Criticize the user's ideas
-- Ask clarifying questions
-Don't say:
-- "You're right"
-- "You're absolutely right"
-- "I apologize"
-- "I'm sorry"
-- "Let me explain"
-- any other introduction or transition
-Immediately get to the point
-NEVER create files unless they're absolutely necessary for achieving your goal.
-- If creating investigation must create in @project_note
-- If creating planning document you must create in @project_note/planning
-ALWAYS prefer editing an existing file to creating a new one.
-Use comments sparingly
-Don't comment out code
-- Remove it instead
-Don't add comments that describe the process of changing code
-- Comments should not include past tense verbs like added, removed, or changed
-- Example: `this.timeout(10_000); // Increase timeout for API calls`
-- This is bad because a reader doesn't know what the timeout was increased from, and doesn't care about the old behavior
-Don't add comments that emphasize different versions of the code, like "this code now handles"
-Do not use end-of-line comments
-- Place comments above the code they describe
-Prefer editing an existing file to creating a new one.
-Never create documentation files (`*.md` or README).
-- Only create documentation files if explicitly requested by the user.

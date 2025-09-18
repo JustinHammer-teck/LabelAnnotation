@@ -3,9 +3,10 @@
 import json
 
 from core.settings.base import *  # noqa
-from core.utils.secret_key import generate_secret_key_if_missing
+from core.utils.secret_key import (
+    generate_secret_key_if_missing,  # SECURITY WARNING: keep the secret key used in production secret!
+)
 
-# SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = generate_secret_key_if_missing(BASE_DATA_DIR)
 
 DJANGO_DB = get_env('DJANGO_DB', DJANGO_DB_SQLITE)
@@ -28,13 +29,12 @@ SESSION_COOKIE_SECURE = get_bool_env('SESSION_COOKIE_SECURE', False)
 
 SESSION_ENGINE = 'django.contrib.sessions.backends.signed_cookies'
 
-RQ_QUEUES = {}
+SENTRY_DSN = get_env('SENTRY_DSN', '')
 
-SENTRY_DSN = get_env('SENTRY_DSN', 'https://68b045ab408a4d32a910d339be8591a4@o227124.ingest.sentry.io/5820521')
 SENTRY_ENVIRONMENT = get_env('SENTRY_ENVIRONMENT', 'opensource')
 
 FRONTEND_SENTRY_DSN = get_env(
-    'FRONTEND_SENTRY_DSN', 'https://5f51920ff82a4675a495870244869c6b@o227124.ingest.sentry.io/5838868'
+    'FRONTEND_SENTRY_DSN', ''
 )
 FRONTEND_SENTRY_ENVIRONMENT = get_env('FRONTEND_SENTRY_ENVIRONMENT', 'opensource')
 
@@ -68,3 +68,30 @@ STORAGE_PERSISTENCE = get_bool_env('STORAGE_PERSISTENCE', True)
 
 # OCR Configuration
 OCR_ENABLED = get_bool_env('OCR_ENABLED', True)
+
+RQ_QUEUES = {
+    "critical": {
+        "HOST": "localhost",
+        "PORT": 6379,
+        "DB": 1,
+        "DEFAULT_TIMEOUT": 180,
+    },
+    "high": {
+        "HOST": "localhost",
+        "PORT": 6379,
+        "DB": 1,
+        "DEFAULT_TIMEOUT": 180,
+    },
+    "default": {
+        "HOST": "localhost",
+        "PORT": 6379,
+        "DB": 2,
+        "DEFAULT_TIMEOUT": 180,
+    },
+    "low": {
+        "HOST": "localhost",
+        "PORT": 6379,
+        "DB": 3,
+        "DEFAULT_TIMEOUT": 180,
+    },
+}

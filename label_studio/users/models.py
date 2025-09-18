@@ -139,6 +139,10 @@ class User(UserMixin, AbstractBaseUser, PermissionsMixin, UserLastActivityMixin)
             else:
                 return settings.HOSTNAME + self.avatar.url
 
+    @cached_property
+    def user_channel_name(self):
+        return self.id + self.email
+
     def is_organization_admin(self, org_pk):
         return True
 

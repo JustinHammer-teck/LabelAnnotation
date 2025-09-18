@@ -3,7 +3,7 @@
 import logging
 from typing import Dict, List
 
-import fitz  # PyMuPDF
+import fitz
 from django.conf import settings
 from django.core.files.base import ContentFile
 from django.db import transaction
@@ -53,12 +53,12 @@ def convert_pdf_to_images_simple(pdf_file_upload: FileUpload) -> List[Dict]:
         
         with transaction.atomic():
             for page_num in range(total_pages):
-                page_number = page_num + 1  # 1-indexed
+                page_number = page_num + 1
                 logger.debug(f"Processing page {page_number}/{total_pages}")
                 
                 page = pdf_document[page_num]
                 
-                mat = fitz.Matrix(300/72.0, 300/72.0)  # 300 DPI
+                mat = fitz.Matrix(300/72.0, 300/72.0)
                 pix = page.get_pixmap(matrix=mat, alpha=False)
                 
                 img_bytes = pix.tobytes("png")
@@ -118,18 +118,18 @@ def extract_characters_from_image_content(image_content: bytes, page_number: int
     
     try:
         import io
-        from PIL import Image
+
         import numpy as np
+        from PIL import Image
         
-        # Convert bytes to PIL Image
         image = Image.open(io.BytesIO(image_content))
         image_width, image_height = image.size
-        
-        # Convert to numpy array for EasyOCR
+
+        reader = easyocr.Reader(['ch_sim', 'en'], gpu=False)
+
         image_array = np.array(image)
-        
-        reader = easyocr.Reader(['ch_sim', 'en'], gpu=False)
         results = reader.readtext(image_array)
+
         logger.info(f"Found {len(results)} text regions")
         
         characters = []
@@ -175,69 +175,6 @@ def extract_characters_from_image_content(image_content: bytes, page_number: int
     except Exception as e:
         logger.error(f"Error extracting characters: {e}")
         return []
-
-
-def extract_characters_from_image(image_path: str, page_number: int = 1) -> List[Dict]:
-    """Extract characters from image using EasyOCR"""
-    if not EASYOCR_AVAILABLE:
-        logger.warning("EasyOCR not available, skipping character extraction")
-        return []
-    
-    logger.info(f"Extracting characters from {image_path}, page {page_number}")
-    
-    try:
-        reader = easyocr.Reader(['ch_sim', 'en'], gpu=False)
-        results = reader.readtext(image_path)
-        logger.info(f"Found {len(results)} text regions")
-        
-        from PIL import Image
-        image = Image.open(image_path)
-        image_width, image_height = image.size
-        
-        characters = []
-        for bbox, text, confidence in results:
-            x_coords = [point[0] for point in bbox]
-            y_coords = [point[1] for point in bbox]
-            
-            x_min = min(x_coords)
-            x_max = max(x_coords)
-            y_min = min(y_coords)
-            y_max = max(y_coords)
-            
-            region_width = x_max - x_min
-            region_height = y_max - y_min
-            
-            if len(text) > 0:
-                char_width = region_width / len(text)
-                
-                for i, char in enumerate(text):
-                    if char.strip():
-                        char_x = x_min + (i * char_width)
-                        
-                        norm_x = char_x / image_width
-                        norm_y = y_min / image_height
-                        norm_width = char_width / image_width
-                        norm_height = region_height / image_height
-                        
-                        characters.append({
-                            'character': char,
-                            'confidence': confidence,
-                            'x': norm_x,
-                            'y': norm_y,
-                            'width': norm_width,
-                            'height': norm_height,
-                            'image_width': image_width,
-                            'image_height': image_height,
-                            'page_number': page_number
-                        })
-        
-        logger.info(f"Extracted {len(characters)} characters")
-        return characters
-        
-    except Exception as e:
-        logger.error(f"Error extracting characters: {e}")
-        return []
-
 
 def save_ocr_extractions_for_task(task, file_upload: FileUpload, characters: List[Dict]):
     """Save OCR character extractions to database"""
@@ -285,7 +222,6 @@ def save_ocr_extractions_for_task(task, file_upload: FileUpload, characters: Lis
             'has_extractions': True
         }
         
-        # Update OCR status to completed
         task.meta['ocr_status'] = 'completed'
         task.meta['ocr_completed_at'] = now().isoformat()
         task.save(update_fields=['meta'])
@@ -334,7 +270,6 @@ def process_ocr_for_tasks_after_import(tasks) -> int:
             
             file_upload = task.file_upload
             
-            # Check if this is a PDF that was converted to images
             pdf_relationships = PDFImageRelationship.objects.filter(
                 pdf_file=file_upload
             ).order_by('page_number')
@@ -342,24 +277,20 @@ def process_ocr_for_tasks_after_import(tasks) -> int:
             if pdf_relationships.exists():
                 logger.info(f"Task {task.id} has PDF with {pdf_relationships.count()} converted pages")
                 
-                # Update task data with pages array for valueList
                 page_urls = []
                 for relationship in pdf_relationships:
                     page_urls.append(relationship.image_file.url)
                 
-                # Update task data to include pages array
                 if not task.data:
                     task.data = {}
                 task.data['pages'] = page_urls
                 task.save(update_fields=['data'])
                 logger.info(f"Task {task.id}: Updated data with {len(page_urls)} page URLs")
                 
-                # Process OCR for each page image
                 for relationship in pdf_relationships:
                     image_file_upload = relationship.image_file
                     page_number = relationship.page_number
                     
-                    # Extract characters from MinIO storage
                     try:
                         # Read image content from MinIO
                         image_file_upload.file.seek(0)
