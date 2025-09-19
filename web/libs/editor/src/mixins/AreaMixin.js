@@ -114,7 +114,7 @@ export const AreaMixinBase = types
     },
 
     get style() {
-      if (!isAlive(self)) {
+      if (!isAlive(self) || !self.results) {
         return void 0;
       }
 
@@ -167,7 +167,9 @@ export const AreaMixinBase = types
   }))
   .actions((self) => ({
     beforeDestroy() {
-      self.results.forEach((r) => destroy(r));
+      if (isAlive(self) && self.results) {
+        self.results.forEach((r) => destroy(r));
+      }
 
       // Some region indexes have to be recalculated after destroying regions
       self.annotation?.updateAppearenceFromState?.();

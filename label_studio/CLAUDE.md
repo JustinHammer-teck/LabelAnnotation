@@ -108,24 +108,37 @@ The primary OCR template uses the following components:
 Standard OCR template structure:
 ```xml
 <View>
-  <Image name="image" value="$ocr"/>
+              
+  <!-- 
+    The Image tag displays the images. The `valueList` parameter is the key to enabling multi-page annotation.
+    It expects your task data to have a key (e.g., "pages") that contains a list of image URLs.
+    Controls for zooming and rotating are enabled for a better user experience.
+  -->
+  <Image name="pages" valueList="$pages" zoom="true" zoomControl="true" rotateControl="true"/>
 
-  <Labels name="label" toName="image">
-    <Label value="Text" background="green"/>
-    <Label value="Handwriting" background="blue"/>
-  </Labels>
+  <!-- 
+    The RectangleLabels tag provides the tools to draw bounding boxes on the images.
+    The `toName` attribute must match the `name` of the Image tag below.
+  -->
+  <RectangleLabels name="box" toName="pages">
+    <Label value="Title" background="yellow"/>
+    <Label value="Date Time" background="blue"/>
+    <Label value="Accident" background="red"/>
+  </RectangleLabels>
 
-  <Rectangle name="bbox" toName="image" strokeWidth="3"/>
-  <Polygon name="poly" toName="image" strokeWidth="3"/>
-
-  <TextArea name="transcription" toName="image"
-            editable="true"
-            perRegion="true"
-            required="true"
-            maxSubmissions="1"
-            rows="5"
-            placeholder="Recognized Text"
+  <!-- 
+    The TextArea tag is optional. It allows annotators to transcribe text for each bounding box created.
+    `perRegion="true"` is crucial as it links each transcription to a specific bounding box.
+  -->
+  <TextArea name="transcription" toName="pages" 
+            editable="true" 
+            perRegion="true" 
+            required="false" 
+            maxSubmissions="1" 
+            rows="3" 
+            placeholder="Enter transcription for the selected region..." 
             displayMode="region-list"/>
+
 </View>
 ```
 
@@ -205,26 +218,6 @@ Standard OCR template structure:
    - ALTO XML format
    - Plain text extraction
 
-### Testing Guidelines for OCR Features
-
-1. **Unit Tests**:
-   - Test bounding box coordinate validation
-   - Test polygon simplification algorithms
-   - Test text encoding/decoding for various scripts
-   - Test region-text association logic
-
-2. **Integration Tests**:
-   - Test full OCR annotation workflow
-   - Test multi-page document handling
-   - Test export in various OCR formats
-   - Test ML backend integration
-
-3. **Performance Tests**:
-   - Test with large documents (100+ pages)
-   - Test with high-resolution images
-   - Test concurrent annotation sessions
-   - Test export of large annotation sets
-
 ### Common OCR Use Cases to Support
 
 1. **Document Digitization**:
@@ -240,26 +233,8 @@ Standard OCR template structure:
    - Stamp/seal recognition
 
 3. **Multilingual OCR**:
-   - Support for various scripts (Latin, Arabic, CJK, etc.)
-   - Mixed language documents
-   - Historical scripts and fonts
-
-### Performance Metrics to Track
-
-- Average time per document annotation
-- Regions annotated per hour
-- Characters transcribed per hour
-- Annotation accuracy rates
-- Model confidence improvements
-
-### Security Considerations
-
-- Sanitize OCR text inputs to prevent XSS
-- Validate image uploads for security
-- Implement rate limiting on OCR endpoints
-- Secure storage of sensitive documents
-- Audit logging for document access
-
+   - Mixed language documents (CN, EN)
+   
 ### Do NOT Implement
 
 - Audio/video annotation features

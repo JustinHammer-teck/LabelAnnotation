@@ -4,10 +4,12 @@ import logging
 from typing import Dict, List
 
 import fitz
+from core.redis import start_job_async_or_sync
 from django.conf import settings
 from django.core.files.base import ContentFile
 from django.db import transaction
 from django.utils.timezone import now
+from projects.models import ProjectReimport
 
 from .models import FileUpload, PDFImageRelationship
 
@@ -22,6 +24,64 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
+def is_support_document(task):
+    return task.file_upload and (
+        task.file_upload.file_name.lower().endswith('.pdf')
+        or task.file_upload.file_name.lower().endswith(('.png', '.jpg', '.jpeg', '.tiff', '.bmp'))
+    )
+
+
+def async_reimport_with_ocr_success_handler(reimport_id, organization_id, user, **kwargs):
+    """
+    Success callback for async reimport that triggers OCR processing
+    """
+    from django.conf import settings
+    from tasks.models import Task
+
+    from .services import process_ocr_for_tasks_background
+
+    if not settings.OCR_ENABLED:
+        return
+
+    try:
+        reimport = ProjectReimport.objects.get(id=reimport_id)
+        if reimport.status != ProjectReimport.Status.COMPLETED:
+            return
+
+        tasks = Task.objects.filter(
+            project=reimport.project,
+            file_upload_id__in=reimport.file_upload_ids
+        )
+
+        ocr_tasks = []
+        for task in tasks:
+            if is_support_document(task):
+                if not task.meta:
+                    task.meta = {}
+
+                task.meta['ocr_status'] = 'processing'
+                task.meta['ocr_started_at'] = now().isoformat()
+                ocr_tasks.append(task)
+
+        if ocr_tasks:
+            for task in ocr_tasks:
+                task.save(update_fields=['meta'])
+
+            ocr_task_ids = [task.id for task in ocr_tasks]
+            logger.info(f'Queuing OCR background job for {len(ocr_task_ids)} tasks after async reimport')
+
+            start_job_async_or_sync(
+                process_ocr_for_tasks_background,
+                ocr_task_ids,
+                queue_name='high'
+            )
+
+            logger.info('OCR background job queued successfully after async reimport')
+        else:
+            logger.info('No tasks require OCR processing after async reimport')
+
+    except Exception as e:
+        logger.error(f'Failed to queue OCR after async reimport: {e}', exc_info=True)
 
 def convert_pdf_to_images_simple(pdf_file_upload: FileUpload) -> List[Dict]:
     """
@@ -115,7 +175,7 @@ def extract_characters_from_image_content(image_content: bytes, page_number: int
         return []
     
     logger.info(f"Extracting characters from image content, page {page_number}")
-    
+
     try:
         import io
 

@@ -141,7 +141,7 @@ class User(UserMixin, AbstractBaseUser, PermissionsMixin, UserLastActivityMixin)
 
     @cached_property
     def user_channel_name(self):
-        return self.id + self.email
+        return str(self.id)  + self.email
 
     def is_organization_admin(self, org_pk):
         return True

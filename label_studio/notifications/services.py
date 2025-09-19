@@ -6,7 +6,7 @@ import redis.asyncio as aredis
 from django.conf import settings
 from users.models import User
 
-from .models import Notification, NotificationChannel, NotificationEventType
+from .models import Notification, NotificationEventType
 
 
 class RedisClient:
@@ -24,7 +24,7 @@ class RedisClient:
         return redis.from_url(self.host)
 
     def get_pubsub_client(self) -> redis.asyncio.client.PubSub:
-        return self._get_async_client().pubsub(host=self.host)
+        return self._get_async_client().pubsub()
 
     def publish(self, channel, message):
         self._get_client().publish(channel=channel, message=message)
@@ -37,17 +37,17 @@ class NotificationService:
         self.redis_client = RedisClient()
 
     async def send_notification(self,
-        channel : NotificationChannel,
-        event_type: NotificationEventType,
-        subject: str,
-        message: str,
-        ts,
-        receive_user: User):
+                                channel_name : str,
+                                event_type: NotificationEventType,
+                                subject: str,
+                                message: str,
+                                ts,
+                                receive_user: User):
 
-            user_channel = receive_user.user_channel_name + channel
+            user_channel = receive_user.user_channel_name + "_" + channel_name
 
             notification = await Notification.objects.acreate(
-                channel= channel,
+                channel= user_channel,
                 event_type= event_type,
                 content=json.dumps(
                     {
@@ -59,7 +59,7 @@ class NotificationService:
             )
 
             self.redis_client.publish(
-                channel,
+                user_channel,
                 json.dumps(
                     {
                         'context': {

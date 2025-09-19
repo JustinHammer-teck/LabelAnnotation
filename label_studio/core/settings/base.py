@@ -198,7 +198,7 @@ if get_bool_env("GOOGLE_LOGGING_ENABLED", False):
     except GoogleAuthError:
         logger.exception("Google Cloud Logging handler could not be setup.")
 
-REDIS_HOST = get_env("REDIS_HOST", "redis://xucxich.hydra-everest.ts.net:6380")
+REDIS_HOST = get_env("REDIS_HOST", "redis://xucxich.hydra-everest.ts.net:6379")
 
 INSTALLED_APPS = [
     "daphne",

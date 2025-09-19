@@ -1,50 +1,46 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Dropdown } from '../Dropdown/Dropdown';
 import { Menu } from '../Menu/Menu';
-import { IconBell, IconSettings } from '@humansignal/icons'; // Assuming IconSettings is available
+import { IconBell, IconSettings } from '@humansignal/icons';
 import './Notification.scss';
+import { useCurrentUser } from '../../providers/CurrentUser';
 import {useTranslation} from "react-i18next";
 
-
-// NEW: A helper function to check if the Notification API is supported.
 const isBrowserNotificationSupported = () => {
   return 'Notification' in window;
 };
 
 export const NotificationBell = () => {
+  const { user } = useCurrentUser();
   const { t } = useTranslation();
   const [notifications, setNotifications] = useState([]);
 
-  // NEW: State to track the browser notification permission status.
-  // We initialize it with the current permission state.
   const [permission, setPermission] = useState(
     isBrowserNotificationSupported() ? Notification.permission : 'unsupported'
   );
 
-  // NEW: This function will be called to show the actual browser notification.
   const showBrowserNotification = useCallback(notificationData => {
     const { id, subject, message, path } = notificationData;
 
     const notification = new Notification(subject, {
       body: message,
-      // You should host a small icon for your notifications
       icon: '/favicon.ico'
     });
 
-    // NEW: Handle clicks on the browser notification.
     notification.onclick = () => {
-      // Bring the user back to our app's window/tab.
       window.focus();
-      // Mark the corresponding in-app notification as read.
       handleNotificationClick(id, path);
-      // Close the notification.
       notification.close();
     };
-  }, []); // We'll define handleNotificationClick next.
+  }, []);
 
-  // The SSE connection logic remains the same.
   useEffect(() => {
-    const sse = new EventSource('http://localhost:8080/events/notifications');
+    if (!user || !user.id || !user.email) {
+      return;
+    }
+
+    const userChannel = `${user.id}${user.email}_notifications`;
+    const sse = new EventSource(`http://localhost:8080/events/${userChannel}`);
 
     sse.onmessage = event => {
       const newNotificationData = JSON.parse(event.data);
@@ -52,13 +48,11 @@ export const NotificationBell = () => {
         newNotificationData.id = new Date().getTime();
       }
 
-      // Add to the in-app list
       setNotifications(prev => {
         if (prev.some(n => n.id === newNotificationData.id)) return prev;
         return [newNotificationData, ...prev];
       });
 
-      // NEW: If permission is granted, also show a browser notification.
       if (
         isBrowserNotificationSupported() &&
         Notification.permission === 'granted'
@@ -73,7 +67,7 @@ export const NotificationBell = () => {
     };
 
     return () => sse.close();
-  }, [showBrowserNotification]); // Add the new dependency
+  }, [showBrowserNotification, user]); // Add the new dependency
 
   const handleNotificationClick = useCallback((id, path) => {
     setNotifications(prev =>

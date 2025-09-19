@@ -39,6 +39,8 @@ Never create documentation files (`*.md` or README).
 - If the release related to bug fix the format must be release-v1.{current}.{increment}.md
 - Example: If the current release is release-v1.0.0.md the feature release note must be release-v1.1.0.md
 - Example: If the current release is release-v1.0.0.md the bug fix release note must be release-v1.0.1.md
+- The release note must be concise but must cover fully the change of the release. 
+- NEVER be too verbose on the release note.
 
 
 ## Project Overview
@@ -58,6 +60,8 @@ lbstudio
 ├── releases/ 
 ├── label_studio
 │   ├── CLAUDE.md
+│   ├── core 
+│   │   ├── CLAUDE.md (instruction for async worker pattern)
 ├── web
 │   ├── apps
 │   │   ├── labelstudio

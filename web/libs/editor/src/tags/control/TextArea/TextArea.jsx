@@ -242,6 +242,14 @@ const Model = types
       addText(text, pid) {
         if (!self.validateText(text)) return;
 
+        // For perRegion TextAreas, validate that this TextArea should be visible for the current region
+        if (self.perregion && !self.perRegionVisible()) {
+          console.warn('[TextArea Fix] TextArea addText called but TextArea is not visible for current region context',
+            { textAreaName: self.name, selectedRegion: self.annotation.highlightedNode?.id }
+          );
+          return;
+        }
+
         self.createRegion(text, pid, self.leadTime);
         // actually creates a new result
         self.onChange();

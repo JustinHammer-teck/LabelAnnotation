@@ -37,7 +37,7 @@ async def streamed_events(event_name: str, request: HttpRequest) -> AsyncGenerat
         raise
 
 
-def events(request: HttpRequest, event_name: str) -> HttpResponseBase:
+async def events(request: HttpRequest, event_name: str) -> HttpResponseBase:
     """Start an SSE connection for event_name"""
     if request.method != 'GET':
         return HttpResponseNotAllowed(

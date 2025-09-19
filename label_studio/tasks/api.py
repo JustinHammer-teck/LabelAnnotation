@@ -829,7 +829,6 @@ class TaskOCRExtractionsAPI(generics.RetrieveAPIView):
         task = self.get_object()
         page_number = request.GET.get('page')
         
-        # Query OCR extractions
         queryset = task.ocr_extractions.all()
         if page_number:
             try:
@@ -841,11 +840,9 @@ class TaskOCRExtractionsAPI(generics.RetrieveAPIView):
                     status=400
                 )
         
-        # Get OCR status from task meta
         ocr_status = task.meta.get('ocr_status', 'unknown') if task.meta else 'unknown'
         ocr_summary = task.meta.get('ocr_summary', {}) if task.meta else {}
         
-        # Serialize character data
         characters = []
         for extraction in queryset:
             characters.append({

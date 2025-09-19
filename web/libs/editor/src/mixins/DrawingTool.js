@@ -5,6 +5,7 @@ import throttle from "lodash.throttle";
 import { MIN_SIZE } from "../tools/Base";
 import { FF_DEV_3793, isFF } from "../utils/feature-flags";
 import { RELATIVE_STAGE_HEIGHT, RELATIVE_STAGE_WIDTH } from "../components/ImageView/Image";
+import { OCRWordDetection } from "../utils/ocrWordDetection";
 
 const DrawingTool = types
   .model("DrawingTool", {
@@ -119,7 +120,9 @@ const DrawingTool = types
   .actions((self) => {
     return {
       createDrawingRegion(opts) {
-        const control = self.control;
+        // Get the currently active control instead of using cached control
+        const activeStates = self.obj.activeStates();
+        const control = activeStates && activeStates.length > 0 ? activeStates[0] : self.control;
         const resultValue = control.getResultValue();
 
         self.currentArea = self.obj.createDrawingRegion(opts, resultValue, control, false);
@@ -139,7 +142,7 @@ const DrawingTool = types
         self.listenForClose?.();
       },
       commitDrawingRegion() {
-        const { currentArea, control, obj } = self;
+        const { currentArea, obj } = self;
 
         if (!currentArea) return;
         const source = currentArea.toJSON();
@@ -150,6 +153,10 @@ const DrawingTool = types
           },
           { coordstype: "px", dynamic: self.dynamic },
         );
+
+        // Get the currently active control for committing
+        const activeStates = self.obj.activeStates();
+        const control = activeStates && activeStates.length > 0 ? activeStates[0] : self.control;
 
         const [main, ...rest] = currentArea.results;
         const newArea = self.annotation.createResult(value, main.value.toJSON(), control, obj);
@@ -163,7 +170,9 @@ const DrawingTool = types
         return newArea;
       },
       createRegion(opts, skipAfterCreate = false) {
-        const control = self.control;
+        // Get the currently active control instead of using cached control
+        const activeStates = self.obj.activeStates();
+        const control = activeStates && activeStates.length > 0 ? activeStates[0] : self.control;
         const resultValue = control.getResultValue();
 
         self.currentArea = self.annotation.createResult(opts, resultValue, control, self.obj, skipAfterCreate);
@@ -276,6 +285,97 @@ const TwoPointsDrawingTool = DrawingTool.named("TwoPointsDrawingTool")
       },
 
       finishDrawing(x, y) {
+        const shape = self.getCurrentArea();
+
+        if (shape && self.obj.ocrSnapEnabled && self.obj.ocrData?.words?.length > 0) {
+          console.log('[OCR Debug] Starting OCR snap process');
+          console.log('[OCR Debug] Shape:', { x: shape.x, y: shape.y, width: shape.width, height: shape.height });
+          console.log('[OCR Debug] OCR words available:', self.obj.ocrData.words.length);
+
+          // Image resolution debug - all available dimensions
+          console.log('[OCR Debug] Image resolutions:', {
+            naturalWidth: self.obj.naturalWidth,
+            naturalHeight: self.obj.naturalHeight,
+            stageWidth: self.obj.stageWidth,
+            stageHeight: self.obj.stageHeight,
+            containerWidth: self.obj.containerWidth,
+            containerHeight: self.obj.containerHeight
+          });
+
+          // Convert shape coordinates to normalized coordinates (0-1 range) for OCR matching
+          // Account for PDF scaling factor (300/72 = 4.167x)
+          const naturalWidth = self.obj.naturalWidth || 1;
+          const naturalHeight = self.obj.naturalHeight || 1;
+          const pdfScaleFactor = 300 / 72; // From the PDF conversion
+
+          console.log('[OCR Debug] Original shape coords:', { x: shape.x, y: shape.y, width: shape.width, height: shape.height });
+          console.log('[OCR Debug] Image dimensions:', { naturalWidth, naturalHeight });
+          console.log('[OCR Debug] PDF scale factor:', pdfScaleFactor);
+
+          // Try simple percentage to normalized conversion first
+          const rect = {
+            x: shape.x / 100,
+            y: shape.y / 100,
+            width: shape.width / 100,
+            height: shape.height / 100
+          };
+
+          console.log('[OCR Debug] Normalized rect coords (accounting for PDF scale):', rect);
+
+          const snapped = OCRWordDetection.snapToWordBoundaries(rect, self.obj.ocrData, 0.01, 0.05);
+          console.log('[OCR Debug] Snap result:', snapped);
+
+          if (snapped) {
+            console.log('[OCR Debug] Applying snapped bounds:', snapped);
+
+            // Convert snapped coordinates back to percentage coordinate system
+            const convertedSnapped = {
+              x: snapped.x * 100,
+              y: snapped.y * 100,
+              width: snapped.width * 100,
+              height: snapped.height * 100
+            };
+
+            console.log('[OCR Debug] Converted snapped bounds back to percentage:', convertedSnapped);
+            shape.setPositionInternal(convertedSnapped.x, convertedSnapped.y, convertedSnapped.width, convertedSnapped.height, shape.rotation);
+
+            console.log('[OCR Debug] Looking for TextArea controls...');
+            console.log('[OCR Debug] self.obj.name:', self.obj.name);
+            console.log('[OCR Debug] self.obj.annotation.toNames:', self.obj.annotation.toNames);
+
+            const allControls = self.obj.annotation.toNames.get(self.obj.name);
+            console.log('[OCR Debug] All controls for this object:', allControls);
+
+            const textAreas = allControls?.filter(s => s.type === 'textarea');
+            console.log('[OCR Debug] Found TextArea controls:', textAreas);
+
+            if (textAreas?.length > 0) {
+              console.log('[OCR Debug] Extracting text from snapped region...');
+              const text = self.obj.highlightRegionWords(shape.id, snapped);
+              console.log('[OCR Debug] Extracted text:', text);
+              console.log('[OCR Debug] TextArea setValue method available:', !!textAreas[0].setValue);
+
+              if (text && textAreas[0].setValue) {
+                console.log('[OCR Debug] Setting text on TextArea:', text);
+                textAreas[0].setValue(text);
+              } else {
+                console.log('[OCR Debug] Cannot set text - no text or no setValue method');
+              }
+            } else {
+              console.log('[OCR Debug] No TextArea controls found for automatic population');
+            }
+          } else {
+            console.log('[OCR Debug] No words found to snap to in this region');
+          }
+        } else {
+          console.log('[OCR Debug] OCR snap conditions not met:', {
+            hasShape: !!shape,
+            snapEnabled: self.obj.ocrSnapEnabled,
+            hasOCRWords: self.obj.ocrData?.words?.length > 0,
+            wordCount: self.obj.ocrData?.words?.length || 0
+          });
+        }
+
         startPoint = null;
         Super.finishDrawing(x, y);
         currentMode = DEFAULT_MODE;

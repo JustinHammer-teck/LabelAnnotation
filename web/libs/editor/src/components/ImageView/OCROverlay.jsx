@@ -1,50 +1,41 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Group, Rect } from "react-konva";
 import { observer } from "mobx-react";
 
 const OCROverlay = observer(({ item, store }) => {
-  const [ocrData, setOcrData] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [isVisible, setIsVisible] = useState(true);
-
-  const taskId = store?.task?.id;
+  const ocrData = item.ocrData;
+  const loading = item.ocrLoading;
+  const isVisible = item.ocrOverlayVisible;
 
   useEffect(() => {
-    const fetchOCRData = async () => {
-      if (!taskId) return;
-
-      setLoading(true);
-      try {
-        // Use relative URL for API call
-        const response = await fetch(`/api/tasks/${taskId}/ocr-extractions/`);
-        if (response.ok) {
-          const data = await response.json();
-          setOcrData(data);
-        } else {
-        }
-      } catch (error) {
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchOCRData();
-  }, [taskId]);
+    if (store?.task?.id && !loading) {
+      item.fetchOCRData().catch(error => {
+        console.error('Failed to fetch OCR data:', error);
+      });
+    }
+  }, [item.currentItemIndex, store?.task?.id]);
 
   useEffect(() => {
     const handleKeyPress = (event) => {
       if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key.toLowerCase() === 'o') {
         event.preventDefault();
-        setIsVisible(prev => !prev);
-        console.log('OCR overlay toggled:', !isVisible);
+        item.toggleOCROverlay();
       }
     };
 
     document.addEventListener('keydown', handleKeyPress);
     return () => document.removeEventListener('keydown', handleKeyPress);
-  }, [isVisible]);
+  }, [isVisible, item]);
 
-  if (loading || !ocrData?.characters?.length || !isVisible) {
+  if (loading) {
+    return null;
+  }
+
+  if (!ocrData?.characters?.length) {
+    return null;
+  }
+
+  if (!isVisible) {
     return null;
   }
 
@@ -123,17 +114,38 @@ const OCROverlay = observer(({ item, store }) => {
       const region = item.annotation.createResult(areaValue, fullResultValue, rectangleControl, item);
 
       if (region) {
-        const textAreaControl = item.annotation.names.values().find(
-          control => control.type === 'textarea'
+        // Find the correct TextArea control that's associated with the rectangle control
+        const textAreaControls = item.annotation.names.values().filter(
+          control => control.type === 'textarea' && control.toname === rectangleControl.toname
         );
 
+        // If there are multiple TextAreas, find the one that matches the current label context
+        let textAreaControl = null;
+        if (textAreaControls.length === 1) {
+          textAreaControl = textAreaControls[0];
+        } else if (textAreaControls.length > 1) {
+          // Check if any TextArea has a whenLabelValue that matches the selected labels
+          const selectedLabels = rectangleControl.selectedLabels || [];
+          textAreaControl = textAreaControls.find(control => {
+            if (control.whenlabelvalue) {
+              return selectedLabels.some(label => label.value === control.whenlabelvalue);
+            }
+            return !control.whenlabelvalue; // Prefer TextArea without label restrictions
+          }) || textAreaControls[0]; // Fallback to first one if no match
+        }
+
         if (textAreaControl && textAreaControl.perregion) {
+          console.log('[OCR Fix] Found perRegion TextArea:', textAreaControl.name, 'for rectangle:', rectangleControl.name);
           item.annotation.selectArea(region);
           textAreaControl.addText(ocrChar.character);
         } else if (textAreaControl) {
+          console.log('[OCR Fix] Found non-perRegion TextArea:', textAreaControl.name, 'for rectangle:', rectangleControl.name);
           textAreaControl.addText(ocrChar.character);
         } else {
-          console.log('Created OCR-based rectangle region without text (no TextArea control found):', region);
+          console.log('[OCR Fix] No matching TextArea control found for rectangle:', rectangleControl.name);
+          console.log('[OCR Fix] Available TextArea controls:',
+            item.annotation.names.values().filter(c => c.type === 'textarea').map(c => ({ name: c.name, toname: c.toname, whenlabelvalue: c.whenlabelvalue }))
+          );
         }
       }
     } catch (error) {
@@ -143,15 +155,17 @@ const OCROverlay = observer(({ item, store }) => {
 
   return (
     <Group name="ocr-overlay">
-      {ocrData.characters.map((ocrChar) => {
+      {ocrData.characters.map((ocrChar, index) => {
         const coords = getDisplayCoords(ocrChar);
-        if (!coords) return null;
+        if (!coords) {
+          return null;
+        }
 
         const style = getCharacterStyle(ocrChar.confidence);
 
         return (
           <Rect
-            key={`ocr-char-${ocrChar.id}`}
+            key={`ocr-char-${ocrChar.id || index}`}
             x={coords.x}
             y={coords.y}
             width={coords.width}

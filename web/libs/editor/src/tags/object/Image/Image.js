@@ -1,6 +1,6 @@
 import { ff } from "@humansignal/core";
 import { inject } from "mobx-react";
-import { destroy, getRoot, getType, types } from "mobx-state-tree";
+import { destroy, flow, getRoot, getType, types } from "mobx-state-tree";
 
 import ImageView from "../../../components/ImageView/ImageView";
 import { customTypes } from "../../../core/CustomTypes";
@@ -33,6 +33,7 @@ import { ImageEntityMixin } from "./ImageEntityMixin";
 import { ImageSelection } from "./ImageSelection";
 import { RELATIVE_STAGE_HEIGHT, RELATIVE_STAGE_WIDTH, SNAP_TO_PIXEL_MODE } from "../../../components/ImageView/Image";
 import MultiItemObjectBase from "../MultiItemObjectBase";
+import { OCRWordDetection } from "../../../utils/ocrWordDetection";
 
 const IMAGE_PRELOAD_COUNT = 3;
 
@@ -178,6 +179,18 @@ const Model = types
   .volatile(() => ({
     currentImage: undefined,
     supportSuggestions: true,
+    ocrData: {
+      characters: [],
+      words: [],
+      lines: [],
+      spatialIndex: null
+    },
+    wordHighlightsByRegion: new Map(),
+    ocrOverlayVisible: true,
+    ocrSnapEnabled: true,
+    ocrLoading: false,
+    ocrFetchError: null,
+    regionTextCache: new Map()
   }))
   .views((self) => ({
     get store() {
@@ -1143,6 +1156,111 @@ const Model = types
       const y = self.canvasToInternalY(canvasY);
 
       self.getToolsManager().event(name, ev.evt || ev, x, y, canvasX, canvasY);
+    },
+
+    // OCR Data Management Actions
+    fetchOCRData: flow(function* () {
+      if (!self.store.task?.id) {
+        throw new Error('Task ID is required for OCR data fetching');
+      }
+
+      const taskId = self.store.task.id;
+      const page = (self.currentItemIndex ?? 0) + 1; // Backend uses 1-based indexing
+
+      self.ocrLoading = true;
+      self.ocrFetchError = null;
+
+      try {
+        const response = yield fetch(`/api/tasks/${taskId}/ocr-extractions/?page=${page}`);
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch OCR data: ${response.status} ${response.statusText}`);
+        }
+
+        const rawData = yield response.json();
+
+        if (!rawData || !rawData.characters) {
+          console.warn(`No OCR data found for task ${taskId}, page ${page}`);
+          self.setOCRData({ characters: [] });
+          return;
+        }
+
+        self.setOCRData(rawData);
+      } catch (error) {
+        console.error(`Error fetching OCR data for task ${taskId}, page ${page}:`, error);
+        self.ocrFetchError = error.message;
+        throw error;
+      } finally {
+        self.ocrLoading = false;
+      }
+    }),
+
+    setOCRData(rawData) {
+      try {
+        // Dynamic import to avoid circular dependency
+        const processed = OCRWordDetection.processOCRData(rawData);
+
+        self.ocrData = {
+          characters: rawData.characters || [],
+          words: processed.words,
+          lines: processed.lines,
+          spatialIndex: processed.spatialIndex
+        };
+      } catch (error) {
+        console.error('Error processing OCR data:', error);
+        self.ocrData = {
+          characters: rawData.characters || [],
+          words: [],
+          lines: [],
+          spatialIndex: null
+        };
+      }
+    },
+
+    toggleOCROverlay() {
+      self.ocrOverlayVisible = !self.ocrOverlayVisible;
+    },
+
+    toggleOCRSnap() {
+      self.ocrSnapEnabled = !self.ocrSnapEnabled;
+    },
+
+    highlightRegionWords(regionId, bounds) {
+      try {
+        const composed = OCRWordDetection.composeTextFromRegion(
+          bounds.x, bounds.y,
+          bounds.x + bounds.width, bounds.y + bounds.height,
+          self.ocrData
+        );
+
+        self.wordHighlightsByRegion.set(regionId, composed);
+        return composed.text;
+      } catch (error) {
+        console.error('Error composing text from region:', error);
+        return '';
+      }
+    },
+
+    getRegionText(regionId) {
+      const regionData = self.wordHighlightsByRegion.get(regionId);
+      return regionData?.text || '';
+    },
+
+    clearRegionText(regionId) {
+      self.wordHighlightsByRegion.delete(regionId);
+      self.regionTextCache.delete(regionId);
+    },
+
+    clearAllOCRData() {
+      self.ocrData = {
+        characters: [],
+        words: [],
+        lines: [],
+        spatialIndex: null
+      };
+      self.wordHighlightsByRegion.clear();
+      self.regionTextCache.clear();
+      self.ocrFetchError = null;
     },
   }));
 

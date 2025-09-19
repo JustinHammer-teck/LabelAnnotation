@@ -1,10 +1,11 @@
 """This file and its contents are licensed under the Apache License 2.0. Please see the included NOTICE for copyright information and LICENSE for a copy of the license."""
-import asyncio
 import logging
 import os
 import pathlib
+from django.utils import timezone
 
 import drf_yasg.openapi as openapi
+from asgiref.sync import async_to_sync
 from core.filters import ListFilter
 from core.label_config import config_essential_data_has_changed
 from core.mixins import GetParentObjectMixin
@@ -19,7 +20,6 @@ from django.conf import settings
 from django.db import IntegrityError
 from django.db.models import F
 from django.http import Http404
-from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django_filters import CharFilter, FilterSet
 from django_filters.rest_framework import DjangoFilterBackend
@@ -27,8 +27,8 @@ from drf_yasg.utils import swagger_auto_schema
 from guardian.shortcuts import assign_perm, get_objects_for_user, remove_perm
 from label_studio_sdk.label_interface.interface import LabelInterface
 from ml.serializers import MLBackendSerializer
-from notifications.models import NotificationChannel
-from notifications.services import NotificationEventType, NotificationService
+from notifications.models import NotificationChannel, NotificationEventType
+from notifications.services import NotificationService
 from projects.functions.next_task import get_next_task
 from projects.functions.stream_history import get_label_stream_history
 from projects.functions.utils import recalculate_created_annotations_and_labels_from_scratch
@@ -948,14 +948,14 @@ class ProjectAssignmentAPI(APIView):
             ),
         )
 
-        asyncio.create_task(NotificationService.send_notification(
-            channel=NotificationChannel.NOTIFICATION,
+        async_to_sync(NotificationService().send_notification)(
+            channel_name=NotificationChannel.NOTIFICATION,
             event_type=NotificationEventType.PROJECT_ASSIGNED,
             subject='Permission Assigned',
-            message=f'User {request_user.email} has assign you to Project: {project.id}',
+            message=f'User {request_user.email} has assigned you to Project: {project.id}',
             ts=timezone.now(),
-            receive_user=request_user
-        ))
+            receive_user=assign_user
+        )
 
     def __revoke_permission(self, permission, request_user, project, assign_user):
         remove_perm(permission, assign_user, project)

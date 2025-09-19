@@ -1,5 +1,12 @@
 ## Project Structure
 
+
+## IMPORTANT INSTRUCTION
+
+NEVER use inline import example:  const { OCRWordDetection } = require("../utils/ocrWordDetection");
+use must always import it at the top import { OCRWordDetection } from "../utils/ocrWordDetection" 
+
+
 ```
 .├── CHANGELOG.md
 ├── CODE_OF_CONDUCT.md
@@ -11,142 +18,12 @@
 │   └── global.ts
 ├── codecov.yml
 ├── cypress.config.ts
-├── examples
-│   ├── audio_classification
-│   │   ├── annotations
-│   ├── audio_regions
-│   │   ├── annotations
-│   ├── audio_video_paragraphs
-│   │   ├── START.md
-│   │   ├── annotations
-│   ├── classification_mixed
-│   │   ├── START.md
-│   │   ├── annotations
-│   ├── datetime
-│   ├── dialogue_analysis
-│   │   ├── START.md
-│   │   ├── annotations
-│   ├── html_document
-│   │   ├── annotations
-│   ├── image_bbox
-│   │   ├── START.md
-│   │   ├── annotations
-│   ├── image_bbox_large
-│   │   ├── START.md
-│   │   ├── annotations
-│   ├── image_classification
-│   ├── image_ellipses
-│   │   ├── START.md
-│   │   ├── annotations
-│   ├── image_keypoints
-│   │   ├── START.md
-│   │   ├── annotations
-│   ├── image_list
-│   │   ├── annotations
-│   ├── image_list_large
-│   │   ├── annotations
-│   ├── image_list_perregion
-│   │   ├── annotations
-│   ├── image_magic_wand
-│   │   ├── START.md
-│   │   ├── annotations
-│   ├── image_multilabel
-│   │   ├── START.md
-│   │   ├── annotations
-│   ├── image_ocr
-│   │   ├── START.md
-│   │   ├── annotations
-│   ├── image_polygons
-│   │   ├── START.md
-│   │   ├── annotations
-│   ├── image_segmentation
-│   │   ├── annotations
-│   ├── image_tools
-│   │   ├── annotations
-│   ├── named_entity
-│   │   ├── START.md
-│   │   ├── annotations
-│   ├── nested_choices
-│   │   ├── annotations
-│   │   ├── complicated.js
-│   ├── pairwise
-│   │   ├── START.md
-│   │   ├── annotations
-│   ├── phrases
-│   │   ├── START.md
-│   │   ├── annotations
-│   ├── ranker
-│   │   ├── annotations
-│   ├── ranker_buckets
-│   │   ├── annotations
-│   ├── references
-│   │   ├── annotations
-│   ├── repeater
-│   │   ├── annotations
-│   ├── required
-│   │   ├── annotations
-│   ├── rich_text_html
-│   │   ├── START.md
-│   │   ├── annotations
-│   ├── rich_text_plain
-│   │   ├── START.md
-│   │   ├── annotations
-│   ├── rich_text_plain_remote
-│   │   ├── START.md
-│   │   ├── annotations
-│   ├── sentiment_analysis
-│   │   ├── START.md
-│   │   ├── annotations
-│   ├── table
-│   │   ├── annotations
-│   ├── table_csv
-│   │   ├── annotations
-│   ├── taxonomy
-│   │   ├── annotations
-│   ├── taxonomy_large
-│   │   ├── annotations
-│   ├── taxonomy_large_inline
-│   │   ├── annotations
-│   ├── timeseries
-│   │   ├── annotations
-│   ├── timeseries_single
-│   │   ├── annotations
-│   ├── transcribe_audio
-│   │   ├── START.md
-│   │   ├── annotations
-│   ├── video
-│   │   ├── annotations
-│   ├── video_audio
-│   │   ├── annotations
-│   └── video_bboxes
-│       ├── annotations
 ├── images
 ├── jest.config.js
 ├── jest.setup.js
 ├── nyc.config.js
 ├── package.json
 ├── project.json
-├── public
-│   ├── favicon.ico
-│   ├── files
-│   │   ├── barradeen-emotional.mp3
-│   │   ├── fps_24_frames_24_video.webm
-│   │   ├── images
-│   │   │   └── DSC03121.jpg
-│   │   ├── opossum_intro.webm
-│   │   ├── opossum_snow.mp4
-│   │   └── video.mp4
-│   ├── images
-│   │   ├── 3nowhite.svg
-│   │   ├── GitHub-Mark-64px.png
-│   │   ├── astro-visuals.jpg
-│   │   ├── logo.png
-│   │   ├── ls_logo.png
-│   │   └── ls_logo.svg
-│   ├── index.html
-│   ├── manifest.json
-│   └── styles
-│       └── main.css
 ├── scripts
 │   ├── copy.sh
 │   ├── create-docs.js
@@ -1089,22 +966,6 @@
 │   │   │   │   └── Ranker.test.ts
 │   │   │   └── index.js
 │   │   ├── object
-│   │   │   ├── Audio
-│   │   │   │   └── Controls.jsx
-│   │   │   ├── Audio.jsx
-│   │   │   ├── AudioNext
-│   │   │   │   ├── constants.ts
-│   │   │   │   ├── index.js
-│   │   │   │   ├── model.js
-│   │   │   │   ├── view.tsx
-│   │   │   │   └── view_old.jsx
-│   │   │   ├── AudioPlus
-│   │   │   │   └── AudioPlus.module.scss
-│   │   │   ├── AudioUltra
-│   │   │   │   ├── constants.ts
-│   │   │   │   ├── model.js
-│   │   │   │   ├── view.scss
-│   │   │   │   └── view.tsx
 │   │   │   ├── Base.js
 │   │   │   ├── HyperText.js
 │   │   │   ├── Image
@@ -1140,26 +1001,6 @@
 │   │   │   ├── Text
 │   │   │   │   └── Text.module.scss
 │   │   │   ├── Text.js
-│   │   │   ├── TimeSeries
-│   │   │   │   ├── Channel.jsx
-│   │   │   │   ├── ChannelLegend.jsx
-│   │   │   │   ├── ChannelLegend.module.scss
-│   │   │   │   ├── MultiChannel.jsx
-│   │   │   │   ├── README.md
-│   │   │   │   ├── helpers.js
-│   │   │   │   ├── palette.js
-│   │   │   │   └── symbols.js
-│   │   │   ├── TimeSeries.jsx
-│   │   │   ├── Video
-│   │   │   │   ├── HtxVideo.jsx
-│   │   │   │   ├── Rectangle.tsx
-│   │   │   │   ├── TransformTools.ts
-│   │   │   │   ├── Video.js
-│   │   │   │   ├── Video.scss
-│   │   │   │   ├── VideoRegions.jsx
-│   │   │   │   ├── index.js
-│   │   │   │   ├── tools.ts
-│   │   │   │   └── types.ts
 │   │   │   └── index.js
 │   │   └── visual
 │   │       ├── Collapse.jsx

@@ -14,7 +14,7 @@ from core.redis import start_job_async_or_sync
 from core.utils.common import retry_database_locked, timeit
 from core.utils.params import bool_from_request, list_of_strings_from_request
 from csp.decorators import csp
-from data_import.services import process_ocr_for_tasks_background
+from data_import.services import async_reimport_with_ocr_success_handler, process_ocr_for_tasks_background
 from django.conf import settings
 from django.db import transaction
 from django.http import HttpResponse
@@ -435,15 +435,6 @@ class TasksBulkCreateAPI(ImportAPI):
 class ReImportAPI(ImportAPI):
     permission_required = all_permissions.projects_change
 
-    @staticmethod
-    def is_support_document(task):
-        return (
-                task.file_upload and (
-                task.file_upload.file_name.lower().endswith('.pdf') or
-                task.file_upload.file_name.lower().endswith(('.png', '.jpg', '.jpeg', '.tiff', '.bmp'))
-            )
-        )
-
     def sync_reimport(self, project, file_upload_ids, files_as_tasks_list):
         start = time.time()
         tasks, found_formats, data_columns = FileUpload.load_tasks_from_uploaded_files(
@@ -457,7 +448,7 @@ class ReImportAPI(ImportAPI):
             if settings.OCR_ENABLED and tasks:
                 ocr_tasks = []
                 for task in tasks:
-                    if ReImportAPI.is_support_document(task):
+                    if ReImportAPIProxy.is_support_document(task):
                         if not task.meta:
                             task.meta = {}
                         
@@ -829,3 +820,51 @@ class DownloadStorageData(APIView):
             response['Content-Disposition'] = f'inline; filename="{filepath}"'
             response['filename'] = filepath
             return response
+
+
+
+class ReImportAPIProxy(ReImportAPI):
+    def async_reimport(self, project, file_upload_ids, files_as_tasks_list, organization_id):
+
+        project_reimport = ProjectReimport.objects.create(
+            project=project, file_upload_ids=file_upload_ids, files_as_tasks_list=files_as_tasks_list
+        )
+
+        start_job_async_or_sync(
+            async_reimport_background,
+            project_reimport.id,
+            organization_id,
+            self.request.user,
+            queue_name='high',
+            on_failure=set_reimport_background_failure,
+            on_success=async_reimport_with_ocr_success_handler,
+            project_id=project.id,
+        )
+
+        response = {'reimport': project_reimport.id}
+        return Response(response, status=status.HTTP_201_CREATED)
+
+    @retry_database_locked()
+    def create(self, request, *args, **kwargs):
+        files_as_tasks_list = bool_from_request(request.data, 'files_as_tasks_list', True)
+        file_upload_ids = self.request.data.get('file_upload_ids')
+
+        project = generics.get_object_or_404(Project.objects.for_user(self.request.user), pk=self.kwargs['pk'])
+
+        if not file_upload_ids:
+            return Response(
+                {
+                    'task_count': 0,
+                    'annotation_count': 0,
+                    'prediction_count': 0,
+                    'duration': 0,
+                    'file_upload_ids': [],
+                    'found_formats': {},
+                    'data_columns': [],
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        return self.async_reimport(
+            project, file_upload_ids, files_as_tasks_list, request.user.active_organization_id
+        )
