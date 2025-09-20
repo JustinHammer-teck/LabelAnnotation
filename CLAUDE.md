@@ -46,6 +46,9 @@ Never create documentation files (`*.md` or README).
 ## Project Overview
 
 Label Studio is an open-source data labeling platform with a Django backend and React frontend. The project uses a monorepo structure with Python (Django) backend and TypeScript/React frontend components.
+This project a downstream application from label studio that I want to extend the functionality of Label studio by adding Proxy function or create decorator on top of the existed to extend it's functionality
+So to work on the source code make sure you always find a way to extend the source code without modify the existed code but build new feature around it instead If there are absolutely no other choice that 
+we would consider to modify directly.
 
 ## Project Structure with CLAUDE.md
 

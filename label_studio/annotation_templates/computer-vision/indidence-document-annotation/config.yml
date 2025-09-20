@@ -1,0 +1,71 @@
+title: Aircraft Incident Report Annotation
+type: community
+group: Computer Vision
+image: /static/templates/optical-character-recognition.png
+details: <h1>Annotate aircraft incident reports by drawing bounding boxes around key information and adding structured data</h1>
+config: |
+  <View>
+    <Header value="Aircraft Incident Report Annotation"/>
+
+    <!-- Primary document categories -->
+    <RectangleLabels name="documentSections" toName="pages" choice="single" strokeWidth="2" opacity="0.7">
+      <Label value="Header" translationKey="labels.document_sections.header" background="#e6f3ff" />
+      <Label value="Aircraft Info" translationKey="labels.document_sections.aircraft_info" background="#fff2e6" />
+      <Label value="Incident Details" translationKey="labels.document_sections.incident_details" background="#ffe6e6" />
+      <Label value="Personnel Info" translationKey="labels.document_sections.personnel_info" background="#e6ffe6" />
+      <Label value="Weather Conditions" translationKey="labels.document_sections.weather_conditions" background="#f0e6ff" />
+      <Label value="Damage Assessment" translationKey="labels.document_sections.damage_assessment" background="#ffe6f0" />
+      <Label value="Signatures" translationKey="labels.document_sections.signatures" background="#e6fff2" />
+    </RectangleLabels>
+
+    <!-- Specific data fields -->
+    <RectangleLabels name="dataFields" toName="pages" choice="multiple" strokeWidth="1" opacity="0.5">
+      <Label value="Date/Time" translationKey="labels.data_fields.date_time" background="#ff9999" />
+      <Label value="Aircraft Registration" translationKey="labels.data_fields.aircraft_registration" background="#99ccff" />
+      <Label value="Aircraft Type" translationKey="labels.data_fields.aircraft_type" background="#99ff99" />
+      <Label value="Location" translationKey="labels.data_fields.location" background="#ffff99" />
+      <Label value="Pilot Name" translationKey="labels.data_fields.pilot_name" background="#ff99ff" />
+      <Label value="License Number" translationKey="labels.data_fields.license_number" background="#99ffff" />
+      <Label value="Flight Hours" translationKey="labels.data_fields.flight_hours" background="#ffcc99" />
+      <Label value="Incident Description" translationKey="labels.data_fields.incident_description" background="#ccccff" />
+      <Label value="Injuries" translationKey="labels.data_fields.injuries" background="#ffcccc" />
+      <Label value="Property Damage" translationKey="labels.data_fields.property_damage" background="#ccffcc" />
+    </RectangleLabels>
+
+    <!-- Image display with zoom and rotation controls -->
+    <Image name="pages" valueList="$pages" zoom="true" zoomControl="true" rotateControl="true"
+           brightnessControl="true" contrastControl="true"/>
+
+    <!-- Text transcription for each region -->
+    <TextArea name="transcription" toName="pages"
+              editable="true"
+              perRegion="true"
+              required="false"
+              maxSubmissions="1"
+              rows="2"
+              placeholder="Transcribe the text content from this region..."
+              displayMode="region-list"/>
+
+    <!-- Structured data extraction -->
+    <Choices name="reportType" toName="pages" choice="single">
+        <Choice value="Initial Report"/>
+        <Choice value="Follow-up Report"/>
+        <Choice value="Final Report"/>
+        <Choice value="Preliminary Report"/>
+    </Choices>
+
+    <Choices name="incidentSeverity" toName="pages" choice="single">
+        <Choice value="Minor"/>
+        <Choice value="Serious"/>
+        <Choice value="Major"/>
+        <Choice value="Catastrophic"/>
+    </Choices>
+
+    <!-- Additional notes -->
+    <TextArea name="generalNotes" toName="pages"
+              editable="true"
+              required="false"
+              rows="4"
+              placeholder="Additional notes about the incident report..."
+              displayMode="tag"/>
+  </View>

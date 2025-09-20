@@ -92,6 +92,12 @@ lbstudio/label_studio
 
 ```
 
+## How to properly develop new feature 
+
+You should must use the Proxy class from the existed Class if the existed class does not have Proxy class then create it
+- example: If I want to extend the ReImportApi class I created a new ReImportApiProxy class to change current method behavior. 
+
+
 ## OCR-Specific Project Rules
 
 ### Project Focus

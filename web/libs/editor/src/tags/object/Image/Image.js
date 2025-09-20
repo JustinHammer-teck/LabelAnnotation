@@ -186,7 +186,7 @@ const Model = types
       spatialIndex: null
     },
     wordHighlightsByRegion: new Map(),
-    ocrOverlayVisible: true,
+    ocrOverlayVisible: false,
     ocrSnapEnabled: true,
     ocrLoading: false,
     ocrFetchError: null,
