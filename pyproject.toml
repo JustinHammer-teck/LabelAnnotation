@@ -78,7 +78,8 @@ dependencies = [
     "django-guardian (>=3.0.3,<4.0.0)",
     "daphne (>=4.2.1,<5.0.0)",
     "pymupdf (>=1.26.4,<2.0.0)",
-    "drf-yasg (>=1.21.10,<2.0.0)"
+    "drf-yasg (>=1.21.10,<2.0.0)",
+    "easyocr (>=1.7.2,<2.0.0)"
 ]
 
 [project.urls]
@@ -226,7 +227,7 @@ exclude = [
 requires-poetry = '>=2.0.0,<3.0.0'
 
 [tool.poetry.dependencies]
-python = ">=3.10,<3.14"
+python = ">=3.10,<4"
 
 [tool.poetry.group.test.dependencies]
 pytest = "7.2.2"

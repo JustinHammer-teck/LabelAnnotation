@@ -17,8 +17,8 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="#272727">  <!-- iOS Safari -->
 
   <!-- Preload fonts -->
-  <link rel="preload" href="{{settings.HOSTNAME}}{% static 'fonts/Figtree-Regular.ttf' %}" type="font" crossorigin="anonymous">
-  <link rel="preload" href="{{settings.HOSTNAME}}{% static 'fonts/Figtree-SemiBold.ttf' %}" type="font" crossorigin="anonymous">
+  <link rel="preload" href="{{settings.HOSTNAME}}{% static 'fonts/Figtree-Regular.ttf' %}" as="font" type="font/ttf" crossorigin="anonymous">
+  <link rel="preload" href="{{settings.HOSTNAME}}{% static 'fonts/Figtree-SemiBold.ttf' %}" as="font" type="font/ttf" crossorigin="anonymous">
 
   <!-- CSS -->
   {% block app-css %}
@@ -148,22 +148,24 @@
   <script nonce="{{request.csp_nonce}}">
 
     // CSRF
-    (function() {
-      function csrfSafeMethod(method) {
-        // these HTTP methods do not require CSRF protection
-        return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
-      }
-
-      // Apply CSRF token
-      var csrftoken = jQuery("[name=csrfmiddlewaretoken]").val();
-      $.ajaxSetup({
-        beforeSend: function (xhr, settings) {
-          if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
-            xhr.setRequestHeader("X-CSRFToken", csrftoken);
-          }
+    document.addEventListener('DOMContentLoaded', function() {
+      if (typeof jQuery !== 'undefined') {
+        function csrfSafeMethod(method) {
+          // these HTTP methods do not require CSRF protection
+          return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
         }
-      });
-    })();
+
+        // Apply CSRF token
+        var csrftoken = jQuery("[name=csrfmiddlewaretoken]").val();
+        jQuery.ajaxSetup({
+          beforeSend: function (xhr, settings) {
+            if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
+              xhr.setRequestHeader("X-CSRFToken", csrftoken);
+            }
+          }
+        });
+      }
+    });
 
   </script>
 {% endblock %}

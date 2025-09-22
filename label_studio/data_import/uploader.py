@@ -16,6 +16,7 @@ from core.utils.io import ssrf_safe_get
 from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework.exceptions import ValidationError
+from data_import.services import process_pdf_if_needed
 
 from .models import FileUpload
 
@@ -80,10 +81,8 @@ def create_file_upload(user, project, file):
             instance.file.truncate()
     instance.save()
     
-    # Process PDF to images if needed
-    if hasattr(settings, 'OCR_ENABLED') and settings.OCR_ENABLED:
+    if settings.OCR_ENABLED:
         try:
-            from data_import.services import process_pdf_if_needed
             process_pdf_if_needed(instance)
         except Exception as e:
             logger.error(f'PDF processing failed for {instance.file_name}: {e}', exc_info=True)

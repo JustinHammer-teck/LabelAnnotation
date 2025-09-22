@@ -94,7 +94,7 @@ export const HomePage: Page = () => {
               </div>
             ) : isError ? (
               <div className="h-64 flex justify-center items-center">can't load projects</div>
-            ) : isSuccess && data.results.length === 0 ? (
+            ) : isSuccess && data?.results?.length === 0 ? (
               <div className="flex flex-col justify-center items-center border border-primary-border-subtle bg-primary-emphasis-subtle rounded-lg h-64">
                 <div
                   className={

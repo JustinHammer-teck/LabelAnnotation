@@ -1,19 +1,22 @@
 """Simple PDF to Image conversion service for Label Studio OCR workflows"""
 
-import logging
-from typing import Dict, List
-
 import fitz
+import logging
+import io
+import numpy as np
+
+from PIL import Image
+from typing import Dict, List
 from core.redis import start_job_async_or_sync
 from django.conf import settings
 from django.core.files.base import ContentFile
 from django.db import transaction
 from django.utils.timezone import now
-from projects.models import ProjectReimport
 
 from .models import FileUpload, PDFImageRelationship
+from projects.models import ProjectReimport
+from tasks.models import Task, OCRCharacterExtraction
 
-# TODO: EasyOCR installed via Nix flake, not Poetry - may cause build issues
 try:
     import easyocr
     EASYOCR_AVAILABLE = True
@@ -35,11 +38,6 @@ def async_reimport_with_ocr_success_handler(reimport_id, organization_id, user, 
     """
     Success callback for async reimport that triggers OCR processing
     """
-    from django.conf import settings
-    from tasks.models import Task
-
-    from .services import process_ocr_for_tasks_background
-
     if not settings.OCR_ENABLED:
         return
 
@@ -177,11 +175,7 @@ def extract_characters_from_image_content(image_content: bytes, page_number: int
     logger.info(f"Extracting characters from image content, page {page_number}")
 
     try:
-        import io
 
-        import numpy as np
-        from PIL import Image
-        
         image = Image.open(io.BytesIO(image_content))
         image_width, image_height = image.size
 
@@ -238,8 +232,7 @@ def extract_characters_from_image_content(image_content: bytes, page_number: int
 
 def save_ocr_extractions_for_task(task, file_upload: FileUpload, characters: List[Dict]):
     """Save OCR character extractions to database"""
-    from tasks.models import OCRCharacterExtraction
-    
+
     if not characters:
         return
     
@@ -293,8 +286,6 @@ def process_ocr_for_tasks_background(task_ids):
     """
     Background job to process OCR for tasks by their IDs
     """
-    from tasks.models import Task
-    
     if not task_ids:
         return 0
     
@@ -324,8 +315,7 @@ def process_ocr_for_tasks_after_import(tasks) -> int:
 
     for task in tasks:
         try:
-            # Check if task has a file_upload
-            if not hasattr(task, 'file_upload') or not task.file_upload:
+            if not task.file_upload:
                 continue
             
             file_upload = task.file_upload
@@ -352,7 +342,6 @@ def process_ocr_for_tasks_after_import(tasks) -> int:
                     page_number = relationship.page_number
                     
                     try:
-                        # Read image content from MinIO
                         image_file_upload.file.seek(0)
                         image_content = image_file_upload.file.read()
                         characters = extract_characters_from_image_content(image_content, page_number)
@@ -367,7 +356,6 @@ def process_ocr_for_tasks_after_import(tasks) -> int:
                 ocr_processed_count += 1
                 
             elif file_upload.file_name.lower().endswith(('.png', '.jpg', '.jpeg', '.tiff', '.bmp')):
-                # Process single image file
                 try:
                     file_upload.file.seek(0)
                     image_content = file_upload.file.read()
@@ -383,7 +371,6 @@ def process_ocr_for_tasks_after_import(tasks) -> int:
         except Exception as e:
             logger.error(f"OCR processing failed for task {task.id}: {e}")
             
-            # Mark OCR as failed
             try:
                 task.refresh_from_db()
                 if not task.meta:
@@ -409,7 +396,6 @@ def process_pdf_if_needed(file_upload: FileUpload) -> bool:
     Returns:
         True if PDF was processed, False otherwise
     """
-    # Check if it's a PDF file
     if not file_upload.file_name.lower().endswith('.pdf'):
         logger.debug(f"File {file_upload.file_name} is not a PDF, skipping conversion")
         return False
@@ -417,11 +403,9 @@ def process_pdf_if_needed(file_upload: FileUpload) -> bool:
     logger.info(f"Detected PDF file: {file_upload.file_name}, starting conversion")
     
     try:
-        # Convert PDF to images
         results = convert_pdf_to_images_simple(file_upload)
         logger.info(f"PDF conversion successful: {len(results)} pages processed")
         return True
     except Exception as e:
         logger.error(f"Failed to convert PDF: {str(e)}")
-        # Don't fail the entire import, just log the error
         return False

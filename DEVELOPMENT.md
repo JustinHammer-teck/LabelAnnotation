@@ -34,3 +34,6 @@ docker compose --env-file .env -f docker-compose.minio.dev.yml up -d
 ```sh | stop container
 docker compose --env-file .env -f docker-compose.minio.dev.yml down --remove-orphans
 ```
+
+React reach file watch limit
+> https://stackoverflow.com/questions/55763428/react-native-error-enospc-system-limit-for-number-of-file-watchers-reached

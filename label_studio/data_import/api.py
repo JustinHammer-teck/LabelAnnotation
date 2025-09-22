@@ -14,7 +14,7 @@ from core.redis import start_job_async_or_sync
 from core.utils.common import retry_database_locked, timeit
 from core.utils.params import bool_from_request, list_of_strings_from_request
 from csp.decorators import csp
-from data_import.services import async_reimport_with_ocr_success_handler, process_ocr_for_tasks_background
+from data_import.services import process_ocr_for_tasks_background, is_support_document
 from django.conf import settings
 from django.db import transaction
 from django.http import HttpResponse
@@ -448,7 +448,7 @@ class ReImportAPI(ImportAPI):
             if settings.OCR_ENABLED and tasks:
                 ocr_tasks = []
                 for task in tasks:
-                    if ReImportAPIProxy.is_support_document(task):
+                    if is_support_document(task):
                         if not task.meta:
                             task.meta = {}
                         
@@ -464,14 +464,16 @@ class ReImportAPI(ImportAPI):
         if settings.OCR_ENABLED and tasks:
             try:
 
-                ocr_task_ids = [task.id for task in tasks if ReImportAPI.is_support_document(task)]
+                ocr_task_ids = [task.id for task in tasks if is_support_document(task)]
 
                 if ocr_task_ids:
                     logger.info(f'Queuing OCR background job for {len(ocr_task_ids)} tasks')
 
-                    from django_rq import get_queue
-                    queue = get_queue('default')
-                    queue.enqueue(process_ocr_for_tasks_background, ocr_task_ids)
+                    start_job_async_or_sync(
+                        process_ocr_for_tasks_background,
+                        ocr_task_ids,
+                        queue_name='high',
+                    )
 
                     logger.info('OCR background job queued successfully')
                 else:
@@ -837,7 +839,6 @@ class ReImportAPIProxy(ReImportAPI):
             self.request.user,
             queue_name='high',
             on_failure=set_reimport_background_failure,
-            on_success=async_reimport_with_ocr_success_handler,
             project_id=project.id,
         )
 
@@ -865,6 +866,5 @@ class ReImportAPIProxy(ReImportAPI):
                 status=status.HTTP_200_OK,
             )
 
-        return self.async_reimport(
-            project, file_upload_ids, files_as_tasks_list, request.user.active_organization_id
-        )
+
+        return self.sync_reimport(project, file_upload_ids, files_as_tasks_list)

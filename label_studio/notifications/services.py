@@ -13,7 +13,7 @@ class RedisClient:
     __slots__ = "host"
 
     def __init__(self):
-        self.host = settings.REDIS_HOST
+        self.host = settings.REDIS_URL
 
     @cache
     def _get_async_client(self) -> aredis.Redis:

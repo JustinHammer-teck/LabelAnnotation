@@ -66,30 +66,34 @@ except IOError:
 
 STORAGE_PERSISTENCE = get_bool_env('STORAGE_PERSISTENCE', True)
 
+REDIS_HOST = get_env("REDIS_HOST", "localhost")
+REDIS_PORT = get_env("REDIS_PORT", 6379)
+REDIS_URL = "redis://{}:{}/0".format(REDIS_HOST, REDIS_PORT)
+
 # OCR Configuration
 OCR_ENABLED = get_bool_env('OCR_ENABLED', True)
 
 RQ_QUEUES = {
     "critical": {
-        "HOST": "localhost",
+        "HOST": REDIS_HOST,
         "PORT": 6379,
         "DB": 1,
         "DEFAULT_TIMEOUT": 180,
     },
     "high": {
-        "HOST": "localhost",
-        "PORT": 6379,
-        "DB": 1,
-        "DEFAULT_TIMEOUT": 180,
-    },
-    "default": {
-        "HOST": "localhost",
+        "HOST": REDIS_HOST,
         "PORT": 6379,
         "DB": 2,
         "DEFAULT_TIMEOUT": 180,
     },
+    "default": {
+        "HOST": REDIS_HOST,
+        "PORT": 6379,
+        "DB": 3,
+        "DEFAULT_TIMEOUT": 180,
+    },
     "low": {
-        "HOST": "localhost",
+        "HOST": REDIS_HOST,
         "PORT": 6379,
         "DB": 3,
         "DEFAULT_TIMEOUT": 180,
