@@ -73,6 +73,44 @@ if [ "$1" = "nginx" ]; then
 elif [ "$1" = "label-studio-uwsgi" ]; then
   exec_entrypoint "$ENTRYPOINT_PATH/app/"
   exec_or_wrap_n_exec uwsgi --ini /label-studio/deploy/uwsgi.ini
+elif [ "$1" = "label-studio-daphne" ]; then
+  exec_entrypoint "$ENTRYPOINT_PATH/app/"
+
+  # Change to label_studio directory (same as uwsgi chdir)
+  cd /label-studio/label_studio
+
+  # Source Daphne configuration
+  if [ -f /label-studio/deploy/daphne.conf ]; then
+    . /label-studio/deploy/daphne.conf
+  fi
+
+  # Set defaults if not configured
+  BIND_HOST=${BIND_HOST:-0.0.0.0}
+  BIND_PORT=${BIND_PORT:-8080}
+  VERBOSITY=${VERBOSITY:-1}
+
+  # Build Daphne command arguments
+  DAPHNE_ARGS="-b ${BIND_HOST} -p ${BIND_PORT}"
+
+  # Add proxy headers support (needed when behind nginx)
+  if [ "${PROXY_HEADERS}" = "true" ]; then
+    DAPHNE_ARGS="${DAPHNE_ARGS} --proxy-headers"
+  fi
+
+  # Add access log configuration
+  if [ -n "${ACCESS_LOG}" ]; then
+    DAPHNE_ARGS="${DAPHNE_ARGS} --access-log ${ACCESS_LOG}"
+  fi
+
+  # Add verbosity
+  if [ "${VERBOSITY}" -gt 0 ]; then
+    DAPHNE_ARGS="${DAPHNE_ARGS} -v ${VERBOSITY}"
+  fi
+
+  # Set environment variable for application
+  export APP_WEBSERVER=daphne
+
+  exec_or_wrap_n_exec daphne ${DAPHNE_ARGS} core.asgi:application
 elif [ "$1" = "label-studio-migrate" ]; then
   exec_entrypoint "$ENTRYPOINT_PATH/app-init/"
   exec python3 /label-studio/label_studio/manage.py locked_migrate >&3
