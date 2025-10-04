@@ -20,7 +20,7 @@ from django.core.exceptions import ImproperlyConfigured
 from label_studio.core.utils.params import get_bool_env, get_env_list
 
 formatter = "standard"
-JSON_LOG = get_bool_env("JSON_LOG", False)
+JSON_LOG = get_bool_env("JSON_LOG", True)
 if JSON_LOG:
     formatter = "json"
 

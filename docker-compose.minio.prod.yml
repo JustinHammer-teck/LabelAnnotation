@@ -16,10 +16,11 @@ services:
     build: .
     image: lbstudio:latest
     restart: unless-stopped
+    user: "1001:1001"
     networks:
       - internal
     ports:
-      - "127.0.0.1:8080:8080"
+      - "8080:8080"
     env_file:
       - .env.list
     volumes:
@@ -27,62 +28,70 @@ services:
     depends_on:
       - minio
       - redis
-    command: label-studio
+    command: label-studio-daphne
 
   worker-low:
     image: lbstudio:latest
     restart: unless-stopped
+    user: "1001:1001"
     networks:
       - internal
     depends_on:
+      - app
       - redis
     env_file:
       - .env.list
     volumes:
-      - ./mydata:/label-studio/data:rw
+      - ${PWD}/mydata:/label-studio/data:rw
     command: python label_studio/manage.py rqworker low
 
   worker-default:
     image: lbstudio:latest
     restart: unless-stopped
+    user: "1001:1001"
     networks:
       - internal
     depends_on:
       - app
+      - redis
     env_file:
       - .env.list
     volumes:
-      - ./mydata:/label-studio/data:rw
+      - ${PWD}/mydata:/label-studio/data:rw
     command: python label_studio/manage.py rqworker default
 
   worker-high:
     image: lbstudio:latest
     restart: unless-stopped
+    user: "1001:1001"
     networks:
       - internal
     depends_on:
       - app
+      - redis
     deploy:
       replicas: 2
     env_file:
       - .env.list
     volumes:
-      - ./mydata:/label-studio/data:rw
+      - ${PWD}/mydata:/label-studio/data:rw
     command: python3 label_studio/manage.py rqworker high
 
   worker-critical:
     image: lbstudio:latest
     restart: unless-stopped
+    user: "1001:1001"
     networks:
       - internal
     deploy:
       replicas: 2
     depends_on:
       - app
+      - redis
     env_file:
       - .env.list
     volumes:
-      - ./mydata:/label-studio/data:rw
+      - ${PWD}/mydata:/label-studio/data:rw
     command: python3 label_studio/manage.py rqworker critical
 
   minio:
