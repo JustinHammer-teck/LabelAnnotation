@@ -154,6 +154,19 @@ COPY --chown=1001:0 LICENSE LICENSE
 COPY --chown=1001:0 licenses licenses
 COPY --chown=1001:0 deploy deploy
 
+# Fix symlinks for Windows Docker builds (Hyper-V doesn't support symlinks, use file copies instead)
+RUN cd $LS_DIR/deploy/docker-entrypoint.d && \
+    rm -f app/11-configure-custom-cabundle.sh app/20-wait-for-db.sh app/30-run-db-migrations.sh && \
+    rm -f app-init/11-configure-custom-cabundle.sh app-init/20-wait-for-db.sh && \
+    rm -f nginx/10-configure-nginx.sh && \
+    cp common/11-configure-custom-cabundle.sh app/11-configure-custom-cabundle.sh && \
+    cp common/20-wait-for-db.sh app/20-wait-for-db.sh && \
+    cp common/30-run-db-migrations.sh app/30-run-db-migrations.sh && \
+    cp common/11-configure-custom-cabundle.sh app-init/11-configure-custom-cabundle.sh && \
+    cp common/20-wait-for-db.sh app-init/20-wait-for-db.sh && \
+    cp common/10-configure-nginx.sh nginx/10-configure-nginx.sh && \
+    chmod +x common/*.sh app/*.sh app-init/*.sh nginx/*.sh
+
 # Copy files from build stages
 COPY --chown=1001:0 --from=venv-builder               $LS_DIR                                           $LS_DIR
 COPY --chown=1001:0 --from=py-version-generator       $LS_DIR/label_studio/core/version_.py             $LS_DIR/label_studio/core/version_.py
