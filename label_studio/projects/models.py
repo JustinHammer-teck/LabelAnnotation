@@ -1112,6 +1112,10 @@ class Project(ProjectMixin, models.Model):
         indexes = [
             models.Index(fields=['pinned_at', 'created_at']),
         ]
+        permissions = [
+            ('assign_project', 'Can Assign Project to other People'),
+            ('assigned_to_project', 'User is assigned to the Project'),
+        ]
 
 
 class ProjectOnboardingSteps(models.Model):
@@ -1483,10 +1487,6 @@ class ProjectReimport(models.Model):
 class ProjectProxy(Project):
     class Meta:
         proxy = True
-        permissions = [
-            ('assign_project', 'Can Assign Project to other People'),
-            ('assigned_to_project', 'User is assigned to the Project'),
-        ]
 
 
 @receiver(post_save, sender=Project)

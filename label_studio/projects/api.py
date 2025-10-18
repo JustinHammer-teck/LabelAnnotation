@@ -902,7 +902,7 @@ class ProjectAssignmentAPI(APIView):
 
     def get(self, request, pk, *args, **kwargs):
         project = generics.get_object_or_404(Project, pk=pk)
-        permission_to_check = 'projects.assigned_to_project'  # Example permission
+        permission_to_check = 'assigned_to_project'
 
         if hasattr(project, 'organization'):
             all_relevant_users = project.organization.users.all().order_by('email')
@@ -925,7 +925,7 @@ class ProjectAssignmentAPI(APIView):
             return Response(status=status.HTTP_403_FORBIDDEN)
 
         request_data = self.request.data.get('users')
-        permission = 'projects.assigned_to_project'
+        permission = 'assigned_to_project'
         request_user = self.request.user
 
         for user in request_data:
