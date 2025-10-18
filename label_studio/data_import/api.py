@@ -867,4 +867,3 @@ class ReImportAPIProxy(ReImportAPI):
             )
 
 
-        return self.sync_reimport(project, file_upload_ids, files_as_tasks_list)

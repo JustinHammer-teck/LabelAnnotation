@@ -27,6 +27,7 @@ from django.views.generic.base import RedirectView
 from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from projects.api import ProjectDashboardAnalyticsAPI
 
 versions = collect_versions()
 open_api_info = openapi.Info(
@@ -56,6 +57,7 @@ urlpatterns = [
         views.static_file_with_host_resolver('static/js/sw-fallback.js', content_type='text/javascript'),
     ),
     re_path(r'^favicon\.ico$', RedirectView.as_view(url='/static/images/favicon.ico', permanent=True)),
+    path('api/dashboard/analytics/', ProjectDashboardAnalyticsAPI.as_view(), name='dashboard-analytics'),
     re_path(
         r'^label-studio-frontend/(?P<path>.*)$',
         serve,

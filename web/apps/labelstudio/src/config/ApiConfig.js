@@ -73,6 +73,9 @@ export const API_CONFIG = {
     // Version
     version: '/version',
 
+    // Dashboard
+    dashboardAnalytics: '/dashboard/analytics',
+
     // Webhook
     webhooks: '/webhooks',
     webhook: '/webhooks/:pk',

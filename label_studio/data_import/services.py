@@ -356,11 +356,29 @@ def process_ocr_for_tasks_after_import(tasks) -> int:
                 ocr_processed_count += 1
                 
             elif file_upload.file_name.lower().endswith(('.png', '.jpg', '.jpeg', '.tiff', '.bmp')):
+                logger.info(f"Task {task.id} has standalone image: {file_upload.file_name}")
+
+                PDFImageRelationship.objects.get_or_create(
+                    pdf_file=file_upload,
+                    image_file=file_upload,
+                    page_number=1,
+                    defaults={
+                        'image_format': file_upload.format.lstrip('.'),
+                        'resolution_dpi': 300
+                    }
+                )
+
+                if not task.data:
+                    task.data = {}
+                task.data['pages'] = [file_upload.url]
+                task.save(update_fields=['data'])
+                logger.info(f"Task {task.id}: Set pages field with image URL")
+
                 try:
                     file_upload.file.seek(0)
                     image_content = file_upload.file.read()
                     characters = extract_characters_from_image_content(image_content, 1)
-                    
+
                     if characters:
                         save_ocr_extractions_for_task(task, file_upload, characters)
                         logger.info(f"Task {task.id}: Extracted {len(characters)} chars from image")
@@ -408,4 +426,3 @@ def process_pdf_if_needed(file_upload: FileUpload) -> bool:
         return True
     except Exception as e:
         logger.error(f"Failed to convert PDF: {str(e)}")
-        return False

@@ -1012,3 +1012,83 @@ class ProjectListApiProxy(ProjectListAPI):
             projects = projects.filter(pinned_at__isnull=filter == 'exclude_pinned')
 
         return ProjectManager.with_counts_annotate(projects, fields=fields).prefetch_related('members', 'created_by')
+
+
+class ProjectDashboardAnalyticsAPI(APIView):
+    """
+    GET /api/dashboard/analytics/
+    Returns real-time analytics data for dashboard
+    Optimized for frequent polling (every 10 seconds)
+    """
+    permission_required = ViewClassPermission(GET=all_permissions.projects_view)
+
+    def get(self, request):
+        from datetime import timedelta
+        from django.db.models import Count
+        from django.db.models.functions import TruncDate
+        from tasks.models import Annotation
+
+        organization = request.user.active_organization
+
+        projects = Project.objects.with_counts().filter(
+            organization=organization
+        )
+
+        members_count = organization.users.filter(
+            om_through__deleted_at__isnull=True
+        ).count()
+
+        today = timezone.now().date()
+        week_ago = today - timedelta(days=6)
+
+        daily_stats = (
+            Annotation.objects
+            .filter(
+                project__organization=organization,
+                created_at__date__gte=week_ago,
+                was_cancelled=False
+            )
+            .annotate(date=TruncDate('created_at'))
+            .values('date')
+            .annotate(count=Count('id'))
+            .order_by('date')
+        )
+
+        daily_annotation_history = []
+        for i in range(7):
+            date = week_ago + timedelta(days=i)
+            stat = next((s for s in daily_stats if s['date'] == date), None)
+            daily_annotation_history.append({
+                'date': date.strftime('%b %d'),
+                'count': stat['count'] if stat else 0
+            })
+
+        today_count = next(
+            (s['count'] for s in daily_stats if s['date'] == today),
+            0
+        )
+
+        project_data = []
+        for project in projects:
+            in_progress = max(0, (project.num_tasks_with_annotations or 0) - (project.finished_task_number or 0))
+            pending = max(0, (project.task_number or 0) - (project.num_tasks_with_annotations or 0))
+
+            project_data.append({
+                'id': project.id,
+                'name': project.title,
+                'annotations': project.total_annotations_number or 0,
+                'color': project.color or '#E1DED5',
+                'totalTasks': project.task_number or 0,
+                'completedTasks': project.finished_task_number or 0,
+                'inProgressTasks': in_progress,
+                'pendingTasks': pending,
+            })
+
+        return Response({
+            'totalProjects': projects.count(),
+            'totalUsers': members_count,
+            'dailyAnnotations': today_count,
+            'dailyAnnotationHistory': daily_annotation_history,
+            'projectAnnotations': project_data,
+            'projectProgress': project_data,
+        })
