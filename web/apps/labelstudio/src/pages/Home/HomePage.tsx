@@ -9,7 +9,8 @@ import { InviteLink } from "../Organization/PeoplePage/InviteLink";
 import { Heading, Sub } from "@humansignal/typography";
 import { Link } from "react-router-dom";
 import { Button } from "../../components";
-import {useTranslation} from "react-i18next";
+import { useTranslation } from "react-i18next";
+import { Dashboard } from "./Dashboard";
 
 const PROJECTS_TO_SHOW = 20;
 
@@ -35,6 +36,7 @@ export const HomePage: Page = () => {
   const api = useAPI();
   const [creationDialogOpen, setCreationDialogOpen] = useState(false);
   const [invitationOpen, setInvitationOpen] = useState(false);
+
   const { data, isFetching, isSuccess, isError } = useQuery({
     queryKey: ["projects", { page_size: 10 }],
     async queryFn() {
@@ -75,6 +77,8 @@ export const HomePage: Page = () => {
               );
             })}
           </div>
+
+          <Dashboard />
 
           <SimpleCard
             title={

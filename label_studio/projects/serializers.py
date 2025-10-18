@@ -401,16 +401,11 @@ class ProjectUserPermissionSerializer(serializers.ModelSerializer):
         """
         Checks if the user has the required permission for the project from the context.
         """
-        # Retrieve the project and permission from the context passed by the view.
         project = self.context.get('project')
         permission_codename = self.context.get('permission_codename')
 
-        # Safety check: if context is not provided, default to False.
         if not project or not permission_codename:
-            # You might want to log a warning here for debugging purposes.
             return False
 
-        # This is where the magic happens.
-        # It calls `user.has_perm()` which will be handled by either
-        # django-rules or django-guardian depending on your setup.
-        return user_obj.has_perm(permission_codename, project)
+        full_permission = f'projects.{permission_codename}'
+        return user_obj.has_perm(full_permission, project)

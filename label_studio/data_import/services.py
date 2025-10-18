@@ -27,10 +27,13 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
+SUPPORTED_IMAGE_EXTENSIONS = ('.png', '.jpg', '.jpeg', '.tiff', '.bmp')
+DEFAULT_OCR_DPI = 300
+
 def is_support_document(task):
     return task.file_upload and (
         task.file_upload.file_name.lower().endswith('.pdf')
-        or task.file_upload.file_name.lower().endswith(('.png', '.jpg', '.jpeg', '.tiff', '.bmp'))
+        or task.file_upload.file_name.lower().endswith(SUPPORTED_IMAGE_EXTENSIONS)
     )
 
 
@@ -282,6 +285,91 @@ def save_ocr_extractions_for_task(task, file_upload: FileUpload, characters: Lis
         logger.info(f"Saved OCR summary to task meta: {task.meta['ocr_summary']}")
 
 
+def _ensure_image_relationship_exists(file_upload: FileUpload) -> bool:
+    """
+    Ensure PDFImageRelationship exists for standalone images
+
+    Args:
+        file_upload: FileUpload instance
+
+    Returns:
+        True if relationship was created/exists for standalone image, False otherwise
+    """
+    if not file_upload.file_name.lower().endswith(SUPPORTED_IMAGE_EXTENSIONS):
+        return False
+
+    PDFImageRelationship.objects.get_or_create(
+        pdf_file=file_upload,
+        image_file=file_upload,
+        page_number=1,
+        defaults={
+            'image_format': file_upload.format.lstrip('.'),
+            'resolution_dpi': DEFAULT_OCR_DPI
+        }
+    )
+    logger.info(f"Ensured relationship exists for standalone image: {file_upload.file_name}")
+    return True
+
+
+def _set_task_pages(task: Task, relationships) -> None:
+    """
+    Set task.data['pages'] from PDFImageRelationship queryset
+
+    Args:
+        task: Task instance
+        relationships: QuerySet of PDFImageRelationship
+    """
+    page_urls = [rel.image_file.url for rel in relationships]
+
+    if not task.data:
+        task.data = {}
+    task.data['pages'] = page_urls
+    task.save(update_fields=['data'])
+    logger.info(f"Task {task.id}: Set pages field with {len(page_urls)} URLs")
+
+
+def _extract_ocr_for_page(task: Task, image_upload: FileUpload, page_number: int) -> bool:
+    """
+    Extract and save OCR characters for a single page/image
+
+    Args:
+        task: Task instance
+        image_upload: FileUpload instance for the image
+        page_number: Page number (1-indexed)
+
+    Returns:
+        True if characters were extracted and saved, False otherwise
+    """
+    try:
+        image_upload.file.seek(0)
+        image_content = image_upload.file.read()
+        characters = extract_characters_from_image_content(image_content, page_number)
+    except Exception as e:
+        logger.error(f"Failed to read image from storage for page {page_number}: {e}")
+        return False
+
+    if characters:
+        save_ocr_extractions_for_task(task, image_upload, characters)
+        logger.info(f"Task {task.id}: Extracted {len(characters)} chars from page {page_number}")
+        return True
+
+    return False
+
+
+def _process_task_relationships(task: Task, relationships) -> None:
+    """
+    Process all page relationships for a task and extract OCR
+
+    Args:
+        task: Task instance
+        relationships: QuerySet of PDFImageRelationship
+    """
+    logger.info(f"Task {task.id} processing {relationships.count()} pages")
+
+    for relationship in relationships:
+        _extract_ocr_for_page(task, relationship.image_file, relationship.page_number)
+
+
 def process_ocr_for_tasks_background(task_ids):
     """
     Background job to process OCR for tasks by their IDs
@@ -319,54 +407,17 @@ def process_ocr_for_tasks_after_import(tasks) -> int:
                 continue
             
             file_upload = task.file_upload
-            
-            pdf_relationships = PDFImageRelationship.objects.filter(
+
+            _ensure_image_relationship_exists(file_upload)
+
+            relationships = PDFImageRelationship.objects.filter(
                 pdf_file=file_upload
             ).order_by('page_number')
-            
-            if pdf_relationships.exists():
-                logger.info(f"Task {task.id} has PDF with {pdf_relationships.count()} converted pages")
-                
-                page_urls = []
-                for relationship in pdf_relationships:
-                    page_urls.append(relationship.image_file.url)
-                
-                if not task.data:
-                    task.data = {}
-                task.data['pages'] = page_urls
-                task.save(update_fields=['data'])
-                logger.info(f"Task {task.id}: Updated data with {len(page_urls)} page URLs")
-                
-                for relationship in pdf_relationships:
-                    image_file_upload = relationship.image_file
-                    page_number = relationship.page_number
-                    
-                    try:
-                        image_file_upload.file.seek(0)
-                        image_content = image_file_upload.file.read()
-                        characters = extract_characters_from_image_content(image_content, page_number)
-                    except Exception as e:
-                        logger.error(f"Failed to read image from MinIO for page {page_number}: {e}")
-                        characters = []
-                    
-                    if characters:
-                        save_ocr_extractions_for_task(task, image_file_upload, characters)
-                        logger.info(f"Task {task.id}: Extracted {len(characters)} chars from page {page_number}")
-                
+
+            if relationships.exists():
+                _set_task_pages(task, relationships)
+                _process_task_relationships(task, relationships)
                 ocr_processed_count += 1
-                
-            elif file_upload.file_name.lower().endswith(('.png', '.jpg', '.jpeg', '.tiff', '.bmp')):
-                try:
-                    file_upload.file.seek(0)
-                    image_content = file_upload.file.read()
-                    characters = extract_characters_from_image_content(image_content, 1)
-                    
-                    if characters:
-                        save_ocr_extractions_for_task(task, file_upload, characters)
-                        logger.info(f"Task {task.id}: Extracted {len(characters)} chars from image")
-                        ocr_processed_count += 1
-                except Exception as e:
-                    logger.error(f"Failed to read image from MinIO: {e}")
             
         except Exception as e:
             logger.error(f"OCR processing failed for task {task.id}: {e}")
@@ -408,4 +459,3 @@ def process_pdf_if_needed(file_upload: FileUpload) -> bool:
         return True
     except Exception as e:
         logger.error(f"Failed to convert PDF: {str(e)}")
-        return False
