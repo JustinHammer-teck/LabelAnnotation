@@ -866,4 +866,5 @@ class ReImportAPIProxy(ReImportAPI):
                 status=status.HTTP_200_OK,
             )
 
+        return self.sync_reimport(project, file_upload_ids, files_as_tasks_list)
 
