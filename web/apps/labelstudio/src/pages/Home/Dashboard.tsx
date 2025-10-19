@@ -3,6 +3,7 @@ import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearSca
 import { Pie, Bar } from "react-chartjs-2";
 import { useDashboardAnalytics } from "../../hooks/useDashboardAnalytics";
 import { useState } from "react";
+import { DASHBOARD_COLORS, generateChartColors } from "./dashboard-theme";
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement);
 
@@ -26,14 +27,16 @@ export const Dashboard = () => {
     );
   }
 
+  const chartColors = generateChartColors(analyticsData.projectAnnotations.length);
+
   const pieChartData = {
     labels: analyticsData.projectAnnotations.map((p) => p.name),
     datasets: [
       {
         label: "Annotations",
         data: analyticsData.projectAnnotations.map((p) => p.annotations),
-        backgroundColor: analyticsData.projectAnnotations.map((p) => p.color),
-        borderColor: analyticsData.projectAnnotations.map((p) => p.color),
+        backgroundColor: chartColors,
+        borderColor: chartColors,
         borderWidth: 1,
       },
     ],
@@ -45,8 +48,8 @@ export const Dashboard = () => {
       {
         label: "Daily Annotations",
         data: analyticsData.dailyAnnotationHistory.map((d) => d.count),
-        backgroundColor: "#36A2EB",
-        borderColor: "#36A2EB",
+        backgroundColor: DASHBOARD_COLORS.chart.primary,
+        borderColor: DASHBOARD_COLORS.chart.primary,
         borderWidth: 1,
       },
     ],
@@ -183,21 +186,21 @@ export const Dashboard = () => {
                         {analyticsData.projectProgress[activeProjectTab].totalTasks}
                       </div>
                     </div>
-                    <div className="bg-green-50 p-3 rounded-lg border border-green-200">
-                      <div className="text-green-700 text-xs">Completed</div>
-                      <div className="text-xl font-bold text-green-800 mt-1">
+                    <div className="p-3 rounded-lg border" style={{ backgroundColor: DASHBOARD_COLORS.status.completed.bg, borderColor: DASHBOARD_COLORS.status.completed.border }}>
+                      <div className="text-xs" style={{ color: DASHBOARD_COLORS.status.completed.text }}>Completed</div>
+                      <div className="text-xl font-bold mt-1" style={{ color: DASHBOARD_COLORS.status.completed.textDark }}>
                         {analyticsData.projectProgress[activeProjectTab].completedTasks}
                       </div>
                     </div>
-                    <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
-                      <div className="text-blue-700 text-xs">In Progress</div>
-                      <div className="text-xl font-bold text-blue-800 mt-1">
+                    <div className="p-3 rounded-lg border" style={{ backgroundColor: DASHBOARD_COLORS.status.inProgress.bg, borderColor: DASHBOARD_COLORS.status.inProgress.border }}>
+                      <div className="text-xs" style={{ color: DASHBOARD_COLORS.status.inProgress.text }}>In Progress</div>
+                      <div className="text-xl font-bold mt-1" style={{ color: DASHBOARD_COLORS.status.inProgress.textDark }}>
                         {analyticsData.projectProgress[activeProjectTab].inProgressTasks}
                       </div>
                     </div>
-                    <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
-                      <div className="text-yellow-700 text-xs">Pending</div>
-                      <div className="text-xl font-bold text-yellow-800 mt-1">
+                    <div className="p-3 rounded-lg border" style={{ backgroundColor: DASHBOARD_COLORS.status.pending.bg, borderColor: DASHBOARD_COLORS.status.pending.border }}>
+                      <div className="text-xs" style={{ color: DASHBOARD_COLORS.status.pending.text }}>Pending</div>
+                      <div className="text-xl font-bold mt-1" style={{ color: DASHBOARD_COLORS.status.pending.textDark }}>
                         {analyticsData.projectProgress[activeProjectTab].pendingTasks}
                       </div>
                     </div>
@@ -219,8 +222,9 @@ export const Dashboard = () => {
                     </div>
                     <div className="w-full bg-neutral-surface rounded-full h-3 overflow-hidden border border-primary-border-subtle">
                       <div
-                        className="bg-green-500 h-full transition-all duration-300"
+                        className="h-full transition-all duration-300"
                         style={{
+                          backgroundColor: DASHBOARD_COLORS.status.completed.textDark,
                           width: `${
                             analyticsData.projectProgress[activeProjectTab].totalTasks > 0
                               ? (analyticsData.projectProgress[activeProjectTab].completedTasks /
