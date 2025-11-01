@@ -10,8 +10,8 @@ networks:
     driver: bridge
 
 volumes:
-  minio-data-test:
-  valkey-data:
+  minio-data-prod:
+  valkey-data-prod:
 
 services:
   app:
@@ -108,7 +108,7 @@ services:
     ports:
       - "127.0.0.1:9009:9009"
     volumes:
-      - minio-data-test:/data
+      - minio-data-prod:/data
     networks:
       - internal
 
@@ -121,7 +121,7 @@ services:
     ports:
       - "127.0.0.1:6379:6379"
     volumes:
-      - valkey-data:/data
+      - valkey-data-prod:/data
     cap_drop:
       - ALL
     cap_add:

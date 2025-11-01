@@ -17,10 +17,6 @@ config: |
       <Label value="Weather Conditions" translationKey="labels.document_sections.weather_conditions" background="#9B59B6" />
       <Label value="Damage Assessment" translationKey="labels.document_sections.damage_assessment" background="#E91E63" />
       <Label value="Signatures" translationKey="labels.document_sections.signatures" background="#16A085" />
-    </RectangleLabels>
-
-    <!-- Specific data fields -->
-    <RectangleLabels name="dataFields" toName="pages" choice="multiple" strokeWidth="1" opacity="0.5">
       <Label value="Date/Time" translationKey="labels.data_fields.date_time" background="#E74C3C" />
       <Label value="Aircraft Registration" translationKey="labels.data_fields.aircraft_registration" background="#3498DB" />
       <Label value="Aircraft Type" translationKey="labels.data_fields.aircraft_type" background="#2ECC71" />
