@@ -2,16 +2,16 @@ import chroma from "chroma-js";
 
 const BASE_COLORS = {
   chart: {
-    primary: '#0F62FE',
-    secondary: '#8A3FFC',
-    tertiary: '#33B1FF',
-    accent: '#24A148',
+    primary: '#4A90E2',
+    secondary: '#9B59B6',
+    tertiary: '#27AE60',
+    accent: '#F5A623',
     neutral: '#525252',
   },
   status: {
-    completed: '#24A148',
-    inProgress: '#0F62FE',
-    pending: '#F1C21B',
+    completed: '#27AE60',
+    inProgress: '#4A90E2',
+    pending: '#F39C12',
   },
 } as const;
 
@@ -41,16 +41,21 @@ export const DASHBOARD_COLORS = {
 } as const;
 
 export const CHART_PALETTE = [
-  BASE_COLORS.chart.primary,
-  BASE_COLORS.chart.secondary,
-  BASE_COLORS.chart.accent,
-  BASE_COLORS.chart.tertiary,
-  BASE_COLORS.chart.neutral,
-  '#D12771',
-  '#FA4D56',
-  '#FF832B',
-  '#198038',
-  '#1192E8',
+  '#4A90E2',
+  '#F5A623',
+  '#E74C3C',
+  '#27AE60',
+  '#9B59B6',
+  '#E91E63',
+  '#16A085',
+  '#3498DB',
+  '#2ECC71',
+  '#F39C12',
+  '#1ABC9C',
+  '#E67E22',
+  '#5DADE2',
+  '#EC7063',
+  '#58D68D',
 ];
 
 export const generateChartColors = (count: number, alpha = 1): string[] => {

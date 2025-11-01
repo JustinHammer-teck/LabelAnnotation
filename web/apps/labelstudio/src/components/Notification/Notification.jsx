@@ -39,6 +39,23 @@ export const NotificationBell = () => {
       return;
     }
 
+    fetch('/api/notifications/?unread=true')
+      .then(res => res.json())
+      .then(data => {
+        const historicalNotifications = data.map(n => ({
+          id: n.id,
+          subject: n.subject,
+          message: n.message,
+          message_time: n.message_time,
+          read: n.is_read,
+          type: 'info',
+          path: n.path,
+          action_type: n.action_type
+        }));
+        setNotifications(historicalNotifications);
+      })
+      .catch(error => console.error('Failed to fetch notifications:', error));
+
     const userChannel = `${user.id}${user.email}_notifications`;
     const sse = new EventSource(`http://localhost:8080/events/${userChannel}`);
 
@@ -46,6 +63,17 @@ export const NotificationBell = () => {
       const newNotificationData = JSON.parse(event.data);
       if (!newNotificationData.id) {
         newNotificationData.id = new Date().getTime();
+      }
+      if (newNotificationData.read === undefined) {
+        newNotificationData.read = false;
+      }
+
+      if (newNotificationData.action_type === 'revoke' && newNotificationData.path) {
+        const currentPath = window.location.pathname;
+        if (currentPath === newNotificationData.path || currentPath.startsWith(newNotificationData.path)) {
+          window.location.href = '/';
+          return;
+        }
       }
 
       setNotifications(prev => {
@@ -73,6 +101,14 @@ export const NotificationBell = () => {
     setNotifications(prev =>
       prev.map(n => (n.id === id ? { ...n, read: true } : n))
     );
+
+    fetch(`/api/notifications/${id}/`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ is_read: true })
+    }).catch(error => console.error('Failed to mark notification as read:', error));
 
     if (path) {
       window.location.href = path;

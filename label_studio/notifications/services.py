@@ -42,33 +42,47 @@ class NotificationService:
                                 subject: str,
                                 message: str,
                                 ts,
-                                receive_user: User):
+                                receive_user: User,
+                                path: str = None,
+                                action_type: str = None,
+                                source: str = None):
 
             user_channel = receive_user.user_channel_name + "_" + channel_name
 
+            content_data = {
+                'subject': subject,
+                'message': message,
+                'message_time': ts.timestamp(),
+            }
+
+            if path:
+                content_data['path'] = path
+            if action_type:
+                content_data['action_type'] = action_type
+
             notification = await Notification.objects.acreate(
+                source=source or '',
                 channel= user_channel,
                 event_type= event_type,
-                content=json.dumps(
-                    {
-                        'subject': subject,
-                        'message': message,
-                        'message_time': ts.timestamp(),
-                    }
-                ),
+                content=json.dumps(content_data),
             )
+
+            context_data = {
+                'id': notification.id,
+                'type': 'info',
+                'subject': subject,
+                'message': message,
+                'message_time': ts.timestamp(),
+            }
+
+            if path:
+                context_data['path'] = path
+            if action_type:
+                context_data['action_type'] = action_type
 
             self.redis_client.publish(
                 user_channel,
-                json.dumps(
-                    {
-                        'context': {
-                            'id': notification.id,
-                            'type': 'info',
-                            'subject': subject,
-                            'message': message,
-                            'message_time': ts.timestamp(),
-                        },
-                    }
-                ),
+                json.dumps({
+                    'context': context_data,
+                }),
             )

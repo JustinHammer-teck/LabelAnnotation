@@ -19,10 +19,10 @@ export const MenuLayout = ({ children, ...routeProps }) => {
         GeneralSettings,
         LabelingSettings,
         AnnotationSettings,
-        MachineLearningSettings,
-        PredictionsSettings,
-        isAllowCloudStorage && StorageSettings,
-        WebhookPage,
+        // MachineLearningSettings,
+        // PredictionsSettings,
+        // isAllowCloudStorage && StorageSettings,
+        // WebhookPage,
         TaskAssignmentSettings,
         DangerZone,
       ].filter(Boolean)}
@@ -35,9 +35,9 @@ export const MenuLayout = ({ children, ...routeProps }) => {
 const pages = {
   AnnotationSettings,
   LabelingSettings,
-  MachineLearningSettings,
-  PredictionsSettings,
-  WebhookPage,
+  // MachineLearningSettings,
+  // PredictionsSettings,
+  // WebhookPage,
   TaskAssignmentSettings,
   DangerZone,
 };

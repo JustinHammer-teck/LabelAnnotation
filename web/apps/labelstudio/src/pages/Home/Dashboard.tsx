@@ -67,6 +67,16 @@ export const Dashboard = () => {
     },
   };
 
+  const pieChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'right' as const,
+      },
+    },
+  };
+
   const totalAnnotations = analyticsData.projectAnnotations.reduce(
     (sum, p) => sum + p.annotations,
     0
@@ -162,7 +172,7 @@ export const Dashboard = () => {
         <SimpleCard title={t("home_page.dashboard.annotations_by_project")}>
           <div className="p-4">
             <div className="h-64 flex items-center justify-center">
-              <Pie data={pieChartData} />
+              <Pie data={pieChartData} options={pieChartOptions} />
             </div>
           </div>
         </SimpleCard>
