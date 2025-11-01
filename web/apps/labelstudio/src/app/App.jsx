@@ -25,7 +25,6 @@ import { RootPage } from "./RootPage";
 import { ff } from "@humansignal/core";
 import "@humansignal/ui/src/tailwind.css";
 import "./App.scss";
-import {StrictMode} from "react";
 import "../utils/i18n";
 
 const baseURL = new URL(APP_SETTINGS.hostname || location.origin);
@@ -90,7 +89,7 @@ const App = ({ content }) => {
 const root = document.querySelector(".app-wrapper");
 const content = document.querySelector("#main-content");
 
-render(<StrictMode><App content={content.innerHTML} /></StrictMode>, root);
+render(<App content={content.innerHTML} />, root);
 
 if (module?.hot) {
   module.hot.accept(); // Enable HMR for React components

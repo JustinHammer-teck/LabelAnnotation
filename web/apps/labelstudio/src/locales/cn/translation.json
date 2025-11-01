@@ -31,6 +31,27 @@
     "action" : {
       "create_project": "创建项目",
       "invite_people": "邀请其他人进入"
+    },
+    "dashboard": {
+      "error": "无法加载仪表板分析",
+      "total_projects": "项目总数",
+      "active_projects": "活跃项目",
+      "organization_users": "组织用户",
+      "team_members": "团队成员",
+      "today_annotations": "今日标注",
+      "completed_today": "今日完成",
+      "completion_rate": "完成率",
+      "overall_progress": "总体进度",
+      "daily_annotations_history": "每日标注历史",
+      "annotations_by_project": "项目标注统计",
+      "project_progress": "项目进度",
+      "total_tasks": "总任务数",
+      "completed": "已完成",
+      "in_progress": "进行中",
+      "pending": "待处理",
+      "summary": "概要",
+      "no_projects": "未找到项目。创建您的第一个项目开始吧！",
+      "summary_text": "您的组织有{{totalProjects}}个活跃项目和{{totalUsers}}名团队成员。今天完成了{{dailyAnnotations}}个标注。所有项目共完成了{{totalAnnotations}}个标注，其中\"{{topProjectName}}\"以{{topProjectAnnotations}}个标注领先。"
     }
   },
   "organization_page": {

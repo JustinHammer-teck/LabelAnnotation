@@ -174,8 +174,6 @@ export const Menubar = ({
           <NotificationBell></NotificationBell>
           <LanguageSwitcher></LanguageSwitcher>
 
-          {ff.isActive(ff.FF_THEME_TOGGLE) && <ThemeToggle />}
-
           <Dropdown.Trigger
             ref={useMenuRef}
             align="right"

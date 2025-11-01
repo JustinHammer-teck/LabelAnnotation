@@ -4,10 +4,12 @@ import { Pie, Bar } from "react-chartjs-2";
 import { useDashboardAnalytics } from "../../hooks/useDashboardAnalytics";
 import { useState } from "react";
 import { DASHBOARD_COLORS, generateChartColors } from "./dashboard-theme";
+import { useTranslation } from "react-i18next";
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement);
 
 export const Dashboard = () => {
+  const { t } = useTranslation();
   const [activeProjectTab, setActiveProjectTab] = useState(0);
   const { data: analyticsData, isLoading: analyticsLoading, isError: analyticsError } = useDashboardAnalytics();
 
@@ -22,7 +24,7 @@ export const Dashboard = () => {
   if (analyticsError || !analyticsData || !analyticsData.projectAnnotations) {
     return (
       <div className="h-64 flex justify-center items-center">
-        Failed to load dashboard analytics
+        {t("home_page.dashboard.error")}
       </div>
     );
   }
@@ -33,7 +35,7 @@ export const Dashboard = () => {
     labels: analyticsData.projectAnnotations.map((p) => p.name),
     datasets: [
       {
-        label: "Annotations",
+        label: t("home_page.dashboard.annotations_by_project"),
         data: analyticsData.projectAnnotations.map((p) => p.annotations),
         backgroundColor: chartColors,
         borderColor: chartColors,
@@ -46,7 +48,7 @@ export const Dashboard = () => {
     labels: analyticsData.dailyAnnotationHistory.map((d) => d.date),
     datasets: [
       {
-        label: "Daily Annotations",
+        label: t("home_page.dashboard.daily_annotations_history"),
         data: analyticsData.dailyAnnotationHistory.map((d) => d.count),
         backgroundColor: DASHBOARD_COLORS.chart.primary,
         borderColor: DASHBOARD_COLORS.chart.primary,
@@ -72,51 +74,58 @@ export const Dashboard = () => {
 
   const generateSummary = () => {
     if (analyticsData.projectAnnotations.length === 0) {
-      return "No projects found. Create your first project to get started!";
+      return t("home_page.dashboard.no_projects");
     }
     const topProject = analyticsData.projectAnnotations.reduce((prev, current) =>
       prev.annotations > current.annotations ? prev : current
     );
-    return `Your organization has ${analyticsData.totalProjects} active projects with ${analyticsData.totalUsers} team members. Today, ${analyticsData.dailyAnnotations} annotations were completed. Across all projects, a total of ${totalAnnotations} annotations have been made, with "${topProject.name}" leading with ${topProject.annotations} annotations.`;
+    return t("home_page.dashboard.summary_text", {
+      totalProjects: analyticsData.totalProjects,
+      totalUsers: analyticsData.totalUsers,
+      dailyAnnotations: analyticsData.dailyAnnotations,
+      totalAnnotations,
+      topProjectName: topProject.name,
+      topProjectAnnotations: topProject.annotations,
+    });
   };
 
   return (
     <div className="flex flex-col gap-6">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <SimpleCard title="Total Projects">
+        <SimpleCard title={t("home_page.dashboard.total_projects")}>
           <div className="p-6 flex items-center justify-center">
             <div className="text-center">
               <div className="text-5xl font-bold text-neutral-content">
                 {analyticsData.totalProjects}
               </div>
-              <div className="text-neutral-content-subtler text-sm mt-2">Active Projects</div>
+              <div className="text-neutral-content-subtler text-sm mt-2">{t("home_page.dashboard.active_projects")}</div>
             </div>
           </div>
         </SimpleCard>
 
-        <SimpleCard title="Organization Users">
+        <SimpleCard title={t("home_page.dashboard.organization_users")}>
           <div className="p-6 flex items-center justify-center">
             <div className="text-center">
               <div className="text-5xl font-bold text-neutral-content">
                 {analyticsData.totalUsers}
               </div>
-              <div className="text-neutral-content-subtler text-sm mt-2">Team Members</div>
+              <div className="text-neutral-content-subtler text-sm mt-2">{t("home_page.dashboard.team_members")}</div>
             </div>
           </div>
         </SimpleCard>
 
-        <SimpleCard title="Today's Annotations">
+        <SimpleCard title={t("home_page.dashboard.today_annotations")}>
           <div className="p-6 flex items-center justify-center">
             <div className="text-center">
               <div className="text-5xl font-bold text-neutral-content">
                 {analyticsData.dailyAnnotations}
               </div>
-              <div className="text-neutral-content-subtler text-sm mt-2">Completed Today</div>
+              <div className="text-neutral-content-subtler text-sm mt-2">{t("home_page.dashboard.completed_today")}</div>
             </div>
           </div>
         </SimpleCard>
 
-        <SimpleCard title="Completion Rate">
+        <SimpleCard title={t("home_page.dashboard.completion_rate")}>
           <div className="p-6 flex items-center justify-center">
             <div className="text-center">
               <div className="text-5xl font-bold text-neutral-content">
@@ -135,14 +144,14 @@ export const Dashboard = () => {
                   : 0}
                 %
               </div>
-              <div className="text-neutral-content-subtler text-sm mt-2">Overall Progress</div>
+              <div className="text-neutral-content-subtler text-sm mt-2">{t("home_page.dashboard.overall_progress")}</div>
             </div>
           </div>
         </SimpleCard>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <SimpleCard title="Daily Annotations History">
+        <SimpleCard title={t("home_page.dashboard.daily_annotations_history")}>
           <div className="p-4">
             <div className="h-64">
               <Bar data={barChartData} options={barChartOptions} />
@@ -150,7 +159,7 @@ export const Dashboard = () => {
           </div>
         </SimpleCard>
 
-        <SimpleCard title="Annotations by Project">
+        <SimpleCard title={t("home_page.dashboard.annotations_by_project")}>
           <div className="p-4">
             <div className="h-64 flex items-center justify-center">
               <Pie data={pieChartData} />
@@ -158,7 +167,7 @@ export const Dashboard = () => {
           </div>
         </SimpleCard>
 
-        <SimpleCard title="Project Progress">
+        <SimpleCard title={t("home_page.dashboard.project_progress")}>
           <div className="p-4">
             <div className="flex border-b border-primary-border-subtle mb-4 overflow-x-auto">
               {analyticsData.projectProgress.map((project, index) => (
@@ -181,25 +190,25 @@ export const Dashboard = () => {
                 <>
                   <div className="grid grid-cols-2 gap-2">
                     <div className="bg-primary-emphasis-subtle p-3 rounded-lg border border-primary-border-subtle">
-                      <div className="text-neutral-content-subtler text-xs">Total Tasks</div>
+                      <div className="text-neutral-content-subtler text-xs">{t("home_page.dashboard.total_tasks")}</div>
                       <div className="text-xl font-bold text-neutral-content mt-1">
                         {analyticsData.projectProgress[activeProjectTab].totalTasks}
                       </div>
                     </div>
                     <div className="p-3 rounded-lg border" style={{ backgroundColor: DASHBOARD_COLORS.status.completed.bg, borderColor: DASHBOARD_COLORS.status.completed.border }}>
-                      <div className="text-xs" style={{ color: DASHBOARD_COLORS.status.completed.text }}>Completed</div>
+                      <div className="text-xs" style={{ color: DASHBOARD_COLORS.status.completed.text }}>{t("home_page.dashboard.completed")}</div>
                       <div className="text-xl font-bold mt-1" style={{ color: DASHBOARD_COLORS.status.completed.textDark }}>
                         {analyticsData.projectProgress[activeProjectTab].completedTasks}
                       </div>
                     </div>
                     <div className="p-3 rounded-lg border" style={{ backgroundColor: DASHBOARD_COLORS.status.inProgress.bg, borderColor: DASHBOARD_COLORS.status.inProgress.border }}>
-                      <div className="text-xs" style={{ color: DASHBOARD_COLORS.status.inProgress.text }}>In Progress</div>
+                      <div className="text-xs" style={{ color: DASHBOARD_COLORS.status.inProgress.text }}>{t("home_page.dashboard.in_progress")}</div>
                       <div className="text-xl font-bold mt-1" style={{ color: DASHBOARD_COLORS.status.inProgress.textDark }}>
                         {analyticsData.projectProgress[activeProjectTab].inProgressTasks}
                       </div>
                     </div>
                     <div className="p-3 rounded-lg border" style={{ backgroundColor: DASHBOARD_COLORS.status.pending.bg, borderColor: DASHBOARD_COLORS.status.pending.border }}>
-                      <div className="text-xs" style={{ color: DASHBOARD_COLORS.status.pending.text }}>Pending</div>
+                      <div className="text-xs" style={{ color: DASHBOARD_COLORS.status.pending.text }}>{t("home_page.dashboard.pending")}</div>
                       <div className="text-xl font-bold mt-1" style={{ color: DASHBOARD_COLORS.status.pending.textDark }}>
                         {analyticsData.projectProgress[activeProjectTab].pendingTasks}
                       </div>
@@ -208,7 +217,7 @@ export const Dashboard = () => {
 
                   <div>
                     <div className="flex justify-between text-sm mb-2">
-                      <span className="text-neutral-content-subtler">Overall Progress</span>
+                      <span className="text-neutral-content-subtler">{t("home_page.dashboard.overall_progress")}</span>
                       <span className="font-semibold text-neutral-content">
                         {analyticsData.projectProgress[activeProjectTab].totalTasks > 0
                           ? Math.round(
@@ -243,7 +252,7 @@ export const Dashboard = () => {
         </SimpleCard>
       </div>
 
-      <SimpleCard title="Summary">
+      <SimpleCard title={t("home_page.dashboard.summary")}>
         <div className="p-4">
           <p className="text-neutral-content-subtler text-sm leading-relaxed">
             {generateSummary()}

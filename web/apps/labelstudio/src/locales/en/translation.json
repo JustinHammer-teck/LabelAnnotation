@@ -31,6 +31,27 @@
     "action" : {
       "create_project": "Create Project",
       "invite_people": "Invite People"
+    },
+    "dashboard": {
+      "error": "Failed to load dashboard analytics",
+      "total_projects": "Total Projects",
+      "active_projects": "Active Projects",
+      "organization_users": "Organization Users",
+      "team_members": "Team Members",
+      "today_annotations": "Today's Annotations",
+      "completed_today": "Completed Today",
+      "completion_rate": "Completion Rate",
+      "overall_progress": "Overall Progress",
+      "daily_annotations_history": "Daily Annotations History",
+      "annotations_by_project": "Annotations by Project",
+      "project_progress": "Project Progress",
+      "total_tasks": "Total Tasks",
+      "completed": "Completed",
+      "in_progress": "In Progress",
+      "pending": "Pending",
+      "summary": "Summary",
+      "no_projects": "No projects found. Create your first project to get started!",
+      "summary_text": "Your organization has {{totalProjects}} active projects with {{totalUsers}} team members. Today, {{dailyAnnotations}} annotations were completed. Across all projects, a total of {{totalAnnotations}} annotations have been made, with \"{{topProjectName}}\" leading with {{topProjectAnnotations}} annotations."
     }
   },
   "organization_page": {

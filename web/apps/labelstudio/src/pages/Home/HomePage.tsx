@@ -19,13 +19,7 @@ const actions = [
     title: "home_page.action.create_project",
     icon: IconFolderAdd,
     type: "createProject",
-  },
-  {
-    title: "home_page.action.invite_people",
-    icon: IconUserAdd,
-    type: "invitePeople",
   }
-
 ] as const;
 
 type Action = (typeof actions)[number]["type"];
@@ -51,9 +45,6 @@ export const HomePage: Page = () => {
       switch (action) {
         case "createProject":
           setCreationDialogOpen(true);
-          break;
-        case "invitePeople":
-          setInvitationOpen(true);
           break;
       }
     };
