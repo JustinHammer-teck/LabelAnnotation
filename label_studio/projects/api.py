@@ -992,9 +992,11 @@ class ProjectAPIProxy(ProjectAPI):
         serializer.is_valid(raise_exception=True)
         fields = serializer.validated_data.get('include')
 
-        projects = Project.objects.with_counts(fields=fields).filter(
-            organization=self.request.user.active_organization
-        )
+        projects = get_objects_for_user(
+            self.request.user,
+            ['assigned_to_project'],
+            klass=Project.objects.with_counts(fields=fields)
+        ).filter(organization=self.request.user.active_organization)
 
         return projects
 
@@ -1042,9 +1044,11 @@ class ProjectDashboardAnalyticsAPI(APIView):
 
         organization = request.user.active_organization
 
-        projects = Project.objects.with_counts().filter(
-            organization=organization
-        )
+        projects = get_objects_for_user(
+            request.user,
+            ['assigned_to_project'],
+            klass=Project.objects.with_counts()
+        ).filter(organization=organization)
 
         members_count = organization.users.filter(
             om_through__deleted_at__isnull=True
@@ -1053,10 +1057,12 @@ class ProjectDashboardAnalyticsAPI(APIView):
         today = timezone.now().date()
         week_ago = today - timedelta(days=6)
 
+        project_ids = list(projects.values_list('id', flat=True))
+
         daily_stats = (
             Annotation.objects
             .filter(
-                project__organization=organization,
+                project_id__in=project_ids,
                 created_at__date__gte=week_ago,
                 was_cancelled=False
             )

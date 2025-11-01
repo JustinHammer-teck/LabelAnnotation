@@ -97,18 +97,22 @@ export const NotificationBell = () => {
     return () => sse.close();
   }, [showBrowserNotification, user]); // Add the new dependency
 
-  const handleNotificationClick = useCallback((id, path) => {
+  const handleNotificationClick = useCallback(async (id, path) => {
     setNotifications(prev =>
       prev.map(n => (n.id === id ? { ...n, read: true } : n))
     );
 
-    fetch(`/api/notifications/${id}/`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ is_read: true })
-    }).catch(error => console.error('Failed to mark notification as read:', error));
+    try {
+      await fetch(`/api/notifications/${id}/`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ is_read: true })
+      });
+    } catch (error) {
+      console.error('Failed to mark notification as read:', error);
+    }
 
     if (path) {
       window.location.href = path;
