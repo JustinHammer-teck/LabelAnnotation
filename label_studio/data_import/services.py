@@ -406,6 +406,7 @@ def save_ocr_extractions_for_task(task, file_upload: FileUpload, characters: Lis
         characters: List of character dictionaries
         total_pages: Total number of pages expected for completion tracking
     """
+    from tasks.models import Task
 
     if not characters:
         return
@@ -437,25 +438,27 @@ def save_ocr_extractions_for_task(task, file_upload: FileUpload, characters: Lis
 
         OCRCharacterExtraction.objects.bulk_create(extractions)
 
-        task.refresh_from_db()
-        if not task.meta:
-            task.meta = {}
+    with transaction.atomic():
+        locked_task = Task.objects.select_for_update().get(id=task.id)
 
-        if 'ocr_pages_completed' not in task.meta:
-            task.meta['ocr_pages_completed'] = []
+        if not locked_task.meta:
+            locked_task.meta = {}
 
-        if page_number not in task.meta['ocr_pages_completed']:
-            task.meta['ocr_pages_completed'].append(page_number)
+        if 'ocr_pages_completed' not in locked_task.meta:
+            locked_task.meta['ocr_pages_completed'] = []
 
-        pages_completed = len(task.meta['ocr_pages_completed'])
+        if page_number not in locked_task.meta['ocr_pages_completed']:
+            locked_task.meta['ocr_pages_completed'].append(page_number)
 
-        total_chars = OCRCharacterExtraction.objects.filter(task=task).count()
+        pages_completed = len(locked_task.meta['ocr_pages_completed'])
+
+        total_chars = OCRCharacterExtraction.objects.filter(task=locked_task).count()
         chinese_chars = OCRCharacterExtraction.objects.filter(
-            task=task,
+            task=locked_task,
             character__regex=r'[\u4e00-\u9fff]'
         ).count()
 
-        task.meta['ocr_summary'] = {
+        locked_task.meta['ocr_summary'] = {
             'total_characters': total_chars,
             'chinese_characters': chinese_chars,
             'pages_processed': pages_completed,
@@ -464,16 +467,16 @@ def save_ocr_extractions_for_task(task, file_upload: FileUpload, characters: Lis
         }
 
         if pages_completed >= total_pages:
-            task.meta['ocr_status'] = 'completed'
-            task.meta['ocr_completed_at'] = now().isoformat()
+            locked_task.meta['ocr_status'] = 'completed'
+            locked_task.meta['ocr_completed_at'] = now().isoformat()
             logger.info(f"Task {task.id}: OCR completed for all {total_pages} pages")
         else:
-            task.meta['ocr_status'] = 'processing'
+            locked_task.meta['ocr_status'] = 'processing'
             logger.info(f"Task {task.id}: OCR progress {pages_completed}/{total_pages} pages")
 
-        task.save(update_fields=['meta'])
+        locked_task.save(update_fields=['meta'])
 
-        logger.info(f"Saved OCR summary to task meta: {task.meta['ocr_summary']}")
+        logger.info(f"Saved OCR summary to task meta: {locked_task.meta['ocr_summary']}")
 
 
 def _ensure_image_relationship_exists(file_upload: FileUpload) -> bool:
