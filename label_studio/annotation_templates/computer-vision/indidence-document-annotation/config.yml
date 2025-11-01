@@ -1,9 +1,10 @@
 title: Aircraft Incident Report Annotation
 type: community
-group: Computer Vision
-image: /static/templates/optical-character-recognition.png
+group:  Incidence Annotation
+image: /static/templates/incidence-annotation.png
 details: <h1>Annotate aircraft incident reports by drawing bounding boxes around key information and adding structured data</h1>
 config: |
+  <!-- { "data": { "pages": ["/static/samples/sample.png"] } } -->
   <View>
     <Header value="Aircraft Incident Report Annotation"/>
 
