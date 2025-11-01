@@ -396,20 +396,29 @@ def extract_characters_from_image_content(image_content: bytes, page_number: int
         logger.error(f"Error extracting characters: {e}")
         return []
 
-def save_ocr_extractions_for_task(task, file_upload: FileUpload, characters: List[Dict]):
-    """Save OCR character extractions to database"""
+def save_ocr_extractions_for_task(task, file_upload: FileUpload, characters: List[Dict], total_pages: int = 1):
+    """
+    Save OCR character extractions to database with parallel-safe completion tracking
+
+    Args:
+        task: Task instance
+        file_upload: FileUpload instance
+        characters: List of character dictionaries
+        total_pages: Total number of pages expected for completion tracking
+    """
 
     if not characters:
         return
-    
-    logger.info(f"Saving {len(characters)} characters for task {task.id}")
-    
+
+    page_number = characters[0]['page_number'] if characters else 1
+    logger.info(f"Saving {len(characters)} characters for task {task.id}, page {page_number}")
+
     with transaction.atomic():
         OCRCharacterExtraction.objects.filter(
             task=task,
-            page_number=characters[0]['page_number'] if characters else 1
+            page_number=page_number
         ).delete()
-        
+
         extractions = []
         for char_data in characters:
             extraction = OCRCharacterExtraction(
@@ -425,26 +434,45 @@ def save_ocr_extractions_for_task(task, file_upload: FileUpload, characters: Lis
                 page_number=char_data['page_number']
             )
             extractions.append(extraction)
-        
+
         OCRCharacterExtraction.objects.bulk_create(extractions)
-        
+
+        task.refresh_from_db()
         if not task.meta:
             task.meta = {}
-        
+
+        if 'ocr_pages_completed' not in task.meta:
+            task.meta['ocr_pages_completed'] = []
+
+        if page_number not in task.meta['ocr_pages_completed']:
+            task.meta['ocr_pages_completed'].append(page_number)
+
+        pages_completed = len(task.meta['ocr_pages_completed'])
+
         total_chars = OCRCharacterExtraction.objects.filter(task=task).count()
-        chinese_chars = sum(1 for c in characters if '\u4e00' <= c['character'] <= '\u9fff')
-        
+        chinese_chars = OCRCharacterExtraction.objects.filter(
+            task=task,
+            character__regex=r'[\u4e00-\u9fff]'
+        ).count()
+
         task.meta['ocr_summary'] = {
             'total_characters': total_chars,
             'chinese_characters': chinese_chars,
-            'pages_processed': char_data['page_number'] if characters else 0,
+            'pages_processed': pages_completed,
+            'total_pages': total_pages,
             'has_extractions': True
         }
-        
-        task.meta['ocr_status'] = 'completed'
-        task.meta['ocr_completed_at'] = now().isoformat()
+
+        if pages_completed >= total_pages:
+            task.meta['ocr_status'] = 'completed'
+            task.meta['ocr_completed_at'] = now().isoformat()
+            logger.info(f"Task {task.id}: OCR completed for all {total_pages} pages")
+        else:
+            task.meta['ocr_status'] = 'processing'
+            logger.info(f"Task {task.id}: OCR progress {pages_completed}/{total_pages} pages")
+
         task.save(update_fields=['meta'])
-        
+
         logger.info(f"Saved OCR summary to task meta: {task.meta['ocr_summary']}")
 
 
@@ -491,7 +519,7 @@ def _set_task_pages(task: Task, relationships) -> None:
     logger.info(f"Task {task.id}: Set pages field with {len(page_urls)} URLs")
 
 
-def _extract_ocr_for_page(task: Task, image_upload: FileUpload, page_number: int) -> bool:
+def _extract_ocr_for_page(task: Task, image_upload: FileUpload, page_number: int, total_pages: int = 1) -> bool:
     """
     Extract and save OCR characters for a single page/image
 
@@ -499,6 +527,7 @@ def _extract_ocr_for_page(task: Task, image_upload: FileUpload, page_number: int
         task: Task instance
         image_upload: FileUpload instance for the image
         page_number: Page number (1-indexed)
+        total_pages: Total number of pages for completion tracking
 
     Returns:
         True if characters were extracted and saved, False otherwise
@@ -512,14 +541,14 @@ def _extract_ocr_for_page(task: Task, image_upload: FileUpload, page_number: int
         return False
 
     if characters:
-        save_ocr_extractions_for_task(task, image_upload, characters)
+        save_ocr_extractions_for_task(task, image_upload, characters, total_pages)
         logger.info(f"Task {task.id}: Extracted {len(characters)} chars from page {page_number}")
         return True
 
     return False
 
 
-def extract_ocr_for_page_job(task_id, image_file_id, page_number, **kwargs):
+def extract_ocr_for_page_job(task_id, image_file_id, page_number, total_pages, **kwargs):
     """
     Background job to extract OCR for a single page.
     Called by RQ workers in parallel.
@@ -528,6 +557,7 @@ def extract_ocr_for_page_job(task_id, image_file_id, page_number, **kwargs):
         task_id: Task ID
         image_file_id: FileUpload ID for the image
         page_number: Page number (1-indexed)
+        total_pages: Total number of pages for completion tracking
 
     Returns:
         Dict with success status and metadata
@@ -538,9 +568,9 @@ def extract_ocr_for_page_job(task_id, image_file_id, page_number, **kwargs):
         task = Task.objects.get(id=task_id)
         image_upload = FileUpload.objects.get(id=image_file_id)
 
-        logger.info(f"OCR job for task {task_id}, page {page_number}")
+        logger.info(f"OCR job for task {task_id}, page {page_number}/{total_pages}")
 
-        success = _extract_ocr_for_page(task, image_upload, page_number)
+        success = _extract_ocr_for_page(task, image_upload, page_number, total_pages)
 
         return {
             'task_id': task_id,
@@ -577,6 +607,7 @@ def process_ocr_for_task_parallel(task: Task, relationships) -> None:
             task.id,
             relationship.image_file.id,
             relationship.page_number,
+            page_count,
             queue_name='high',
             job_timeout=300
         )
@@ -586,16 +617,17 @@ def process_ocr_for_task_parallel(task: Task, relationships) -> None:
 
 def _process_task_relationships(task: Task, relationships) -> None:
     """
-    Process all page relationships for a task and extract OCR
+    Process all page relationships for a task and extract OCR (sequential version)
 
     Args:
         task: Task instance
         relationships: QuerySet of PDFImageRelationship
     """
-    logger.info(f"Task {task.id} processing {relationships.count()} pages")
+    page_count = relationships.count()
+    logger.info(f"Task {task.id} processing {page_count} pages")
 
     for relationship in relationships:
-        _extract_ocr_for_page(task, relationship.image_file, relationship.page_number)
+        _extract_ocr_for_page(task, relationship.image_file, relationship.page_number, page_count)
 
 
 def process_ocr_for_tasks_background(task_ids):
