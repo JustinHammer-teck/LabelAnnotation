@@ -25,10 +25,35 @@ except ImportError:
     logger = logging.getLogger(__name__)
     logger.warning("EasyOCR not available")
 
+try:
+    import cv2
+    CV2_AVAILABLE = True
+except ImportError:
+    CV2_AVAILABLE = False
+    logger = logging.getLogger(__name__)
+    logger.warning("OpenCV (cv2) not available, binarization disabled")
+
 logger = logging.getLogger(__name__)
 
 SUPPORTED_IMAGE_EXTENSIONS = ('.png', '.jpg', '.jpeg', '.tiff', '.bmp')
 DEFAULT_OCR_DPI = 300
+
+_easyocr_reader = None
+
+def get_easyocr_reader():
+    """
+    Get or create cached EasyOCR reader instance.
+    Singleton pattern to avoid reloading language models for each image.
+    """
+    global _easyocr_reader
+    if _easyocr_reader is None:
+        if not EASYOCR_AVAILABLE:
+            logger.warning("EasyOCR not available, cannot create reader")
+            return None
+        logger.info("Initializing EasyOCR reader (this may take 30-60 seconds)...")
+        _easyocr_reader = easyocr.Reader(['ch_sim', 'en'], gpu=False)
+        logger.info("EasyOCR reader initialized and cached for reuse")
+    return _easyocr_reader
 
 def is_support_document(task):
     return task.file_upload and (
@@ -118,13 +143,28 @@ def convert_pdf_to_images_simple(pdf_file_upload: FileUpload) -> List[Dict]:
                 logger.debug(f"Processing page {page_number}/{total_pages}")
                 
                 page = pdf_document[page_num]
-                
+
                 mat = fitz.Matrix(300/72.0, 300/72.0)
-                pix = page.get_pixmap(matrix=mat, alpha=False)
-                
-                img_bytes = pix.tobytes("png")
+                pix = page.get_pixmap(matrix=mat, alpha=False, colorspace=fitz.csGRAY)
+
+                img = Image.frombytes("L", (pix.width, pix.height), pix.samples)
+
+                if settings.OCR_BINARIZE and CV2_AVAILABLE:
+                    img_array = np.array(img)
+                    binary = cv2.adaptiveThreshold(
+                        img_array, 255,
+                        cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+                        cv2.THRESH_BINARY, 11, 2
+                    )
+                    img = Image.fromarray(binary)
+                    logger.debug(f"Page {page_number} binarized for text optimization")
+
+                output = io.BytesIO()
+                img.save(output, format='PNG', optimize=True, compress_level=settings.OCR_PNG_COMPRESSION)
+                img_bytes = output.getvalue()
+
                 logger.debug(f"Page {page_number} converted: {len(img_bytes)} bytes, {pix.width}x{pix.height}px")
-                
+
                 pdf_name = pdf_file_upload.file_name.replace('.pdf', '').replace('.PDF', '')
                 image_filename = f"{pdf_name}_page_{page_number:03d}.png"
                 
@@ -144,7 +184,8 @@ def convert_pdf_to_images_simple(pdf_file_upload: FileUpload) -> List[Dict]:
                     resolution_dpi=300,
                     extraction_params={
                         'width': pix.width,
-                        'height': pix.height
+                        'height': pix.height,
+                        'binarized': settings.OCR_BINARIZE and CV2_AVAILABLE
                     }
                 )
                 logger.debug(f"Created PDFImageRelationship id={relationship.id}")
@@ -169,6 +210,125 @@ def convert_pdf_to_images_simple(pdf_file_upload: FileUpload) -> List[Dict]:
     return results
 
 
+def render_pdf_page_job(pdf_file_upload_id, page_num, total_pages, **kwargs):
+    """
+    Background job to render a single PDF page.
+    Called by RQ workers in parallel.
+
+    Args:
+        pdf_file_upload_id: FileUpload ID
+        page_num: 0-indexed page number
+        total_pages: Total pages in PDF
+        **kwargs: Extra metadata (coordination_key, etc.)
+    """
+    try:
+        pdf_file_upload = FileUpload.objects.get(id=pdf_file_upload_id)
+
+        if hasattr(settings, 'AWS_S3_ENDPOINT_URL') and settings.AWS_S3_ENDPOINT_URL:
+            pdf_file_upload.file.seek(0)
+            pdf_content = pdf_file_upload.file.read()
+        else:
+            with open(pdf_file_upload.file.path, 'rb') as f:
+                pdf_content = f.read()
+
+        doc = fitz.open(stream=pdf_content, filetype="pdf")
+        page = doc[page_num]
+
+        mat = fitz.Matrix(300/72.0, 300/72.0)
+        pix = page.get_pixmap(matrix=mat, alpha=False, colorspace=fitz.csGRAY)
+
+        img = Image.frombytes("L", (pix.width, pix.height), pix.samples)
+
+        if settings.OCR_BINARIZE and CV2_AVAILABLE:
+            img_array = np.array(img)
+            binary = cv2.adaptiveThreshold(
+                img_array, 255,
+                cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+                cv2.THRESH_BINARY, 11, 2
+            )
+            img = Image.fromarray(binary)
+
+        output = io.BytesIO()
+        img.save(output, format='PNG', optimize=True, compress_level=settings.OCR_PNG_COMPRESSION)
+        img_bytes = output.getvalue()
+
+        doc.close()
+
+        page_number = page_num + 1
+        pdf_name = pdf_file_upload.file_name.replace('.pdf', '').replace('.PDF', '')
+        image_filename = f"{pdf_name}_page_{page_number:03d}.png"
+
+        image_file = ContentFile(img_bytes, name=image_filename)
+        image_file_upload = FileUpload(
+            user=pdf_file_upload.user,
+            project=pdf_file_upload.project
+        )
+        image_file_upload.file.save(image_filename, image_file, save=True)
+
+        relationship = PDFImageRelationship.objects.create(
+            pdf_file=pdf_file_upload,
+            image_file=image_file_upload,
+            page_number=page_number,
+            image_format='png',
+            resolution_dpi=300,
+            extraction_params={
+                'width': pix.width,
+                'height': pix.height,
+                'binarized': settings.OCR_BINARIZE and CV2_AVAILABLE
+            }
+        )
+
+        logger.info(f"Rendered page {page_number}/{total_pages} for PDF {pdf_file_upload_id}")
+
+        return {
+            'page_number': page_number,
+            'file_upload_id': image_file_upload.id,
+            'relationship_id': relationship.id,
+            'success': True
+        }
+
+    except Exception as e:
+        logger.error(f"Failed to render page {page_num + 1}: {e}", exc_info=True)
+        return {'success': False, 'error': str(e), 'page_num': page_num}
+
+
+def convert_pdf_to_images_parallel(pdf_file_upload: FileUpload) -> List[Dict]:
+    """
+    Coordinate parallel PDF conversion by enqueueing per-page jobs to RQ workers.
+    Returns immediately after enqueueing jobs.
+    """
+    logger.info(f"Starting parallel PDF conversion: {pdf_file_upload.file_name}")
+
+    if hasattr(settings, 'AWS_S3_ENDPOINT_URL') and settings.AWS_S3_ENDPOINT_URL:
+        pdf_file_upload.file.seek(0)
+        pdf_content = pdf_file_upload.file.read()
+        pdf_document = fitz.open(stream=pdf_content, filetype="pdf")
+    else:
+        pdf_document = fitz.open(pdf_file_upload.file.path)
+
+    total_pages = pdf_document.page_count
+    pdf_document.close()
+
+    logger.info(f"PDF has {total_pages} pages, splitting across RQ workers")
+
+    jobs = []
+    for page_num in range(total_pages):
+        job = start_job_async_or_sync(
+            render_pdf_page_job,
+            pdf_file_upload.id,
+            page_num,
+            total_pages,
+            queue_name='high',
+            job_timeout=300,
+            coordination_key=f"pdf:{pdf_file_upload.id}"
+        )
+        jobs.append(job)
+
+    logger.info(f"Enqueued {len(jobs)} page rendering jobs to high queue")
+
+    return []
+
+
 def extract_characters_from_image_content(image_content: bytes, page_number: int = 1) -> List[Dict]:
     """Extract characters from image content using EasyOCR"""
     if not EASYOCR_AVAILABLE:
@@ -182,7 +342,10 @@ def extract_characters_from_image_content(image_content: bytes, page_number: int
         image = Image.open(io.BytesIO(image_content))
         image_width, image_height = image.size
 
-        reader = easyocr.Reader(['ch_sim', 'en'], gpu=False)
+        reader = get_easyocr_reader()
+        if reader is None:
+            logger.error("Failed to get EasyOCR reader")
+            return []
 
         image_array = np.array(image)
         results = reader.readtext(image_array)
@@ -356,6 +519,71 @@ def _extract_ocr_for_page(task: Task, image_upload: FileUpload, page_number: int
     return False
 
 
+def extract_ocr_for_page_job(task_id, image_file_id, page_number, **kwargs):
+    """
+    Background job to extract OCR for a single page.
+    Called by RQ workers in parallel.
+
+    Args:
+        task_id: Task ID
+        image_file_id: FileUpload ID for the image
+        page_number: Page number (1-indexed)
+
+    Returns:
+        Dict with success status and metadata
+    """
+    from tasks.models import Task
+
+    try:
+        task = Task.objects.get(id=task_id)
+        image_upload = FileUpload.objects.get(id=image_file_id)
+
+        logger.info(f"OCR job for task {task_id}, page {page_number}")
+
+        success = _extract_ocr_for_page(task, image_upload, page_number)
+
+        return {
+            'task_id': task_id,
+            'page_number': page_number,
+            'image_file_id': image_file_id,
+            'success': success
+        }
+    except Exception as e:
+        logger.error(f"Failed to extract OCR for task {task_id} page {page_number}: {e}", exc_info=True)
+        return {
+            'task_id': task_id,
+            'page_number': page_number,
+            'success': False,
+            'error': str(e)
+        }
+
+
+def process_ocr_for_task_parallel(task: Task, relationships) -> None:
+    """
+    Coordinate parallel OCR extraction by enqueueing per-page jobs to RQ workers.
+
+    Args:
+        task: Task instance
+        relationships: QuerySet of PDFImageRelationship
+    """
+    from core.redis import start_job_async_or_sync
+
+    page_count = relationships.count()
+    logger.info(f"Task {task.id}: Enqueueing {page_count} parallel OCR jobs")
+
+    for relationship in relationships:
+        start_job_async_or_sync(
+            extract_ocr_for_page_job,
+            task.id,
+            relationship.image_file.id,
+            relationship.page_number,
+            queue_name='high',
+            job_timeout=300
+        )
+
+    logger.info(f"Task {task.id}: Enqueued {page_count} OCR extraction jobs")
+
+
 def _process_task_relationships(task: Task, relationships) -> None:
     """
     Process all page relationships for a task and extract OCR
@@ -416,7 +644,7 @@ def process_ocr_for_tasks_after_import(tasks) -> int:
 
             if relationships.exists():
                 _set_task_pages(task, relationships)
-                _process_task_relationships(task, relationships)
+                process_ocr_for_task_parallel(task, relationships)
                 ocr_processed_count += 1
             
         except Exception as e:
@@ -451,11 +679,11 @@ def process_pdf_if_needed(file_upload: FileUpload) -> bool:
         logger.debug(f"File {file_upload.file_name} is not a PDF, skipping conversion")
         return False
     
-    logger.info(f"Detected PDF file: {file_upload.file_name}, starting conversion")
-    
+    logger.info(f"Detected PDF file: {file_upload.file_name}, starting parallel conversion")
+
     try:
-        results = convert_pdf_to_images_simple(file_upload)
-        logger.info(f"PDF conversion successful: {len(results)} pages processed")
+        convert_pdf_to_images_parallel(file_upload)
+        logger.info(f"PDF conversion jobs enqueued successfully")
         return True
     except Exception as e:
         logger.error(f"Failed to convert PDF: {str(e)}")
