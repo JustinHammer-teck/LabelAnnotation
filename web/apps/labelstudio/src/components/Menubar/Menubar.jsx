@@ -231,16 +231,13 @@ export const Menubar = ({
                     exact
                   />
                 )}
-                {
-                  isManagerOrResearcher &&
-                  <Menu.Item
-                    label="Projects"
-                    to="/projects"
-                    icon={<IconFolder />}
-                    data-external
-                    exact
-                  />
-                }
+                <Menu.Item
+                  label="Projects"
+                  to="/projects"
+                  icon={<IconFolder />}
+                  data-external
+                  exact
+                />
                 <Menu.Item
                   label="Organization"
                   to="/organization"

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState , useEffect, useContext} from "react";
 import { useParams as useRouterParams } from "react-router";
 import { Redirect } from "react-router-dom";
 import { Button } from "../../components";
@@ -14,6 +14,7 @@ import "./Projects.scss";
 import { EmptyProjectsList, ProjectsList } from "./ProjectsList";
 import { useAbortController } from "@humansignal/core";
 import {useTranslation} from "react-i18next";
+import {useUserRole} from "../../hooks/useUserRole";
 
 const getCurrentPage = () => {
   const pageNumberFromURL = new URLSearchParams(location.search).get("page");
@@ -22,16 +23,17 @@ const getCurrentPage = () => {
 };
 
 export const ProjectsPage = () => {
-  const api = React.useContext(ApiContext);
+  const api = useContext(ApiContext);
   const abortController = useAbortController();
-  const [projectsList, setProjectsList] = React.useState([]);
-  const [networkState, setNetworkState] = React.useState(null);
+  const [projectsList, setProjectsList] = useState([]);
+  const [networkState, setNetworkState] = useState(null);
   const [currentPage, setCurrentPage] = useState(getCurrentPage());
   const [totalItems, setTotalItems] = useState(1);
   const setContextProps = useContextProps();
   const defaultPageSize = Number.parseInt(localStorage.getItem("pages:projects-list") ?? 30);
+  const { isManagerOrResearcher } = useUserRole()
 
-  const [modal, setModal] = React.useState(false);
+  const [modal, setModal] = useState(false);
 
   const openModal = () => setModal(true);
 
@@ -104,14 +106,14 @@ export const ProjectsPage = () => {
     await fetchProjects(page, pageSize);
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
     fetchProjects();
   }, []);
 
-  React.useEffect(() => {
+  useEffect(() => {
     // there is a nice page with Create button when list is empty
     // so don't show the context button in that case
-    setContextProps({ openModal, showButton: projectsList.length > 0 });
+    setContextProps({ openModal, showButton: isManagerOrResearcher && projectsList.length > 0 });
   }, [projectsList.length]);
 
   return (
