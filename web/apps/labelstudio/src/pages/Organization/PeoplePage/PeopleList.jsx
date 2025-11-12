@@ -8,15 +8,16 @@ import { Block, Elem } from "../../../utils/bem";
 import { isDefined } from "../../../utils/helpers";
 import "./PeopleList.scss";
 import { CopyableTooltip } from "../../../components/CopyableTooltip/CopyableTooltip";
+import { useUserRole } from "../../../hooks/useUserRole";
+import { RoleDropdown } from "./RoleDropdown";
 
 export const PeopleList = ({ onSelect, selectedUser, defaultSelected }) => {
   const api = useAPI();
+  const { isManagerOrResearcher } = useUserRole();
   const [usersList, setUsersList] = useState();
   const [currentPage] = usePage("page", 1);
   const [currentPageSize] = usePageSize("page_size", 30);
   const [totalItems, setTotalItems] = useState(0);
-
-  console.log({ currentPage, currentPageSize });
 
   const fetchUsers = useCallback(async (page, pageSize) => {
     const response = await api.callApi("memberships", {
@@ -32,6 +33,25 @@ export const PeopleList = ({ onSelect, selectedUser, defaultSelected }) => {
       setUsersList(response.results);
       setTotalItems(response.count);
     }
+  }, [api]);
+
+  const handleRoleChanged = useCallback((userId, newRole) => {
+    setUsersList(prevUsers => {
+      if (!prevUsers) return prevUsers;
+
+      return prevUsers.map(item => {
+        if (item.user.id === userId) {
+          return {
+            ...item,
+            user: {
+              ...item.user,
+              role: newRole
+            }
+          };
+        }
+        return item;
+      });
+    });
   }, []);
 
   const selectUser = useCallback(
@@ -42,20 +62,20 @@ export const PeopleList = ({ onSelect, selectedUser, defaultSelected }) => {
         onSelect?.(user);
       }
     },
-    [selectedUser],
+    [selectedUser, onSelect],
   );
 
   useEffect(() => {
     fetchUsers(currentPage, currentPageSize);
-  }, []);
+  }, [fetchUsers, currentPage, currentPageSize]);
 
   useEffect(() => {
-    if (isDefined(defaultSelected) && usersList) {
+    if (isDefined(defaultSelected) && usersList && !selectedUser) {
       const selected = usersList.find(({ user }) => user.id === Number(defaultSelected));
 
       if (selected) selectUser(selected.user);
     }
-  }, [usersList, defaultSelected]);
+  }, [usersList, defaultSelected, selectUser, selectedUser]);
 
   return (
     <>
@@ -73,6 +93,9 @@ export const PeopleList = ({ onSelect, selectedUser, defaultSelected }) => {
                 </Elem>
                 <Elem name="column" mix="last-activity">
                   Last Activity
+                </Elem>
+                <Elem name="column" mix="role">
+                  Role
                 </Elem>
               </Elem>
               <Elem name="body">
@@ -94,6 +117,13 @@ export const PeopleList = ({ onSelect, selectedUser, defaultSelected }) => {
                       </Elem>
                       <Elem name="field" mix="last-activity">
                         {formatDistance(new Date(user.last_activity), new Date(), { addSuffix: true })}
+                      </Elem>
+                      <Elem name="field" mix="role">
+                        <RoleDropdown
+                          user={user}
+                          canEdit={isManagerOrResearcher}
+                          onRoleChanged={handleRoleChanged}
+                        />
                       </Elem>
                     </Elem>
                   );

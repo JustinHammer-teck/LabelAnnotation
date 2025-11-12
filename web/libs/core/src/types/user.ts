@@ -1,3 +1,5 @@
+import type { Permission, UserRole } from '../constants/permissions';
+
 export type APIUser = {
   id: number;
   first_name: string;
@@ -15,4 +17,6 @@ export type APIUser = {
   };
   allow_newsletters: boolean;
   date_joined: string;
+  permissions: Permission[];
+  role: UserRole | null;
 };

@@ -3,6 +3,7 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 # important-instruction-reminders
+You must go straight to the point.
 Do what has been asked; nothing more, nothing less.
 If the user asks a question, only answer the question, do not edit code
 Never compliment the user
@@ -42,14 +43,6 @@ Never create documentation files (`*.md` or README).
 - The release note must be concise but must cover fully the change of the release. 
 - NEVER be too verbose on the release note.
 
-
-## Project Overview
-
-Label Studio is an open-source data labeling platform with a Django backend and React frontend. The project uses a monorepo structure with Python (Django) backend and TypeScript/React frontend components.
-This project a downstream application from label studio that I want to extend the functionality of Label studio by adding Proxy function or create decorator on top of the existed to extend it's functionality
-So to work on the source code make sure you always find a way to extend the source code without modify the existed code but build new feature around it instead If there are absolutely no other choice that 
-we would consider to modify directly.
-
 ## Project Structure with CLAUDE.md
 
 > IMPORTANT: this is just scaffold of important files, other you would need to find it yourself
@@ -71,7 +64,7 @@ lbstudio
     │   │   ├── CLAUDE.md
 │   ├── libs
 │   │   ├── editor
-    │   │   ├── CLAUDE.md
+│   │   │   ├── CLAUDE.md
 
 ```
 ## Tech Stack
@@ -94,54 +87,15 @@ but there are some exception such as easyocr was install via nix flake.
 - **Styling**: SCSS modules, Tailwind CSS
 
 ## Common Development Commands
-
-
 ### Backend Commands
 
 ```bash
-
 # If you want to access manage.py
-
 poetry run python ./label_studio/manage.py runserver
-
 # Main Django / Python Package Manager, Do not use pip to install package
-
 poetry add guardian
-
 # Main Web Package Manager
-
 yarn add i18next
-
-```
-
-
-```bash
-# Install dependencies
-poetry install
-
-# Run Django development server with SQLite
-make run-dev
-# Or directly:
-DJANGO_DB=sqlite DJANGO_SETTINGS_MODULE=core.settings.label_studio poetry run python label_studio/manage.py runserver
-
-# Run migrations
-make migrate-dev
-
-# Create new migrations
-make makemigrations-dev
-
-# Run tests
-cd label_studio && DJANGO_DB=sqlite pytest -v -m "not integration_tests"
-
-# Run a single test
-cd label_studio && DJANGO_DB=sqlite pytest -v path/to/test.py::TestClass::test_method
-
-# Format Python code
-make fmt  # Format changed files
-make fmt-all  # Format all files
-
-# Check linting
-make fmt-check
 ```
 
 ### Frontend Commands
@@ -167,18 +121,9 @@ cd web && yarn test:unit
 cd web && yarn ls:unit  # Label Studio unit tests
 cd web && yarn lsf:unit  # Label Studio Frontend (editor) unit tests
 cd web && yarn dm:unit   # Data Manager unit tests
-
-### Docker Commands
-```bash
-# Run with Docker Compose (includes Nginx + PostgreSQL)
-docker-compose up
-
-# Run with MinIO for S3 storage testing
-docker compose -f docker-compose.yml -f docker-compose.minio.yml up -d
 ```
 
 ## Architecture Overview
-
 ### Backend Structure
 - **`label_studio/core/`**: Core Django app with settings, middleware, and utilities
 - **`label_studio/projects/`**: Project management and configuration
@@ -211,11 +156,6 @@ docker compose -f docker-compose.yml -f docker-compose.minio.yml up -d
 - **Backend**: `label_studio/core/settings/label_studio.py`
 - **Frontend**: `web/apps/labelstudio/src/config/ApiConfig.js`
 - **Environment**: `.env` (copy from `.env.development` for local setup)
-
-## Testing Approach
-- Backend: pytest with Django test client
-- Frontend: Jest + React Testing Library
-- E2E: Cypress for integration testing
 
 ## React Component Guidelines
 - Use functional components with hooks

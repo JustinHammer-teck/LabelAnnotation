@@ -121,5 +121,50 @@ class UserWithPermissionSerializer(serializers.ModelSerializer):
         model = User
         fields = ['id', 'username', 'email', 'has_view_permission']
 
+
+class UserWithPermissionsSerializer(BaseUserSerializer):
+    permissions = serializers.SerializerMethodField()
+    role = serializers.SerializerMethodField()
+
+    def get_permissions(self, user):
+        from core.permissions import all_permissions
+
+        permissions_list = []
+        for permission_name in all_permissions.model_fields.keys():
+            permission_value = getattr(all_permissions, permission_name)
+            if user.has_perm(permission_value):
+                permissions_list.append(permission_value)
+
+        return permissions_list
+
+    def get_role(self, user):
+        from core.permissions import annotator_permissions, researcher_permissions, manager_permissions
+
+        user_permissions = set(self.get_permissions(user))
+
+        if manager_permissions.issubset(user_permissions):
+            return 'Manager'
+        elif researcher_permissions.issubset(user_permissions):
+            return 'Researcher'
+        elif annotator_permissions.issubset(user_permissions):
+            return 'Annotator'
+
+        return None
+
+    class Meta(BaseUserSerializer.Meta):
+        fields = BaseUserSerializer.Meta.fields + ('permissions', 'role')
+
+
+class RoleAssignmentSerializer(serializers.Serializer):
+    role = serializers.ChoiceField(choices=['Annotator', 'Researcher', 'Manager'], required=True)
+
+    def validate_role(self, value):
+        from django.contrib.auth.models import Group
+
+        if not Group.objects.filter(name=value).exists():
+            raise serializers.ValidationError(f"Role group '{value}' does not exist")
+        return value
+
+
 UserSerializer = load_func(settings.USER_SERIALIZER)
 UserSerializerUpdate = load_func(settings.USER_SERIALIZER_UPDATE)

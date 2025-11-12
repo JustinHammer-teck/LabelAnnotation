@@ -4,8 +4,8 @@ import { IconFolderAdd, IconUserAdd, IconFolderOpen } from "@humansignal/icons";
 import { useQuery } from "@tanstack/react-query";
 import { useAPI } from "../../providers/ApiProvider";
 import { useState } from "react";
+import { useUserRole } from '../../hooks/useUserRole';
 import { CreateProject } from "../CreateProject/CreateProject";
-import { InviteLink } from "../Organization/PeoplePage/InviteLink";
 import { Heading, Sub } from "@humansignal/typography";
 import { Link } from "react-router-dom";
 import { Button } from "../../components";
@@ -29,8 +29,8 @@ export const HomePage: Page = () => {
 
   const api = useAPI();
   const [creationDialogOpen, setCreationDialogOpen] = useState(false);
-  const [invitationOpen, setInvitationOpen] = useState(false);
-
+  const { isManagerOrResearcher } = useUserRole();
+  console.log(`the role : ${isManagerOrResearcher}`)
   const { data, isFetching, isSuccess, isError } = useQuery({
     queryKey: ["projects", { page_size: 10 }],
     async queryFn() {
@@ -57,6 +57,7 @@ export const HomePage: Page = () => {
           <div className="flex justify-start gap-4">
             {actions.map((action) => {
               return (
+                isManagerOrResearcher &&
                 <Button
                   key={action.title}
                   rawClassName="flex-grow-0 text-16/24 gap-2 text-primary-content text-left min-w-[250px] [&_svg]:w-6 [&_svg]:h-6 pl-2"
@@ -68,9 +69,7 @@ export const HomePage: Page = () => {
               );
             })}
           </div>
-
-          <Dashboard />
-
+          { isManagerOrResearcher && <Dashboard /> }
           <SimpleCard
             title={
               data && data?.count > 0 ? (
@@ -115,7 +114,6 @@ export const HomePage: Page = () => {
         </section>
       </div>
       {creationDialogOpen && <CreateProject onClose={() => setCreationDialogOpen(false)} />}
-      <InviteLink opened={invitationOpen} onClosed={() => setInvitationOpen(false)} />
     </main>
   );
 };

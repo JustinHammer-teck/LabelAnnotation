@@ -79,25 +79,25 @@ OCR_PNG_COMPRESSION = int(get_env('OCR_PNG_COMPRESSION', '9'))
 RQ_QUEUES = {
     "critical": {
         "HOST": REDIS_HOST,
-        "PORT": 6379,
+        "PORT": REDIS_PORT,
         "DB": 1,
         "DEFAULT_TIMEOUT": 600,
     },
     "high": {
         "HOST": REDIS_HOST,
-        "PORT": 6379,
+        "PORT": REDIS_PORT,
         "DB": 2,
         "DEFAULT_TIMEOUT": 600,
     },
     "default": {
         "HOST": REDIS_HOST,
-        "PORT": 6379,
+        "PORT": REDIS_PORT,
         "DB": 3,
         "DEFAULT_TIMEOUT": 250,
     },
     "low": {
         "HOST": REDIS_HOST,
-        "PORT": 6379,
+        "PORT": REDIS_PORT,
         "DB": 3,
         "DEFAULT_TIMEOUT": 250,
     },

@@ -22,7 +22,7 @@ class AllPermissions(BaseModel):
     projects_view: str = 'projects.view'
     projects_change: str = 'projects.change'
     projects_delete: str = 'projects.delete'
-    projects_assign: str = 'projects.assign'
+    projects_assign: str = 'projects.assign_project'
     tasks_create: str = 'tasks.create'
     tasks_view: str = 'tasks.view'
     tasks_change: str = 'tasks.change'
@@ -129,12 +129,11 @@ manager_permissions = researcher_permissions.union(
 # Assign permissions to roles
 for permission_name in all_permissions:
     if permission_name[1] in manager_permissions:
-        make_perm(permission_name[1], is_manager | is_researcher | is_annotator)
+        make_perm(permission_name[1], is_manager)
     elif permission_name[1] in researcher_permissions:
-        make_perm(permission_name[1], is_researcher | is_annotator)
+        make_perm(permission_name[1], is_researcher)
     elif permission_name[1] in annotator_permissions:
         make_perm(permission_name[1], is_annotator)
     else:
-        # Default to authenticated user for any permissions not explicitly assigned to a role
         make_perm(permission_name[1], rules.is_authenticated)
 
