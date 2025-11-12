@@ -22,6 +22,7 @@ import {
   useFixedLocation
 } from '../../providers/RoutesProvider';
 import { useCurrentUser } from '../../providers/CurrentUser';
+import { useUserRole } from '../../hooks/useUserRole';
 import { cn } from '../../utils/bem';
 import { absoluteURL, isDefined } from '../../utils/helpers';
 import { Breadcrumbs } from '../Breadcrumbs/Breadcrumbs';
@@ -29,7 +30,6 @@ import { Dropdown } from '../Dropdown/Dropdown';
 import { Hamburger } from '../Hamburger/Hamburger';
 import { Menu } from '../Menu/Menu';
 import {
-  VersionNotifier,
   VersionProvider
 } from '../VersionNotifier/VersionNotifier';
 import { NotificationBell } from '../Notification/Notification';
@@ -73,6 +73,7 @@ export const Menubar = ({
   const menuDropdownRef = useRef();
   const useMenuRef = useRef();
   const { user, fetch, isInProgress } = useCurrentUser();
+  const { isManagerOrResearcher } = useUserRole();
   const location = useFixedLocation();
 
   const config = useConfig();
@@ -174,8 +175,6 @@ export const Menubar = ({
           <NotificationBell></NotificationBell>
           <LanguageSwitcher></LanguageSwitcher>
 
-          {ff.isActive(ff.FF_THEME_TOGGLE) && <ThemeToggle />}
-
           <Dropdown.Trigger
             ref={useMenuRef}
             align="right"
@@ -193,21 +192,6 @@ export const Menubar = ({
                   href={absoluteURL('/logout')}
                   data-external
                 />
-                {showNewsletterDot && (
-                  <>
-                    <Menu.Divider />
-                    <Menu.Item
-                      className={cn('newsletter-menu-item')}
-                      href={pages.AccountSettingsPage.path}
-                    >
-                      <span>
-                        Please check new notification settings in the Account &
-                        Settings page
-                      </span>
-                      <span className={cn('newsletter-menu-badge')} />
-                    </Menu.Item>
-                  </>
-                )}
               </Menu>
             }
           >
@@ -247,13 +231,16 @@ export const Menubar = ({
                     exact
                   />
                 )}
-                <Menu.Item
-                  label="Projects"
-                  to="/projects"
-                  icon={<IconFolder />}
-                  data-external
-                  exact
-                />
+                {
+                  isManagerOrResearcher &&
+                  <Menu.Item
+                    label="Projects"
+                    to="/projects"
+                    icon={<IconFolder />}
+                    data-external
+                    exact
+                  />
+                }
                 <Menu.Item
                   label="Organization"
                   to="/organization"
@@ -261,22 +248,17 @@ export const Menubar = ({
                   data-external
                   exact
                 />
-                {}
-                <Menu.Item
-                  label="Admin"
-                  href="/admin"
-                  icon={<IconPersonInCircle />}
-                  forceReload
-                />
-
+                {
+                  isManagerOrResearcher &&
+                  <Menu.Item
+                    label="Advance Admin Panel"
+                    href="/admin"
+                    icon={<IconPersonInCircle />}
+                    forceReload
+                  />
+                }
                 <Menu.Spacer />
-
-                <VersionNotifier showNewVersion />
-
-                <VersionNotifier showCurrentVersion />
-
                 <Menu.Divider />
-
                 <Menu.Item
                   icon={<IconPin />}
                   className={sidebarClass.elem('pin')}

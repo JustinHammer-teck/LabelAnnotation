@@ -13,23 +13,27 @@ type LabelProps = PropsWithChildren<{
   flat?: boolean;
 }>;
 
-export const Label = forwardRef(
-  ({
-    text,
-    children,
-    required,
-    placement = "left",
-    className,
-    description,
-    size = "small",
-    style: inlineStyle,
-    simple,
-    flat,
-  }: LabelProps) => {
+export const Label = forwardRef<HTMLLabelElement | HTMLDivElement, LabelProps>(
+  (
+    {
+      text,
+      children,
+      required,
+      placement = "left",
+      className,
+      description,
+      size = "small",
+      style: inlineStyle,
+      simple,
+      flat,
+    },
+    ref,
+  ) => {
     const TagName = simple ? "div" : "label";
 
     return (
       <TagName
+        ref={ref}
         style={inlineStyle}
         data-required={required}
         className={clsx(styles.label, className, {

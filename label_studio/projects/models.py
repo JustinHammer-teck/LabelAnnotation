@@ -1484,10 +1484,6 @@ class ProjectReimport(models.Model):
         return self.project.has_permission(user)
 
 
-class ProjectProxy(Project):
-    class Meta:
-        proxy = True
-
 
 @receiver(post_save, sender=Project)
 def create_project(sender, instance, **kwargs):

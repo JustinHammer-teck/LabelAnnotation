@@ -948,13 +948,18 @@ class ProjectAssignmentAPI(APIView):
             ),
         )
 
+        project_url = f'/projects/{project.id}/'
+
         async_to_sync(NotificationService().send_notification)(
             channel_name=NotificationChannel.NOTIFICATION,
             event_type=NotificationEventType.PROJECT_ASSIGNED,
             subject='Permission Assigned',
-            message=f'User {request_user.email} has assigned you to Project: {project.id}',
+            message=f'User {request_user.email} has assigned you to Project: {project.title}',
             ts=timezone.now(),
-            receive_user=assign_user
+            receive_user=assign_user,
+            path=project_url,
+            action_type='assign',
+            source=f'project:{project.id}'
         )
 
     def __revoke_permission(self, permission, request_user, project, assign_user):
@@ -966,12 +971,19 @@ class ProjectAssignmentAPI(APIView):
             ),
         )
 
-        # send_notification(
-        #     event='notifications',
-        #     subject='Permission Revoke',
-        #     message=f'User {request_user.email} has revoke you from Project: {project.id}',
-        #     ts=now(),
-        # )
+        project_url = f'/projects/{project.id}/'
+
+        async_to_sync(NotificationService().send_notification)(
+            channel_name=NotificationChannel.NOTIFICATION,
+            event_type=NotificationEventType.PROJECT_ASSIGNED,
+            subject='Permission Revoke',
+            message=f'User {request_user.email} has revoked your permission from Project: {project.title}',
+            ts=timezone.now(),
+            receive_user=assign_user,
+            path=project_url,
+            action_type='revoke',
+            source=f'project:{project.id}'
+        )
 
 
 class ProjectAPIProxy(ProjectAPI):
@@ -980,9 +992,11 @@ class ProjectAPIProxy(ProjectAPI):
         serializer.is_valid(raise_exception=True)
         fields = serializer.validated_data.get('include')
 
-        projects = Project.objects.with_counts(fields=fields).filter(
-            organization=self.request.user.active_organization
-        )
+        projects = get_objects_for_user(
+            self.request.user,
+            ['assigned_to_project'],
+            klass=Project.objects.with_counts(fields=fields)
+        ).filter(organization=self.request.user.active_organization)
 
         return projects
 
@@ -1030,9 +1044,11 @@ class ProjectDashboardAnalyticsAPI(APIView):
 
         organization = request.user.active_organization
 
-        projects = Project.objects.with_counts().filter(
-            organization=organization
-        )
+        projects = get_objects_for_user(
+            request.user,
+            ['assigned_to_project'],
+            klass=Project.objects.with_counts()
+        ).filter(organization=organization)
 
         members_count = organization.users.filter(
             om_through__deleted_at__isnull=True
@@ -1041,10 +1057,12 @@ class ProjectDashboardAnalyticsAPI(APIView):
         today = timezone.now().date()
         week_ago = today - timedelta(days=6)
 
+        project_ids = list(projects.values_list('id', flat=True))
+
         daily_stats = (
             Annotation.objects
             .filter(
-                project__organization=organization,
+                project_id__in=project_ids,
                 created_at__date__gte=week_ago,
                 was_cancelled=False
             )

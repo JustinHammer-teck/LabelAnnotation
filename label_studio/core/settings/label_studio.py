@@ -72,30 +72,33 @@ REDIS_URL = "redis://{}:{}/0".format(REDIS_HOST, REDIS_PORT)
 
 # OCR Configuration
 OCR_ENABLED = get_bool_env('OCR_ENABLED', True)
+OCR_IMAGE_FORMAT = get_env('OCR_IMAGE_FORMAT', 'PNG')
+OCR_BINARIZE = get_bool_env('OCR_BINARIZE', True)
+OCR_PNG_COMPRESSION = int(get_env('OCR_PNG_COMPRESSION', '9'))
 
 RQ_QUEUES = {
     "critical": {
         "HOST": REDIS_HOST,
-        "PORT": 6379,
+        "PORT": REDIS_PORT,
         "DB": 1,
-        "DEFAULT_TIMEOUT": 180,
+        "DEFAULT_TIMEOUT": 600,
     },
     "high": {
         "HOST": REDIS_HOST,
-        "PORT": 6379,
+        "PORT": REDIS_PORT,
         "DB": 2,
-        "DEFAULT_TIMEOUT": 180,
+        "DEFAULT_TIMEOUT": 600,
     },
     "default": {
         "HOST": REDIS_HOST,
-        "PORT": 6379,
+        "PORT": REDIS_PORT,
         "DB": 3,
-        "DEFAULT_TIMEOUT": 180,
+        "DEFAULT_TIMEOUT": 250,
     },
     "low": {
         "HOST": REDIS_HOST,
-        "PORT": 6379,
+        "PORT": REDIS_PORT,
         "DB": 3,
-        "DEFAULT_TIMEOUT": 180,
+        "DEFAULT_TIMEOUT": 250,
     },
 }

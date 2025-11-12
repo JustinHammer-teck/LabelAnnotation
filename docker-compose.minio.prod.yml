@@ -9,6 +9,10 @@ networks:
   internal:
     driver: bridge
 
+volumes:
+  minio-data-prod:
+  valkey-data-prod:
+
 services:
   app:
     stdin_open: true
@@ -104,12 +108,9 @@ services:
     ports:
       - "127.0.0.1:9009:9009"
     volumes:
-      - minio-data:/data
+      - minio-data-prod:/data
     networks:
       - internal
-    environment:
-      - MINIO_ROOT_USER=${MINIO_ROOT_USER:-admin}
-      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD:-123456789}
 
   redis:
     image: docker.io/valkey/valkey:8-alpine
@@ -120,7 +121,7 @@ services:
     ports:
       - "127.0.0.1:6379:6379"
     volumes:
-      - valkey-data:/data
+      - valkey-data-prod:/data
     cap_drop:
       - ALL
     cap_add:
@@ -132,7 +133,3 @@ services:
       options:
         max-size: "1m"
         max-file: "1"
-  
-volumes:
-  minio-data:
-  valkey-data:

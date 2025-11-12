@@ -1,35 +1,32 @@
 title: Aircraft Incident Report Annotation
 type: community
-group: Computer Vision
-image: /static/templates/optical-character-recognition.png
+group:  Incidence Annotation
+image: /static/templates/incidence-annotation.png
 details: <h1>Annotate aircraft incident reports by drawing bounding boxes around key information and adding structured data</h1>
 config: |
+  <!-- { "data": { "pages": ["/static/samples/sample.png"] } } -->
   <View>
     <Header value="Aircraft Incident Report Annotation"/>
 
     <!-- Primary document categories -->
     <RectangleLabels name="documentSections" toName="pages" choice="single" strokeWidth="2" opacity="0.7">
-      <Label value="Header" translationKey="labels.document_sections.header" background="#e6f3ff" />
-      <Label value="Aircraft Info" translationKey="labels.document_sections.aircraft_info" background="#fff2e6" />
-      <Label value="Incident Details" translationKey="labels.document_sections.incident_details" background="#ffe6e6" />
-      <Label value="Personnel Info" translationKey="labels.document_sections.personnel_info" background="#e6ffe6" />
-      <Label value="Weather Conditions" translationKey="labels.document_sections.weather_conditions" background="#f0e6ff" />
-      <Label value="Damage Assessment" translationKey="labels.document_sections.damage_assessment" background="#ffe6f0" />
-      <Label value="Signatures" translationKey="labels.document_sections.signatures" background="#e6fff2" />
-    </RectangleLabels>
-
-    <!-- Specific data fields -->
-    <RectangleLabels name="dataFields" toName="pages" choice="multiple" strokeWidth="1" opacity="0.5">
-      <Label value="Date/Time" translationKey="labels.data_fields.date_time" background="#ff9999" />
-      <Label value="Aircraft Registration" translationKey="labels.data_fields.aircraft_registration" background="#99ccff" />
-      <Label value="Aircraft Type" translationKey="labels.data_fields.aircraft_type" background="#99ff99" />
-      <Label value="Location" translationKey="labels.data_fields.location" background="#ffff99" />
-      <Label value="Pilot Name" translationKey="labels.data_fields.pilot_name" background="#ff99ff" />
-      <Label value="License Number" translationKey="labels.data_fields.license_number" background="#99ffff" />
-      <Label value="Flight Hours" translationKey="labels.data_fields.flight_hours" background="#ffcc99" />
-      <Label value="Incident Description" translationKey="labels.data_fields.incident_description" background="#ccccff" />
-      <Label value="Injuries" translationKey="labels.data_fields.injuries" background="#ffcccc" />
-      <Label value="Property Damage" translationKey="labels.data_fields.property_damage" background="#ccffcc" />
+      <Label value="Header" translationKey="labels.document_sections.header" background="#4A90E2" />
+      <Label value="Aircraft Info" translationKey="labels.document_sections.aircraft_info" background="#F5A623" />
+      <Label value="Incident Details" translationKey="labels.document_sections.incident_details" background="#E74C3C" />
+      <Label value="Personnel Info" translationKey="labels.document_sections.personnel_info" background="#27AE60" />
+      <Label value="Weather Conditions" translationKey="labels.document_sections.weather_conditions" background="#9B59B6" />
+      <Label value="Damage Assessment" translationKey="labels.document_sections.damage_assessment" background="#E91E63" />
+      <Label value="Signatures" translationKey="labels.document_sections.signatures" background="#16A085" />
+      <Label value="Date/Time" translationKey="labels.data_fields.date_time" background="#E74C3C" />
+      <Label value="Aircraft Registration" translationKey="labels.data_fields.aircraft_registration" background="#3498DB" />
+      <Label value="Aircraft Type" translationKey="labels.data_fields.aircraft_type" background="#2ECC71" />
+      <Label value="Location" translationKey="labels.data_fields.location" background="#F39C12" />
+      <Label value="Pilot Name" translationKey="labels.data_fields.pilot_name" background="#9B59B6" />
+      <Label value="License Number" translationKey="labels.data_fields.license_number" background="#1ABC9C" />
+      <Label value="Flight Hours" translationKey="labels.data_fields.flight_hours" background="#E67E22" />
+      <Label value="Incident Description" translationKey="labels.data_fields.incident_description" background="#5DADE2" />
+      <Label value="Injuries" translationKey="labels.data_fields.injuries" background="#EC7063" />
+      <Label value="Property Damage" translationKey="labels.data_fields.property_damage" background="#58D68D" />
     </RectangleLabels>
 
     <!-- Image display with zoom and rotation controls -->

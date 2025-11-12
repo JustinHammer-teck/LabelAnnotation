@@ -18,6 +18,7 @@ import { IconPlus } from "@humansignal/icons";
 import { useToast } from "@humansignal/ui";
 import { InviteLink } from "./InviteLink";
 import { debounce } from "@humansignal/core/lib/utils/debounce";
+import { useUserRole } from '../../../hooks/useUserRole';
 
 const InvitationModal = ({ link }) => {
   return (
@@ -57,6 +58,7 @@ export const PeoplePage = () => {
   const toast = useToast();
   const [selectedUser, setSelectedUser] = useState(null);
   const [invitationOpen, setInvitationOpen] = useState(false);
+  const { isManagerOrResearcher } = useUserRole();
 
   const [link, setLink] = useState();
 
@@ -66,7 +68,7 @@ export const PeoplePage = () => {
 
       localStorage.setItem("selectedUser", user?.id);
     },
-    [setSelectedUser],
+    [],
   );
 
   const apiTokensSettingsModalProps = useMemo(
@@ -101,10 +103,16 @@ export const PeoplePage = () => {
           <Space />
 
           <Space>
-            {isFF(FF_AUTH_TOKENS) && <Button onClick={showApiTokenSettingsModal}>API Tokens Settings</Button>}
-            <Button icon={<IconPlus />} primary onClick={() => setInvitationOpen(true)}>
-              Add People
-            </Button>
+            {
+              isManagerOrResearcher &&
+              isFF(FF_AUTH_TOKENS) &&
+              <Button onClick={showApiTokenSettingsModal}>API Tokens Settings</Button>
+            }
+            {isManagerOrResearcher &&
+              <Button icon={<IconPlus />} primary onClick={() => setInvitationOpen(true)}>
+                Add People
+              </Button>
+            }
           </Space>
         </Space>
       </Elem>
@@ -114,12 +122,9 @@ export const PeoplePage = () => {
           defaultSelected={defaultSelected}
           onSelect={(user) => selectUser(user)}
         />
-
-        {selectedUser ? (
-          <SelectedUser user={selectedUser} onClose={() => selectUser(null)} />
-        ) : (
-          isFF(FF_LSDV_E_297) && <HeidiTips collection="organizationPage" />
-        )}
+        {
+          selectedUser && <SelectedUser user={selectedUser} onClose={() => selectUser(null)} />
+        }
       </Elem>
       <InviteLink
         opened={invitationOpen}

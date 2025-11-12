@@ -64,10 +64,10 @@
 // --- Styles for Individual Notification Items ---
 
 .notification-item {
-  // Add some padding inside each item for better spacing.
   white-space: nowrap;
   padding: 8px 16px;
   text-overflow: ellipsis;
+  position: relative;
 
   &__content {
     white-space: normal;
@@ -75,24 +75,41 @@
 
   &__subject {
     font-size: 14px;
-    color: #1f2937; // Equivalent to Tailwind's `text-gray-800`
+    color: #1f2937;
   }
 
   &__message {
     font-size: 13px;
-    color: #4b5563; // Equivalent to Tailwind's `text-gray-600`
+    color: #4b5563;
     margin-top: 4px;
   }
 }
 
-// Style for unread notifications to make them stand out.
 .notification-item--unread {
-  // ** CHANGE 2: SET UNREAD BACKGROUND TO LIGHT GREY (using CSS Hex Code) **
-  // #f3f4f6 is the hex code for Tailwind's `bg-gray-100`.
-  background-color: #f3f4f6;
+  background-color: #e0f2fe;
+  border-left: 3px solid #0284c7;
+
+  .notification-item__content {
+    padding-left: 8px;
+  }
 
   .notification-item__subject {
-    // Make the subject bold for unread items.
-    font-weight: 600; // Equivalent to Tailwind's `font-semibold`
+    font-weight: 600;
+    color: #0c4a6e;
+
+    &::before {
+      content: '';
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      background-color: #0284c7;
+      border-radius: 50%;
+      margin-right: 8px;
+      vertical-align: middle;
+    }
+  }
+
+  .notification-item__message {
+    color: #0c4a6e;
   }
 }

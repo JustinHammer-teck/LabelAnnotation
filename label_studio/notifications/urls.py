@@ -5,8 +5,9 @@ from datetime import datetime
 from typing import AsyncGenerator
 
 from django.http import HttpRequest, HttpResponseBase, HttpResponseNotAllowed, StreamingHttpResponse
-from django.urls import path
+from django.urls import include, path
 
+from . import api
 from .services import RedisClient
 
 logger = logging.getLogger(__name__)
@@ -52,12 +53,12 @@ async def events(request: HttpRequest, event_name: str) -> HttpResponseBase:
     )
 
 
-# _api_urlpatterns = [
-#     path('', api.NotificationsAPIList.as_view(), name='notification-list'),
-#     path('<int:pk>/', api.NotificationAPI.as_view(), name='notification-detail'),
-# ]
-
+_api_urlpatterns = [
+    path('', api.NotificationListView.as_view(), name='notification-list'),
+    path('<int:pk>/', api.MarkNotificationAsReadView.as_view(), name='notification-detail'),
+]
 
 urlpatterns = [
     path('events/<str:event_name>', events, name='server-events'),
+    path('api/notifications/', include((_api_urlpatterns, app_name), namespace='api')),
 ]

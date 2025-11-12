@@ -9,22 +9,24 @@ import { PredictionsSettings } from "./PredictionsSettings/PredictionsSettings";
 import { StorageSettings } from "./StorageSettings/StorageSettings";
 import { isInLicense, LF_CLOUD_STORAGE_FOR_MANAGERS } from "../../utils/license-flags";
 import {TaskAssignmentSettings} from "./TaskAssignmentSettings/TaskAssignmentSettings";
+import {useUserRole} from "../../hooks/useUserRole";
 
 const isAllowCloudStorage = !isInLicense(LF_CLOUD_STORAGE_FOR_MANAGERS);
 
 export const MenuLayout = ({ children, ...routeProps }) => {
+  const { isManagerOrResearcher } = useUserRole()
   return (
     <SidebarMenu
       menuItems={[
         GeneralSettings,
         LabelingSettings,
         AnnotationSettings,
-        MachineLearningSettings,
-        PredictionsSettings,
-        isAllowCloudStorage && StorageSettings,
-        WebhookPage,
-        TaskAssignmentSettings,
-        DangerZone,
+        // MachineLearningSettings,
+        // PredictionsSettings,
+        // isAllowCloudStorage && StorageSettings,
+        // WebhookPage,
+        isManagerOrResearcher && TaskAssignmentSettings,
+        isManagerOrResearcher && DangerZone,
       ].filter(Boolean)}
       path={routeProps.match.url}
       children={children}
@@ -35,9 +37,9 @@ export const MenuLayout = ({ children, ...routeProps }) => {
 const pages = {
   AnnotationSettings,
   LabelingSettings,
-  MachineLearningSettings,
-  PredictionsSettings,
-  WebhookPage,
+  // MachineLearningSettings,
+  // PredictionsSettings,
+  // WebhookPage,
   TaskAssignmentSettings,
   DangerZone,
 };

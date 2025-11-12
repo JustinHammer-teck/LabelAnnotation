@@ -1,19 +1,14 @@
 import chroma from "chroma-js";
 
-const BASE_COLORS = {
-  chart: {
-    primary: '#0F62FE',
-    secondary: '#8A3FFC',
-    tertiary: '#33B1FF',
-    accent: '#24A148',
-    neutral: '#525252',
-  },
-  status: {
-    completed: '#24A148',
-    inProgress: '#0F62FE',
-    pending: '#F1C21B',
-  },
-} as const;
+const getCSSVariable = (varName: string): string => {
+  if (typeof window === 'undefined') return 'rgb(0, 0, 0)';
+  const raw = getComputedStyle(document.documentElement)
+    .getPropertyValue(`${varName}-raw`)
+    .trim();
+  if (!raw) return 'rgb(0, 0, 0)';
+  const [r, g, b] = raw.split(/\s+/).map(Number);
+  return `rgb(${r}, ${g}, ${b})`;
+};
 
 const createStatusColors = (baseColor: string) => {
   const base = chroma(baseColor);
@@ -25,32 +20,47 @@ const createStatusColors = (baseColor: string) => {
   };
 };
 
-export const DASHBOARD_COLORS = {
-  chart: {
-    primary: BASE_COLORS.chart.primary,
-    secondary: BASE_COLORS.chart.secondary,
-    tertiary: BASE_COLORS.chart.tertiary,
-    accent: BASE_COLORS.chart.accent,
-    neutral: BASE_COLORS.chart.neutral,
-  },
-  status: {
-    completed: createStatusColors(BASE_COLORS.status.completed),
-    inProgress: createStatusColors(BASE_COLORS.status.inProgress),
-    pending: createStatusColors(BASE_COLORS.status.pending),
-  },
-} as const;
+const getThemeColors = () => {
+  return {
+    chart: {
+      primary: getCSSVariable('--color-primary-content'),
+      secondary: getCSSVariable('--color-accent-plum-base'),
+      tertiary: getCSSVariable('--color-positive-content'),
+      accent: getCSSVariable('--color-accent-blueberry-bold'),
+      neutral: getCSSVariable('--color-neutral-content'),
+    },
+    status: {
+      completed: getCSSVariable('--color-accent-kiwi-bold'),
+      inProgress: getCSSVariable('--color-accent-persimmon-bold'),
+      pending: getCSSVariable('--color-accent-blueberry-bold'),
+    },
+  };
+};
+
+export const DASHBOARD_COLORS = (() => {
+  const themeColors = getThemeColors();
+
+  return {
+    chart: themeColors.chart,
+    status: {
+      completed: createStatusColors(themeColors.status.completed),
+      inProgress: createStatusColors(themeColors.status.inProgress),
+      pending: createStatusColors(themeColors.status.pending),
+    },
+  };
+})();
 
 export const CHART_PALETTE = [
-  BASE_COLORS.chart.primary,
-  BASE_COLORS.chart.secondary,
-  BASE_COLORS.chart.accent,
-  BASE_COLORS.chart.tertiary,
-  BASE_COLORS.chart.neutral,
-  '#D12771',
-  '#FA4D56',
-  '#FF832B',
-  '#198038',
-  '#1192E8',
+  // getCSSVariable('--color-accent-plum-base'),
+  // getCSSVariable('--color-accent-fig-base'),
+  getCSSVariable('--color-accent-kale-base'),
+  getCSSVariable('--color-accent-blueberry-base'),
+  getCSSVariable('--color-accent-kiwi-base'),
+  getCSSVariable('--color-accent-grape-base'),
+  getCSSVariable('--color-accent-mango-base'),
+  // getCSSVariable('--color-accent-canteloupe-base'),
+  getCSSVariable('--color-accent-persimmon-base'),
+  getCSSVariable('--color-warning-icon'),
 ];
 
 export const generateChartColors = (count: number, alpha = 1): string[] => {

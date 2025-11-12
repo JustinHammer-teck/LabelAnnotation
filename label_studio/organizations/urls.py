@@ -1,7 +1,7 @@
 """This file and its contents are licensed under the Apache License 2.0. Please see the included NOTICE for copyright information and LICENSE for a copy of the license.
 """
 from django.urls import include, path
-from organizations import api, views
+from organizations import api, views, proxy
 
 app_name = 'organizations'
 
@@ -19,7 +19,11 @@ _api_urlpattens = [
     # organization detail viewset
     path('<int:pk>', api.OrganizationAPI.as_view(), name='organization-detail'),
     # organization memberships list viewset
-    path('<int:pk>/memberships', api.OrganizationMemberListAPI.as_view(), name='organization-memberships-list'),
+    path(
+        '<int:pk>/memberships',
+         proxy.OrganizationMemberListAPIProxy.as_view(),
+         name='organization-memberships-list'
+    ),
     path(
         '<int:pk>/memberships/<int:user_pk>/',
         api.OrganizationMemberDetailAPI.as_view(),

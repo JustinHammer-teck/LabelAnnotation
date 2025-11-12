@@ -16,7 +16,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from users.functions import check_avatar
 from users.models import User
-from users.serializers import UserSerializer, UserSerializerUpdate
+from users.serializers import UserSerializer, UserSerializerUpdate, UserWithPermissionsSerializer, RoleAssignmentSerializer
 
 logger = logging.getLogger(__name__)
 
@@ -154,6 +154,56 @@ class UserAPI(viewsets.ModelViewSet):
             request.user.save()
             return Response(status=204)
 
+    @swagger_auto_schema(
+        methods=['post'],
+        tags=['Users'],
+        operation_summary='Assign role to user',
+        operation_description='Assign a role (Annotator, Researcher, Manager) to a user. Only Managers and Researchers can assign roles.',
+        request_body=RoleAssignmentSerializer,
+        responses={200: UserSerializer, 400: 'Bad Request', 403: 'Forbidden'},
+    )
+    @action(detail=True, methods=['post'], permission_required=all_permissions.organizations_change)
+    def assign_role(self, request, pk):
+        from django.contrib.auth.models import Group
+        from rest_framework.exceptions import PermissionDenied, ValidationError
+
+        target_user = self.get_object()
+        serializer = RoleAssignmentSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        role_name = serializer.validated_data['role']
+        requesting_user = request.user
+
+        if target_user.active_organization != requesting_user.active_organization:
+            raise PermissionDenied('Cannot assign role to user in different organization')
+
+        role_hierarchy = {'Annotator': 1, 'Researcher': 2, 'Manager': 3}
+
+        requesting_user_groups = requesting_user.groups.values_list('name', flat=True)
+        requesting_user_role = None
+        for role in ['Manager', 'Researcher', 'Annotator']:
+            if role in requesting_user_groups:
+                requesting_user_role = role
+                break
+
+        if not requesting_user_role:
+            raise PermissionDenied('You do not have a role assigned')
+
+        if role_hierarchy.get(role_name, 0) > role_hierarchy.get(requesting_user_role, 0):
+            raise PermissionDenied(f'{requesting_user_role}s cannot assign {role_name} role')
+
+        target_user.groups.clear()
+        role_group = Group.objects.get(name=role_name)
+        target_user.groups.add(role_group)
+
+        logger.info(f'User {requesting_user.id} assigned role {role_name} to user {target_user.id}')
+
+        return Response({
+            'detail': f'Role {role_name} assigned successfully',
+            'user_id': target_user.id,
+            'role': role_name,
+        }, status=200)
+
     def get_serializer_class(self):
         if self.request.method in {'PUT', 'PATCH'}:
             return UserSerializerUpdate
@@ -287,7 +337,7 @@ class UserWhoAmIAPI(generics.RetrieveAPIView):
     parser_classes = (JSONParser, FormParser, MultiPartParser)
     queryset = User.objects.all()
     permission_classes = (IsAuthenticated,)
-    serializer_class = UserSerializer
+    serializer_class = UserWithPermissionsSerializer
 
     def get_object(self):
         return self.request.user

@@ -22,27 +22,33 @@
       in
       {
 
-        devShells.default = pkgs.mkShell {
+        devShells.default = pkgs.mkShellNoCC {
           name = "labelstudio";
 
-          packages = with pkgs; [
-            python313
-            poetry
-            ruff
-            ty
-            vtsls
-            nodejs
-            yarn
-            pre-commit
-          ] ++ (with pkgs.python313Packages; [
-            pip
-            easyocr
-          ]);
+          packages =
+            with pkgs;
+            [
+              python313
+              poetry
+              ruff
+              ty
+              vtsls
+              nodejs
+              yarn
+              pre-commit
+            ]
+            ++ (with pkgs.python313Packages; [
+              pip
+              easyocr
+              stdenv.cc.cc.lib
+            ]);
 
           shellHook = ''
-            poetry env use "$(which python)"
-            poetry install
-            source "$(poetry env info --path)/bin/activate"
+                        poetry env use "$(which python)"
+                        poetry install
+                        source "$(poetry env info --path)/bin/activate"
+            	    export LD_LIBRARY_PATH=${pkgs.stdenv.cc.cc.lib}/lib:$LD_LIBRARY_PATH
+                    alias pycharm='nohup pycharm-professional . &'
           '';
 
           VTSLS_PATH = "${pkgs.vtsls}/bin/vtsls";

@@ -32,6 +32,7 @@ class OrganizationMemberListParamsSerializer(serializers.Serializer):
 class UserOrganizationMemberListSerializer(UserSerializer):
     created_projects = serializers.SerializerMethodField(read_only=True)
     contributed_to_projects = serializers.SerializerMethodField(read_only=True)
+    role = serializers.SerializerMethodField(read_only=True)
 
     def get_created_projects(self, user):
         if not self.context.get('contributed_to_projects', False):
@@ -45,8 +46,20 @@ class UserOrganizationMemberListSerializer(UserSerializer):
         contributed_to_projects_map = self.context.get('contributed_to_projects_map', {})
         return contributed_to_projects_map.get(user.id, [])
 
+    def get_role(self, user):
+        user_groups = set(user.groups.values_list('name', flat=True))
+
+        if 'Manager' in user_groups:
+            return 'Manager'
+        elif 'Researcher' in user_groups:
+            return 'Researcher'
+        elif 'Annotator' in user_groups:
+            return 'Annotator'
+
+        return None
+
     class Meta(UserSerializer.Meta):
-        fields = UserSerializer.Meta.fields + ('created_projects', 'contributed_to_projects')
+        fields = UserSerializer.Meta.fields + ('created_projects', 'contributed_to_projects', 'role')
 
 
 class OrganizationMemberListSerializer(DynamicFieldsMixin, serializers.ModelSerializer):
