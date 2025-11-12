@@ -6,8 +6,8 @@ import { IconCheck, IconEllipsis, IconMinus, IconSparks } from "@humansignal/ico
 import { Userpic } from "@humansignal/ui";
 import { Button, Dropdown, Menu, Pagination } from "../../components";
 import { Block, Elem } from "../../utils/bem";
-import { absoluteURL } from "../../utils/helpers";
 import {useTranslation} from "react-i18next";
+import {useUserRole} from "../../hooks/useUserRole";
 
 const DEFAULT_CARD_COLORS = ["#FFFFFF", "#FDFDFC"];
 
@@ -37,13 +37,21 @@ export const ProjectsList = ({ projects, currentPage, totalItems, loadNextPage, 
 
 export const EmptyProjectsList = ({ openModal }) => {
   const {t} = useTranslation();
+  const { isManagerOrResearcher } = useUserRole();
+
   return (
-    <Block name="empty-projects-page">
-      <p>Create one and start labeling your data.</p>
-      <Elem name="action" tag={Button} onClick={openModal} look="primary">
-        {t("project_page.create_button")}
-      </Elem>
-    </Block>
+    isManagerOrResearcher ? (
+      <Block name="empty-projects-page">
+        <p>Create one and start labeling your data.</p>
+        <Elem name="action" tag={Button} onClick={openModal} look="primary">
+          {t("project_page.create_button")}
+        </Elem>
+      </Block>
+    ) : (
+      <Block name="empty-projects-page">
+        <p>You Haven't Assigned To Any Project Yet.</p>
+      </Block>
+    )
   );
 };
 

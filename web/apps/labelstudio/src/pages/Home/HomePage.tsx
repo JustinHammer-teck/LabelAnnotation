@@ -1,6 +1,6 @@
 import type { Page } from "../types/Page";
 import { SimpleCard, Spinner } from "@humansignal/ui";
-import { IconFolderAdd, IconUserAdd, IconFolderOpen } from "@humansignal/icons";
+import { IconFolderAdd, IconFolderOpen } from "@humansignal/icons";
 import { useQuery } from "@tanstack/react-query";
 import { useAPI } from "../../providers/ApiProvider";
 import { useState } from "react";
@@ -30,7 +30,6 @@ export const HomePage: Page = () => {
   const api = useAPI();
   const [creationDialogOpen, setCreationDialogOpen] = useState(false);
   const { isManagerOrResearcher } = useUserRole();
-  console.log(`the role : ${isManagerOrResearcher}`)
   const { data, isFetching, isSuccess, isError } = useQuery({
     queryKey: ["projects", { page_size: 10 }],
     async queryFn() {
@@ -89,20 +88,24 @@ export const HomePage: Page = () => {
             ) : isError ? (
               <div className="h-64 flex justify-center items-center">can't load projects</div>
             ) : isSuccess && data?.results?.length === 0 ? (
-              <div className="flex flex-col justify-center items-center border border-primary-border-subtle bg-primary-emphasis-subtle rounded-lg h-64">
-                <div
-                  className={
-                    "rounded-full w-12 h-12 flex justify-center items-center bg-accent-grape-subtle text-primary-icon"
-                  }
-                >
-                  <IconFolderOpen />
+              isManagerOrResearcher ? (
+                <div className="flex flex-col justify-center items-center border border-primary-border-subtle bg-primary-emphasis-subtle rounded-lg h-64">
+                  <div
+                    className={
+                      "rounded-full w-12 h-12 flex justify-center items-center bg-accent-grape-subtle text-primary-icon"
+                    }
+                  >
+                    <IconFolderOpen />
+                  </div>
+                  <Heading size={2}>Create your first project</Heading>
+                  <Sub>Import your data and set up the labeling interface to start annotating</Sub>
+                  <Button primary rawClassName="mt-4" onClick={() => setCreationDialogOpen(true)}>
+                    Create Project
+                  </Button>
                 </div>
-                <Heading size={2}>Create your first project</Heading>
-                <Sub>Import your data and set up the labeling interface to start annotating</Sub>
-                <Button primary rawClassName="mt-4" onClick={() => setCreationDialogOpen(true)}>
-                  Create Project
-                </Button>
-              </div>
+              ) : (
+                <p>You Haven't Assigned To Any Project Yet.</p>
+              )
             ) : isSuccess && data.results.length > 0 ? (
               <div className="flex flex-col gap-1">
                 {data.results.map((project) => {

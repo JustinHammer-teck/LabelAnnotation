@@ -1,5 +1,9 @@
 export const API_CONFIG = {
   gateway: `${window.APP_SETTINGS.hostname}/api`,
+  sse: {
+    baseUrl: window.APP_SETTINGS.hostname || 'http://localhost:8080',
+    notifications: '/events',
+  },
   endpoints: {
     // Users
     users: '/users',
@@ -98,6 +102,9 @@ export const API_CONFIG = {
     accessTokenUpdateSettings: 'POST:/jwt/settings',
 
     // Notifcations
+    notifications: '/notifications',
+    notification: '/notifications/:id',
+    updateNotification: 'PATCH:/notifications/:id',
     sendNotification: 'POST:/notifications/send',
 
     // OCR

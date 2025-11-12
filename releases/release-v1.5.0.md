@@ -88,3 +88,78 @@ POST /api/users/{user_id}/assign_role/
 ```bash
 poetry run python label_studio/manage.py migrate users
 ```
+
+### Real-Time Notification System Refactoring
+
+Refactored Server-Sent Events (SSE) implementation to improve code organization, maintainability, and control over real-time notification streams.
+
+**Issue:**
+- SSE connection logic tightly coupled with UI component
+- Hardcoded server URL (`http://localhost:8080`)
+- No reconnection strategy on connection failure
+- Difficult to test SSE logic independently
+- No TypeScript type safety for notifications
+- Cannot share SSE connection across components
+
+**Implementation:**
+
+**1. Separation of Concerns Architecture**
+```typescript
+// Three-layer architecture
+useSSE (generic connection management)
+    ↓
+useNotificationStream (notification-specific logic)
+    ↓
+Jotai atoms (shared state)
+    ↓
+NotificationBell (UI only)
+```
+
+**2. Generic SSE Hook**
+```typescript
+useSSE({ url, autoConnect })
+// Returns: connectionState, error, addEventListener, close
+// Handles: EventSource lifecycle, error handling, cleanup
+```
+
+**3. Notification Stream Hook**
+```typescript
+useNotificationStream()
+// Returns: notifications, unreadCount, connectionState, markAsRead
+// Integrates: useSSE, API calls, atom state management
+// Handles: Historical fetch, SSE events, revoke actions
+```
+
+**4. State Management with Jotai**
+```typescript
+// Atoms for shared state
+notificationsAtom: Notification[]
+notificationConnectionStateAtom: ConnectionState
+unreadCountAtom: derived atom (computed)
+```
+
+**Technical Details:**
+- EventSource connection management with proper cleanup
+- Configurable endpoints via ApiConfig (no hardcoded URLs)
+- TypeScript types for Notification, ConnectionState, ActionType
+- Browser notification permission handling (unchanged)
+- Automatic handling of revoke action type (redirect to home)
+
+**Impact:**
+- ✅ SSE logic separated from UI concerns
+- ✅ Reusable hooks for future real-time features
+- ✅ Single shared SSE connection (prevents multiple connections)
+- ✅ Type-safe notification handling
+- ✅ Easier to test independently
+- ✅ Better error handling and connection state tracking
+- ✅ Simplified NotificationBell component (UI only)
+
+**Files Created:**
+- `web/apps/labelstudio/src/utils/atoms/notificationAtoms.ts` (Jotai atoms + types)
+- `web/apps/labelstudio/src/hooks/useSSE.ts` (generic SSE connection hook)
+- `web/apps/labelstudio/src/hooks/useNotificationStream.ts` (notification-specific hook)
+
+**Files Modified:**
+- `web/apps/labelstudio/src/config/ApiConfig.js:3-6, 105-107` (SSE endpoint configuration)
+- `web/apps/labelstudio/src/components/Notification/Notification.tsx` (refactored from .jsx, simplified to UI only)
+- `web/apps/labelstudio/src/pages/Projects/ProjectsList.jsx:39-57` (fixed EmptyProjectsList syntax)

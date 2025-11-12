@@ -99,6 +99,14 @@ yarn add i18next
 ```
 
 ### Frontend Commands
+
+DO NOT run long running command
+
+``` bash
+# WRONG 
+yarn run dev
+```
+
 ```bash
 # Install dependencies
 cd web && yarn install --frozen-lockfile
