@@ -163,3 +163,124 @@ unreadCountAtom: derived atom (computed)
 - `web/apps/labelstudio/src/config/ApiConfig.js:3-6, 105-107` (SSE endpoint configuration)
 - `web/apps/labelstudio/src/components/Notification/Notification.tsx` (refactored from .jsx, simplified to UI only)
 - `web/apps/labelstudio/src/pages/Projects/ProjectsList.jsx:39-57` (fixed EmptyProjectsList syntax)
+
+## Bug Fixes
+
+### Task Assignment Settings Security and Performance Improvements
+
+Enhanced Task Assignment Settings component with critical security fixes, comprehensive input validation, and performance optimizations following React best practices.
+
+**Issues Fixed:**
+
+**Security Vulnerabilities:**
+- Users could modify their own project permissions (privilege escalation risk)
+- No frontend permission validation before API calls
+- Missing input validation allowed invalid API requests
+- Error suppression masked failures without proper handling
+- No null safety checks for ProjectContext
+
+**Performance Issues:**
+- Handler function recreated on every render causing unnecessary re-renders
+- No memoization for expensive operations
+- Missing React Query optimizations
+
+**Code Quality Issues:**
+- Raw API calls without React Query integration
+- Inconsistent error handling
+- Missing TypeScript strict validation
+- Router compatibility issue with component memoization
+
+**Implementation:**
+
+**1. Self-Modification Prevention**
+```typescript
+// Before: Users could toggle themselves ON (partial protection)
+const isDisabled = isToggling || (isCurrentUser && permissionUser.has_permission);
+
+// After: Users cannot modify their own permissions at all
+const isDisabled = isToggling || isCurrentUser;
+```
+
+**2. Permission-Based Access Control**
+```typescript
+// Frontend validation before showing interactive controls
+const hasAssignPermission = user?.permissions?.some(p => p === 'projects.change_project');
+const canManagePermissions = hasAssignPermission && isManagerOrResearcher;
+
+// Show "no permission" message for unauthorized users
+{!canManagePermissions ? (
+  <div>You don't have permission to manage task assignments.</div>
+) : (
+  // Interactive table
+)}
+```
+
+**3. Input Validation**
+```typescript
+// Query validation
+if (!projectId || typeof projectId !== 'number' || projectId <= 0) {
+  throw new Error('Invalid project ID');
+}
+
+// Mutation validation
+if (!userId || userId <= 0) throw new Error('Invalid user ID');
+if (typeof hasPermission !== 'boolean') throw new Error('Invalid permission value');
+```
+
+**4. Error Handling**
+```typescript
+// Removed error suppression
+// Before: suppressError: true (masked failures)
+
+// After: Proper 403 handling with user-friendly messages
+if (result?.status === 403) {
+  throw new Error('You do not have permission to modify user assignments');
+}
+```
+
+**5. Performance Optimization**
+```typescript
+// Memoized handler prevents unnecessary re-renders
+const handleTogglePermission = useCallback((userId: number, currentPermission: boolean) => {
+  void togglePermission(userId, currentPermission);
+}, [togglePermission]);
+```
+
+**Security Improvements:**
+- ✅ Prevent all self-modifications (both grant and revoke)
+- ✅ Frontend permission validation (projects.change_project + role check)
+- ✅ Comprehensive input validation (projectId, userId, hasPermission)
+- ✅ Proper 403 error handling with specific messages
+- ✅ Null safety for ProjectContext
+- ✅ Defense in depth (frontend + backend validation)
+
+**Performance Improvements:**
+- ✅ useCallback optimization for event handlers
+- ✅ Prevents unnecessary child component re-renders
+- ✅ React Query optimistic updates with rollback
+- ✅ Proper query caching (30s stale time)
+
+**UX Improvements:**
+- ✅ Clear "no permission" message for unauthorized users
+- ✅ Visual indicator "(You)" for current user
+- ✅ Disabled toggle with descriptive aria-label
+- ✅ Toast notifications for success/error feedback
+- ✅ Specific error messages (validation, 403, network)
+
+**Technical Details:**
+- React Query integration for data fetching and mutations
+- TypeScript strict validation with runtime checks
+- Custom hook pattern (useProjectPermissions) for reusable logic
+- Optimistic updates with automatic rollback on error
+- Proper cleanup and error boundaries
+
+**Files Modified:**
+- `web/apps/labelstudio/src/pages/Settings/TaskAssignmentSettings/TaskAssignmentSettings.tsx` (8 security and performance fixes)
+- `web/apps/labelstudio/src/pages/Settings/TaskAssignmentSettings/hooks/useProjectPermissions.ts` (input validation, error handling)
+
+**Impact:**
+- 🔒 Enhanced security: prevents privilege escalation and unauthorized access
+- ⚡ Improved performance: reduced unnecessary re-renders
+- 🎯 Better UX: clear feedback and error messages
+- 🛡️ Defense in depth: frontend and backend validation
+- ✅ Production-ready: follows React and TypeScript best practices
