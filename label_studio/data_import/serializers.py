@@ -25,3 +25,45 @@ class FileUploadSerializer(serializers.ModelSerializer):
     class Meta:
         model = FileUpload
         fields = ['id', 'file']
+
+
+class FileUploadListSerializer(serializers.ModelSerializer):
+    """Serializer for FileUpload list view with computed fields for file management tab"""
+
+    file_name = serializers.SerializerMethodField()
+    file_type = serializers.SerializerMethodField()
+    status = serializers.SerializerMethodField()
+    task_count = serializers.SerializerMethodField()
+    project_title = serializers.SerializerMethodField()
+
+    class Meta:
+        model = FileUpload
+        fields = [
+            'id',
+            'file_name',
+            'file_type',
+            'created_at',
+            'status',
+            'task_count',
+            'project_title',
+        ]
+
+    def get_file_name(self, obj):
+        """Extract file name from file path"""
+        return obj.file_name
+
+    def get_file_type(self, obj):
+        """Get file extension/format"""
+        return obj.format or 'unknown'
+
+    def get_status(self, obj):
+        """Get annotation status from model method"""
+        return obj.get_annotation_status()
+
+    def get_task_count(self, obj):
+        """Get count of tasks associated with this upload"""
+        return obj.task_count
+
+    def get_project_title(self, obj):
+        """Get project title for display"""
+        return obj.project.title if obj.project else None

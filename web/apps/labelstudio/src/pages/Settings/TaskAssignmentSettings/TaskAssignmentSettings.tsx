@@ -1,21 +1,27 @@
-import React, { useContext } from 'react';
+import React, { useCallback, useContext } from 'react';
 import { Spinner } from '@humansignal/ui';
 import { Block, Elem } from '../../../utils/bem';
 import { Toggle } from '../../../components/Form';
 import { ProjectContext } from '../../../providers/ProjectProvider';
 import { useCurrentUser } from '../../../providers/CurrentUser';
+import { useUserRole } from '../../../hooks/useUserRole';
 import { useProjectPermissions } from './hooks/useProjectPermissions';
 
 export const TaskAssignmentSettings: React.FC = () => {
   const { project } = useContext(ProjectContext);
   const { user } = useCurrentUser();
+  const { isManagerOrResearcher } = useUserRole();
+
+  // const hasAssignPermission = user?.permissions?.some(p => p === 'projects.change_project') ?? false;
+  const canManagePermissions = isManagerOrResearcher;
+
   const { permissions, isLoading, togglePermission, isToggling } = useProjectPermissions({
     projectId: project.id,
   });
 
-  const handleTogglePermission = (userId: number, currentPermission: boolean) => {
+  const handleTogglePermission = useCallback((userId: number, currentPermission: boolean) => {
     void togglePermission(userId, currentPermission);
-  };
+  }, [togglePermission]);
 
   return (
     <Block name="annotation-settings">
@@ -26,6 +32,10 @@ export const TaskAssignmentSettings: React.FC = () => {
           {isLoading ? (
             <div className="h-64 flex justify-center items-center">
               <Spinner />
+            </div>
+          ) : !canManagePermissions ? (
+            <div className="p-4 text-gray-600">
+              You don't have permission to manage task assignments.
             </div>
           ) : (
             <div>
@@ -39,7 +49,7 @@ export const TaskAssignmentSettings: React.FC = () => {
                 <tbody>
                   {permissions.map((permissionUser) => {
                     const isCurrentUser = permissionUser.user_id === user?.id;
-                    const isDisabled = isToggling || (isCurrentUser && permissionUser.has_permission);
+                    const isDisabled = isToggling || isCurrentUser;
 
                     return (
                       <tr key={permissionUser.user_id} className="border-t">
@@ -55,8 +65,8 @@ export const TaskAssignmentSettings: React.FC = () => {
                             name={`user-${permissionUser.user_id}`}
                             disabled={isDisabled}
                             aria-label={
-                              isCurrentUser && permissionUser.has_permission
-                                ? `Cannot remove your own permission`
+                              isCurrentUser
+                                ? `Cannot modify your own permission`
                                 : `Toggle permission for ${permissionUser.user_email}`
                             }
                           />
