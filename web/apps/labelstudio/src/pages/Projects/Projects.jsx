@@ -1,6 +1,7 @@
 import React, { useState , useEffect, useContext} from "react";
 import { useParams as useRouterParams } from "react-router";
 import { Redirect } from "react-router-dom";
+import { useAtom } from "jotai";
 import { Button } from "../../components";
 import { Oneof } from "../../components/Oneof/Oneof";
 import { Spinner } from "../../components/Spinner/Spinner";
@@ -15,6 +16,9 @@ import { EmptyProjectsList, ProjectsList } from "./ProjectsList";
 import { useAbortController } from "@humansignal/core";
 import {useTranslation} from "react-i18next";
 import {useUserRole} from "../../hooks/useUserRole";
+import { TabsContainer } from "./tabs-container";
+import { FilesList } from "./files-list";
+import { activeTabAtom } from "./files-atoms";
 
 const getCurrentPage = () => {
   const pageNumberFromURL = new URLSearchParams(location.search).get("page");
@@ -31,7 +35,8 @@ export const ProjectsPage = () => {
   const [totalItems, setTotalItems] = useState(1);
   const setContextProps = useContextProps();
   const defaultPageSize = Number.parseInt(localStorage.getItem("pages:projects-list") ?? 30);
-  const { isManagerOrResearcher } = useUserRole()
+  const { isManagerOrResearcher } = useUserRole();
+  const [activeTab] = useAtom(activeTabAtom);
 
   const [modal, setModal] = useState(false);
 
@@ -116,6 +121,11 @@ export const ProjectsPage = () => {
     setContextProps({ openModal, showButton: isManagerOrResearcher && projectsList.length > 0 });
   }, [projectsList.length]);
 
+  const tabs = [
+    { key: 'projects', label: 'Projects' },
+    ...(isManagerOrResearcher ? [{ key: 'files', label: 'Files' }] : []),
+  ];
+
   return (
     <Block name="projects-page">
       <Oneof value={networkState}>
@@ -123,17 +133,25 @@ export const ProjectsPage = () => {
           <Spinner size={64} />
         </Elem>
         <Elem name="content" case="loaded">
-          {projectsList.length ? (
-            <ProjectsList
-              projects={projectsList}
-              currentPage={currentPage}
-              totalItems={totalItems}
-              loadNextPage={loadNextPage}
-              pageSize={defaultPageSize}
-            />
-          ) : (
-            <EmptyProjectsList openModal={openModal} />
-          )}
+          <TabsContainer tabs={tabs}>
+            {activeTab === 'projects' ? (
+              <>
+                {projectsList.length ? (
+                  <ProjectsList
+                    projects={projectsList}
+                    currentPage={currentPage}
+                    totalItems={totalItems}
+                    loadNextPage={loadNextPage}
+                    pageSize={defaultPageSize}
+                  />
+                ) : (
+                  <EmptyProjectsList openModal={openModal} />
+                )}
+              </>
+            ) : (
+              <FilesList />
+            )}
+          </TabsContainer>
           {modal && <CreateProject onClose={closeModal} />}
         </Elem>
       </Oneof>

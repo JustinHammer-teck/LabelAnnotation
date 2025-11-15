@@ -1,0 +1,125 @@
+# Development Docker Compose configuration for Label Studio
+# Optimized for fast iteration and debugging
+
+networks:
+  internal:
+    driver: bridge
+
+volumes:
+  app-data-dev:
+  minio-data-dev:
+  valkey-data-dev:
+
+services:
+  app:
+    stdin_open: true
+    tty: true
+    build:
+      context: .
+      args:
+        INCLUDE_DEV: "true"
+    image: lbstudio:dev
+    restart: "no"
+    user: "1001:1001"
+    networks:
+      - internal
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env.list
+    environment:
+      - DEBUG=true
+      - LOG_LEVEL=DEBUG
+    volumes:
+      - app-data-dev:/label-studio/data:rw
+      - ${PWD}/label_studio:/label-studio/label_studio:ro
+    depends_on:
+      - minio
+      - redis
+    command: label-studio-daphne
+
+  worker-default:
+    image: lbstudio:dev
+    restart: "no"
+    user: "1001:1001"
+    networks:
+      - internal
+    depends_on:
+      - app
+      - redis
+    env_file:
+      - .env.list
+    environment:
+      - DEBUG=true
+      - LOG_LEVEL=DEBUG
+    volumes:
+      - app-data-dev:/label-studio/data:rw
+      - ${PWD}/label_studio:/label-studio/label_studio:ro
+    command: python3 label_studio/manage.py rqworker default
+
+  worker-high:
+    image: lbstudio:dev
+    restart: "no"
+    user: "1001:1001"
+    networks:
+      - internal
+    depends_on:
+      - app
+      - redis
+    env_file:
+      - .env.list
+    environment:
+      - DEBUG=true
+      - LOG_LEVEL=DEBUG
+    volumes:
+      - app-data-dev:/label-studio/data:rw
+      - ${PWD}/label_studio:/label-studio/label_studio:ro
+    command: python3 label_studio/manage.py rqworker high
+    profiles:
+      - full
+
+  worker-critical:
+    image: lbstudio:dev
+    restart: "no"
+    user: "1001:1001"
+    networks:
+      - internal
+    depends_on:
+      - app
+      - redis
+    env_file:
+      - .env.list
+    environment:
+      - DEBUG=true
+      - LOG_LEVEL=DEBUG
+    volumes:
+      - app-data-dev:/label-studio/data:rw
+      - ${PWD}/label_studio:/label-studio/label_studio:ro
+    command: python3 label_studio/manage.py rqworker critical
+    profiles:
+      - full
+
+  minio:
+    image: "minio/minio:${MINIO_VERSION:-RELEASE.2025-04-22T22-12-26Z}"
+    command: server /data --console-address ":9009"
+    restart: "no"
+    env_file:
+      - .env.list
+    ports:
+      - "9000:9000"
+      - "9009:9009"
+    volumes:
+      - minio-data-dev:/data
+    networks:
+      - internal
+
+  redis:
+    image: docker.io/valkey/valkey:8-alpine
+    command: valkey-server --save 60 1 --loglevel verbose
+    restart: "no"
+    networks:
+      - internal
+    ports:
+      - "6379:6379"
+    volumes:
+      - valkey-data-dev:/data

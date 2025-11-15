@@ -43,7 +43,7 @@ export const useProjectPermissions = ({
       });
 
       if (!result || result.error) {
-        throw new Error('Failed to fetch user permissions');
+        throw new Error(result?.error || 'Failed to fetch user permissions');
       }
 
       return Array.isArray(result) ? result : [];
@@ -55,6 +55,18 @@ export const useProjectPermissions = ({
 
   const togglePermissionMutation = useMutation<void, Error, TogglePermissionParams>({
     mutationFn: async ({ userId, hasPermission, projectId }: TogglePermissionParams) => {
+      if (!userId || typeof userId !== 'number' || userId <= 0) {
+        throw new Error('Invalid user ID');
+      }
+
+      if (!projectId || typeof projectId !== 'number' || projectId <= 0) {
+        throw new Error('Invalid project ID');
+      }
+
+      if (typeof hasPermission !== 'boolean') {
+        throw new Error('Invalid permission value');
+      }
+
       const payload: TogglePermissionPayload = {
         users: [{ user_id: userId, has_permission: hasPermission }],
       };
@@ -62,11 +74,14 @@ export const useProjectPermissions = ({
       const result = await api.callApi('assignProject', {
         params: { pk: projectId },
         body: payload,
-        suppressError: true,
       });
 
       if (!result || result.error) {
-        throw new Error(result?.error || 'Failed to update permission');
+        const errorMessage = result?.error || 'Failed to update permission';
+        if (result?.status === 403) {
+          throw new Error('You do not have permission to modify user assignments');
+        }
+        throw new Error(errorMessage);
       }
     },
     onMutate: async ({ userId, hasPermission }) => {

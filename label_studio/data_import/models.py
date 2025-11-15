@@ -14,6 +14,7 @@ except:  # noqa: E722
 
 from django.conf import settings
 from django.db import models
+from django.utils import timezone
 from django.utils.functional import cached_property
 from rest_framework.exceptions import ValidationError
 
@@ -32,6 +33,7 @@ class FileUpload(models.Model):
     user = models.ForeignKey('users.User', related_name='file_uploads', on_delete=models.CASCADE)
     project = models.ForeignKey('projects.Project', related_name='file_uploads', on_delete=models.CASCADE)
     file = models.FileField(upload_to=upload_name_generator)
+    created_at = models.DateTimeField(default=timezone.now, db_index=True, help_text='When the file was uploaded')
 
     def has_permission(self, user):
         user.project = self.project  # link for activity log
@@ -62,6 +64,57 @@ class FileUpload(models.Model):
         finally:
             logger.debug('Get file format ' + str(file_format))
         return file_format
+
+    @property
+    def task_count(self):
+        """Count of tasks associated with this upload"""
+        return self.tasks.count()
+
+    @property
+    def is_parent_document(self):
+        """Check if this is a parent document (not an extracted child)
+
+        Returns True if:
+        - This FileUpload is NOT referenced as an image_file in PDFImageRelationship
+        - Meaning it's an original uploaded file, not a PDF-extracted image
+
+        Returns False if:
+        - This FileUpload exists as image_file in PDFImageRelationship
+        - Meaning it's an image extracted from a PDF
+        """
+        return not PDFImageRelationship.objects.filter(image_file=self).exists()
+
+    def get_annotation_status(self):
+        """Get aggregated annotation status from associated tasks
+
+        Returns:
+            'no_tasks': No tasks associated with this file upload
+            'not_started': Has tasks but none are labeled
+            'in_progress': Some tasks labeled, but not all
+            'completed': All tasks are labeled
+
+        Uses Task.is_labeled field which indicates if a task has reached
+        the required number of annotations (>= project.maximum_completions)
+        """
+        if not hasattr(self, '_task_count_cache'):
+            self._task_count_cache = self.tasks.count()
+
+        task_count = self._task_count_cache
+
+        if task_count == 0:
+            return 'no_tasks'
+
+        if not hasattr(self, '_labeled_count_cache'):
+            self._labeled_count_cache = self.tasks.filter(is_labeled=True).count()
+
+        labeled_count = self._labeled_count_cache
+
+        if labeled_count == 0:
+            return 'not_started'
+        elif labeled_count < task_count:
+            return 'in_progress'
+        else:
+            return 'completed'
 
     @property
     def content(self):
@@ -155,6 +208,12 @@ class FileUpload(models.Model):
         except Exception as exc:
             raise ValidationError('Failed to parse input file ' + self.file_name + ': ' + str(exc))
         return tasks
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['project', '-created_at'], name='fileupload_project_created_idx'),
+            models.Index(fields=['project', 'user'], name='fileupload_project_user_idx'),
+        ]
 
     @classmethod
     def load_tasks_from_uploaded_files(

@@ -6,7 +6,11 @@ from . import api
 
 app_name = 'data_import'
 
-_api_urlpatterns = [path('file-upload/<int:pk>', api.FileUploadAPI.as_view(), name='file-upload-detail')]
+_api_urlpatterns = [
+    path('file-upload/<int:pk>', api.FileUploadAPI.as_view(), name='file-upload-detail'),
+    path('file-upload/<int:pk>/download/', api.FileUploadDownloadAPI.as_view(), name='file-upload-download'),
+    path('file-upload/<int:pk>/task/', api.FileUploadTaskAPI.as_view(), name='file-upload-task'),
+]
 
 _api_projects_urlpatterns = [
     # import api

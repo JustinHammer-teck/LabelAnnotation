@@ -73,8 +73,11 @@ REDIS_URL = "redis://{}:{}/0".format(REDIS_HOST, REDIS_PORT)
 # OCR Configuration
 OCR_ENABLED = get_bool_env('OCR_ENABLED', True)
 OCR_IMAGE_FORMAT = get_env('OCR_IMAGE_FORMAT', 'PNG')
-OCR_BINARIZE = get_bool_env('OCR_BINARIZE', True)
+OCR_BINARIZE = get_bool_env('OCR_BINARIZE', False)
 OCR_PNG_COMPRESSION = int(get_env('OCR_PNG_COMPRESSION', '9'))
+OCR_USE_GPU = get_bool_env('OCR_USE_GPU', False)
+OCR_PREPROCESS_CHINESE = get_bool_env('OCR_PREPROCESS_CHINESE', True)
+OCR_BATCH_SIZE = int(get_env('OCR_BATCH_SIZE', '1'))
 
 RQ_QUEUES = {
     "critical": {

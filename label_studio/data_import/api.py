@@ -4,6 +4,7 @@ import json
 import logging
 import mimetypes
 import time
+from typing import TYPE_CHECKING
 from urllib.parse import unquote, urlparse
 
 import drf_yasg.openapi as openapi
@@ -17,6 +18,7 @@ from csp.decorators import csp
 from data_import.services import process_ocr_for_tasks_background, is_support_document
 from django.conf import settings
 from django.db import transaction
+from django.db.models import QuerySet
 from django.http import HttpResponse
 from django.utils.decorators import method_decorator
 from django.utils.timezone import now
@@ -25,6 +27,7 @@ from projects.models import Project, ProjectImport, ProjectReimport
 from ranged_fileresponse import RangedFileResponse
 from rest_framework import generics, status
 from rest_framework.exceptions import ValidationError
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -38,6 +41,7 @@ from webhooks.utils import emit_webhooks_for_instance
 
 from label_studio.core.utils.common import load_func
 
+from .constants import ALLOWED_FILE_EXTENSIONS, VALID_ORDERINGS
 from .functions import (
     async_import_background,
     async_reimport_background,
@@ -45,8 +49,8 @@ from .functions import (
     set_import_background_failure,
     set_reimport_background_failure,
 )
-from .models import FileUpload
-from .serializers import FileUploadSerializer, ImportApiSerializer, PredictionSerializer
+from .models import FileUpload, PDFImageRelationship
+from .serializers import FileUploadSerializer, FileUploadListSerializer, ImportApiSerializer, PredictionSerializer
 from .uploader import create_file_uploads, load_tasks
 
 logger = logging.getLogger(__name__)
@@ -103,6 +107,13 @@ task_create_response_scheme = {
         title='Incorrect task data', description='String with error description', type=openapi.TYPE_STRING
     ),
 }
+
+
+class FileUploadPagination(PageNumberPagination):
+    """Pagination for file upload list with 30 items per page"""
+    page_size = 30
+    page_size_query_param = 'page_size'
+    max_page_size = 100
 
 
 @method_decorator(
@@ -327,49 +338,46 @@ class ImportAPI(generics.CreateAPIView):
     @timeit
     def async_import(self, request, project, preannotated_from_fields, commit_to_project, return_task_ids):
 
-        project_import = ProjectImport.objects.create(
-            project=project,
-            preannotated_from_fields=preannotated_from_fields,
-            commit_to_project=commit_to_project,
-            return_task_ids=return_task_ids,
-        )
+        with transaction.atomic():
+            project_import = ProjectImport.objects.create(
+                project=project,
+                preannotated_from_fields=preannotated_from_fields,
+                commit_to_project=commit_to_project,
+                return_task_ids=return_task_ids,
+            )
 
-        if len(request.FILES):
-            logger.debug(f'Import from files: {request.FILES}')
-            file_upload_ids, could_be_tasks_list = create_file_uploads(request.user, project, request.FILES)
-            project_import.file_upload_ids = file_upload_ids
-            project_import.could_be_tasks_list = could_be_tasks_list
-            project_import.save(update_fields=['file_upload_ids', 'could_be_tasks_list'])
-        elif 'application/x-www-form-urlencoded' in request.content_type:
-            logger.debug(f'Import from url: {request.data.get("url")}')
-            # empty url
-            url = request.data.get('url')
-            if not url:
-                raise ValidationError('"url" is not found in request data')
-            project_import.url = url
-            project_import.save(update_fields=['url'])
-        # take one task from request DATA
-        elif 'application/json' in request.content_type and isinstance(request.data, dict):
-            project_import.tasks = [request.data]
-            project_import.save(update_fields=['tasks'])
+            if len(request.FILES):
+                logger.debug(f'Import from files: {request.FILES}')
+                file_upload_ids, could_be_tasks_list = create_file_uploads(request.user, project, request.FILES)
+                project_import.file_upload_ids = file_upload_ids
+                project_import.could_be_tasks_list = could_be_tasks_list
+                project_import.save(update_fields=['file_upload_ids', 'could_be_tasks_list'])
+            elif 'application/x-www-form-urlencoded' in request.content_type:
+                logger.debug(f'Import from url: {request.data.get("url")}')
+                url = request.data.get('url')
+                if not url:
+                    raise ValidationError('"url" is not found in request data')
+                project_import.url = url
+                project_import.save(update_fields=['url'])
+            elif 'application/json' in request.content_type and isinstance(request.data, dict):
+                project_import.tasks = [request.data]
+                project_import.save(update_fields=['tasks'])
+            elif 'application/json' in request.content_type and isinstance(request.data, list):
+                project_import.tasks = request.data
+                project_import.save(update_fields=['tasks'])
+            else:
+                raise ValidationError('load_tasks: No data found in DATA or in FILES')
 
-        # take many tasks from request DATA
-        elif 'application/json' in request.content_type and isinstance(request.data, list):
-            project_import.tasks = request.data
-            project_import.save(update_fields=['tasks'])
-
-        # incorrect data source
-        else:
-            raise ValidationError('load_tasks: No data found in DATA or in FILES')
-
-        start_job_async_or_sync(
-            async_import_background,
-            project_import.id,
-            request.user.id,
-            queue_name='high',
-            on_failure=set_import_background_failure,
-            project_id=project.id,
-            organization_id=request.user.active_organization.id,
+        transaction.on_commit(
+            lambda: start_job_async_or_sync(
+                async_import_background,
+                project_import.id,
+                request.user.id,
+                queue_name='high',
+                on_failure=set_import_background_failure,
+                project_id=project.id,
+                organization_id=request.user.active_organization.id,
+            )
         )
 
         response = {'import': project_import.id}
@@ -586,74 +594,245 @@ class ReImportAPI(ImportAPI):
         x_fern_sdk_group_name=['files'],
         x_fern_sdk_method_name='list',
         x_fern_audiences=['public'],
-        operation_summary='Get files list',
+        operation_summary='Get project file uploads',
+        operation_description='Retrieve paginated list of file uploads for a project, with filtering options.',
         manual_parameters=[
             openapi.Parameter(
-                name='all',
-                type=openapi.TYPE_BOOLEAN,
+                name='page',
+                type=openapi.TYPE_INTEGER,
                 in_=openapi.IN_QUERY,
-                description='Set to "true" if you want to retrieve all file uploads',
+                description='Page number for pagination',
             ),
             openapi.Parameter(
-                name='ids',
-                type=openapi.TYPE_ARRAY,
+                name='page_size',
+                type=openapi.TYPE_INTEGER,
                 in_=openapi.IN_QUERY,
-                items=openapi.Schema(title='File upload ID', type=openapi.TYPE_INTEGER),
-                description='Specify the list of file upload IDs to retrieve, e.g. ids=[1,2,3]',
+                description='Number of items per page (max 100)',
+            ),
+            openapi.Parameter(
+                name='is_parent',
+                type=openapi.TYPE_BOOLEAN,
+                in_=openapi.IN_QUERY,
+                description='Filter for parent documents only (default: true)',
+                default=True,
+            ),
+            openapi.Parameter(
+                name='file_type',
+                type=openapi.TYPE_STRING,
+                in_=openapi.IN_QUERY,
+                description='Filter by file extension (e.g., ".pdf", ".png")',
+            ),
+            openapi.Parameter(
+                name='ordering',
+                type=openapi.TYPE_STRING,
+                in_=openapi.IN_QUERY,
+                description='Sort order (e.g., "-created_at", "created_at")',
             ),
         ],
-        operation_description="""
-        Retrieve the list of uploaded files used to create labeling tasks for a specific project.
-        """,
     ),
 )
+class FileUploadListAPI(generics.ListAPIView):
+    """
+    List file uploads for a project with filtering and pagination.
+
+    Supports:
+    - Parent document filtering (excludes PDF-extracted images)
+    - File type filtering
+    - Ordering by various fields
+    - Pagination with customizable page size
+    """
+    parser_classes = (JSONParser, MultiPartParser, FormParser)
+    serializer_class = FileUploadListSerializer
+    permission_required = ViewClassPermission(
+        GET=all_permissions.projects_view,
+    )
+    pagination_class = FileUploadPagination
+
+    def get_queryset(self) -> QuerySet[FileUpload]:
+        """
+        Get filtered and ordered queryset of FileUpload objects for the project.
+
+        Query Parameters:
+            is_parent (bool): Filter for parent documents only (default: True)
+            file_type (str): Filter by file extension (e.g., ".pdf", ".png")
+            ordering (str): Sort order, must be one of VALID_ORDERINGS
+
+        Returns:
+            QuerySet[FileUpload]: Filtered and ordered queryset
+
+        Raises:
+            ValidationError: If file_type extension is not in ALLOWED_FILE_EXTENSIONS
+            ValidationError: If ordering is not in VALID_ORDERINGS
+        """
+        project_pk = self.kwargs.get('pk')
+        project = generics.get_object_or_404(
+            Project.objects.for_user(self.request.user),
+            pk=project_pk
+        )
+
+        queryset = FileUpload.objects.filter(project=project) \
+            .select_related('project', 'user') \
+            .prefetch_related('tasks')
+
+        is_parent = bool_from_request(self.request.query_params, 'is_parent', True)
+        if is_parent:
+            child_file_ids = PDFImageRelationship.objects.values_list('image_file_id', flat=True)
+            queryset = queryset.exclude(id__in=child_file_ids)
+
+        file_type = self.request.query_params.get('file_type')
+        if file_type:
+            normalized_ext = file_type.strip().lower()
+            if not normalized_ext.startswith('.'):
+                normalized_ext = f'.{normalized_ext}'
+
+            if normalized_ext not in ALLOWED_FILE_EXTENSIONS:
+                raise ValidationError(
+                    f'Invalid file_type "{file_type}". '
+                    f'Must be one of: {", ".join(sorted(ALLOWED_FILE_EXTENSIONS))}'
+                )
+
+            queryset = queryset.filter(file__endswith=normalized_ext)
+
+        ordering = self.request.query_params.get('ordering', '-created_at')
+        if ordering not in VALID_ORDERINGS:
+            raise ValidationError(
+                f'Invalid ordering "{ordering}". '
+                f'Must be one of: {", ".join(sorted(VALID_ORDERINGS))}'
+            )
+
+        queryset = queryset.order_by(ordering)
+
+        return queryset
+
+
 @method_decorator(
-    name='delete',
+    name='get',
     decorator=swagger_auto_schema(
         tags=['Import'],
         x_fern_sdk_group_name=['files'],
-        x_fern_sdk_method_name='delete_many',
+        x_fern_sdk_method_name='download',
         x_fern_audiences=['public'],
-        operation_summary='Delete files',
-        operation_description="""
-        Delete uploaded files for a specific project.
-        """,
+        operation_summary='Download file upload',
+        operation_description='Get download URL or stream for a specific file upload. Returns presigned URL for S3/MinIO storage, or streams file for local storage.',
     ),
 )
-class FileUploadListAPI(generics.mixins.ListModelMixin, generics.mixins.DestroyModelMixin, generics.GenericAPIView):
-    parser_classes = (JSONParser, MultiPartParser, FormParser)
-    serializer_class = FileUploadSerializer
+class FileUploadDownloadAPI(APIView):
+    """
+    Provides download access for uploaded files.
+
+    Behavior:
+    - For S3/MinIO storage: Returns JSON with presigned URL
+    - For local storage: Streams file using RangedFileResponse
+    """
     permission_required = ViewClassPermission(
         GET=all_permissions.projects_view,
-        DELETE=all_permissions.projects_change,
     )
-    queryset = FileUpload.objects.all()
-
-    def get_queryset(self):
-        project = generics.get_object_or_404(Project.objects.for_user(self.request.user), pk=self.kwargs.get('pk', 0))
-        if project.is_draft or bool_from_request(self.request.query_params, 'all', False):
-            # If project is in draft state, we return all uploaded files, ignoring queried ids
-            logger.debug(f'Return all uploaded files for draft project {project}')
-            return FileUpload.objects.filter(project_id=project.id, user=self.request.user)
-
-        # If requested in regular import, only queried IDs are returned to avoid showing previously imported
-        ids = json.loads(self.request.query_params.get('ids', '[]'))
-        logger.debug(f'File Upload IDs found: {ids}')
-        return FileUpload.objects.filter(project_id=project.id, id__in=ids, user=self.request.user)
 
     def get(self, request, *args, **kwargs):
-        return self.list(request, *args, **kwargs)
+        file_upload_id = self.kwargs.get('pk')
 
-    def delete(self, request, *args, **kwargs):
-        project = generics.get_object_or_404(Project.objects.for_user(self.request.user), pk=self.kwargs['pk'])
-        ids = self.request.data.get('file_upload_ids')
-        if ids is None:
-            deleted, _ = FileUpload.objects.filter(project=project).delete()
-        elif isinstance(ids, list):
-            deleted, _ = FileUpload.objects.filter(project=project, id__in=ids).delete()
+        file_upload = generics.get_object_or_404(FileUpload, pk=file_upload_id)
+
+        if not file_upload.has_permission(request.user):
+            return Response(
+                {'error': 'Permission denied'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        file = file_upload.file
+
+        storage = file.storage
+        storage_type = storage.__class__.__name__
+
+        if 'S3' in storage_type or hasattr(storage, 'bucket_name'):
+            try:
+                from io_storages.s3.models import S3ImportStorage
+
+                s3_storage = S3ImportStorage.objects.filter(
+                    project=file_upload.project
+                ).first()
+
+                if s3_storage:
+                    presigned_url = s3_storage.generate_http_url(file.url)
+                    return Response({
+                        'download_url': presigned_url,
+                        'file_name': file_upload.file_name,
+                    })
+                else:
+                    return Response({
+                        'download_url': file.url,
+                        'file_name': file_upload.file_name,
+                    })
+
+            except Exception as e:
+                logger.error(f'Failed to generate presigned URL for file {file_upload.id}: {e}')
+                return Response(
+                    {'error': 'Failed to generate download URL'},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
         else:
-            raise ValueError('"file_upload_ids" parameter must be a list of integers')
-        return Response({'deleted': deleted}, status=status.HTTP_200_OK)
+            if not file.storage.exists(file.name):
+                return Response(
+                    {'error': 'File not found'},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+
+            content_type, encoding = mimetypes.guess_type(str(file.name))
+            content_type = content_type or 'application/octet-stream'
+
+            response = RangedFileResponse(
+                request,
+                file.open(mode='rb'),
+                content_type=content_type
+            )
+            response['Content-Disposition'] = f'attachment; filename="{file_upload.file_name}"'
+            return response
+
+
+@method_decorator(
+    name='get',
+    decorator=swagger_auto_schema(
+        tags=['Import'],
+        x_fern_sdk_group_name=['files'],
+        x_fern_sdk_method_name='get_task',
+        x_fern_audiences=['public'],
+        operation_summary='Get first task for file upload',
+        operation_description='Returns the first task ID associated with this file upload for navigation to annotation view.',
+    ),
+)
+class FileUploadTaskAPI(APIView):
+    """
+    Returns first associated task ID for file upload navigation.
+
+    Used by frontend to navigate to: /projects/{project_id}/data?task={task_id}
+    """
+    permission_required = ViewClassPermission(
+        GET=all_permissions.projects_view,
+    )
+
+    def get(self, request, *args, **kwargs):
+        file_upload_id = self.kwargs.get('pk')
+
+        file_upload = generics.get_object_or_404(FileUpload, pk=file_upload_id)
+
+        if not file_upload.has_permission(request.user):
+            return Response(
+                {'error': 'Permission denied'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        first_task = file_upload.tasks.first()
+
+        if not first_task:
+            return Response(
+                {'error': 'No tasks found for this file upload'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        return Response({
+            'task_id': first_task.id,
+            'project_id': file_upload.project_id,
+        })
 
 
 @method_decorator(

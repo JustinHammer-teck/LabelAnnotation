@@ -167,7 +167,6 @@ export const ImportPage = ({
     if (action.ids) {
       const ids = unique([...state.ids, ...action.ids]);
 
-      onFileListUpdate?.(ids);
       return { ...state, ids };
     }
     return state;
@@ -184,13 +183,14 @@ export const ImportPage = ({
         // should be stringified array "[1,2]"
         query.ids = JSON.stringify(file_upload_ids);
       }
-      const files = await api.callApi("fileUploads", {
+      const response = await api.callApi("fileUploads", {
         params: { pk: project.id, ...query },
       });
 
-      dispatch({ uploaded: files ?? [] });
+      const files = response?.results ?? [];
+      dispatch({ uploaded: files });
 
-      if (files?.length) {
+      if (files.length) {
         dispatch({ ids: files.map((f) => f.id) });
       }
       return files;
@@ -299,12 +299,18 @@ export const ImportPage = ({
       loadFilesList().then((files) => {
         if (csvHandling) return;
         // empirical guess on start if we have some possible tasks list/structured data problem
-        if (Array.isArray(files) && files.some(({ file }) => /\.[ct]sv$/.test(file))) {
+        if (files.some(({ file_name }) => /\.[ct]sv$/.test(file_name))) {
           setCsvHandling("choose");
         }
       });
     }
   }, [project?.id, loadFilesList]);
+
+  useEffect(() => {
+    if (files.ids.length > 0) {
+      onFileListUpdate?.(files.ids);
+    }
+  }, [files.ids, onFileListUpdate]);
 
   const urlRef = useRef();
 
@@ -476,12 +482,12 @@ export const ImportPage = ({
                         </tr>
                       ))}
                       {files.uploaded.map((file) => (
-                        <tr key={file.file}>
-                          <td>{file.file}</td>
+                        <tr key={file.id}>
+                          <td>{file.file_name}</td>
                           <td>
                             <span className={importClass.elem("file-status")} />
                           </td>
-                          <td>{file.size}</td>
+                          <td>{file.task_count} task{file.task_count !== 1 ? 's' : ''}</td>
                         </tr>
                       ))}
                     </tbody>

@@ -40,6 +40,8 @@ export const API_CONFIG = {
     createSampleTask: 'POST:/projects/:pk/sample-task',
     fileUploads: '/projects/:pk/file-uploads',
     deleteFileUploads: 'DELETE:/projects/:pk/file-uploads',
+    fileUploadDownload: 'GET:/import/file-upload/:pk/download/',
+    fileUploadTask: 'GET:/import/file-upload/:pk/task/',
     importFiles: 'POST:/projects/:pk/import',
     reimportFiles: 'POST:/projects/:pk/reimport',
     dataSummary: '/projects/:pk/summary',
