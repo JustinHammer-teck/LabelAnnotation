@@ -96,6 +96,7 @@ const Model = types
       "brush",
       "magicwand",
       "rectanglelabels",
+      "rectanglelabelsdropdown",
       "ellipselabels",
       "polygonlabels",
       "keypointlabels",

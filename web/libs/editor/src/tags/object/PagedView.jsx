@@ -34,6 +34,7 @@ const Model = types.model({
     "brush",
     "magicwand",
     "rectanglelabels",
+    "rectanglelabelsdropdown",
     "ellipselabels",
     "polygonlabels",
     "keypointlabels",
