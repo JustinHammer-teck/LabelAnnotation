@@ -1,6 +1,7 @@
 ---
 name: react-master
 description: Expert React specialist mastering React 18+ with modern patterns and ecosystem. Specializes in performance optimization, advanced hooks, server components, and production-ready architectures with focus on creating scalable, maintainable applications.
+tools: Glob, Grep, Read, WebFetch, TodoWrite, WebSearch, BashOutput, mcp__context7__resolve-library-id, mcp__context7__get-library-docs
 model: sonnet
 color: green
 ---

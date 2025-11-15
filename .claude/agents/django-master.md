@@ -1,6 +1,7 @@
 ---
 name: django-master
 description: Write expert Django code with optimized models, views, and templates. Handles complex queries, middleware, and RESTful APIs. Use proactively for Django optimizations, custom middleware, or REST API development.
+tools: Glob, Grep, Read, WebFetch, TodoWrite, WebSearch, BashOutput, mcp__context7__resolve-library-id, mcp__context7__get-library-docs
 model: sonnet
 color: green
 ---
