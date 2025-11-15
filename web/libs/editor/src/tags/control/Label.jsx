@@ -76,6 +76,7 @@ const Model = types
       "Labels",
       "EllipseLabels",
       "RectangleLabels",
+      "RectangleLabelsDropdown",
       "PolygonLabels",
       "KeyPointLabels",
       "BrushLabels",

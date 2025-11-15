@@ -34,7 +34,7 @@ const _BaseNPointTool = types
       get tagTypes() {
         return {
           stateTypes: "rectanglelabels",
-          controlTagTypes: ["rectanglelabels", "rectangle"],
+          controlTagTypes: ["rectanglelabels", "rectanglelabelsdropdown", "rectangle"],
         };
       },
       get defaultDimensions() {
