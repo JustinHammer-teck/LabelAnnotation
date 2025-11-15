@@ -18,7 +18,7 @@ services:
       context: .
       args:
         INCLUDE_DEV: "true"
-    image: lbstudio:dev
+    image: lbstudio:latest
     restart: "no"
     user: "1001:1001"
     networks:
@@ -39,7 +39,7 @@ services:
     command: label-studio-daphne
 
   worker-default:
-    image: lbstudio:dev
+    image: lbstudio:latest
     restart: "no"
     user: "1001:1001"
     networks:
@@ -58,7 +58,7 @@ services:
     command: python3 label_studio/manage.py rqworker default
 
   worker-high:
-    image: lbstudio:dev
+    image: lbstudio:latest
     restart: "no"
     user: "1001:1001"
     networks:
@@ -79,7 +79,7 @@ services:
       - full
 
   worker-critical:
-    image: lbstudio:dev
+    image: lbstudio:latest
     restart: "no"
     user: "1001:1001"
     networks:

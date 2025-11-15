@@ -102,7 +102,12 @@ export const FileActions: React.FC<FileActionsProps> = ({ file, onView }) => {
         return;
       }
 
-      window.open(downloadUrl, '_blank');
+      const anchor = document.createElement('a');
+      anchor.href = downloadUrl;
+      anchor.download = file.file_name || 'download';
+      anchor.rel = 'noopener noreferrer';
+      anchor.click();
+
       setDownloading(false);
     } catch (err) {
       setError('Failed to download file');

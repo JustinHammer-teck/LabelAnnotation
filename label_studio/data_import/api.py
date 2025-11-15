@@ -18,7 +18,7 @@ from csp.decorators import csp
 from data_import.services import process_ocr_for_tasks_background, is_support_document
 from django.conf import settings
 from django.db import transaction
-from django.db.models import QuerySet
+from django.db.models import F, QuerySet
 from django.http import HttpResponse
 from django.utils.decorators import method_decorator
 from django.utils.timezone import now
@@ -676,7 +676,9 @@ class FileUploadListAPI(generics.ListAPIView):
 
         is_parent = bool_from_request(self.request.query_params, 'is_parent', True)
         if is_parent:
-            child_file_ids = PDFImageRelationship.objects.values_list('image_file_id', flat=True)
+            child_file_ids = PDFImageRelationship.objects.exclude(
+                pdf_file_id=F('image_file_id')
+            ).values_list('image_file_id', flat=True)
             queryset = queryset.exclude(id__in=child_file_ids)
 
         file_type = self.request.query_params.get('file_type')

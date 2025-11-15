@@ -27,7 +27,7 @@ elif has_legacy_config; then
     export DJANGO_INITIAL_USER_1_PASSWORD="$DJANGO_INITIAL_USER_PASSWORD"
     export DJANGO_INITIAL_USER_1_FIRSTNAME="${DJANGO_INITIAL_USER_FIRSTNAME:-}"
     export DJANGO_INITIAL_USER_1_LASTNAME="${DJANGO_INITIAL_USER_LASTNAME:-}"
-    export DJANGO_INITIAL_USER_1_ROLE="${DJANGO_INITIAL_USER_ROLE:-owner}"
+    export DJANGO_INITIAL_USER_1_ROLE="${DJANGO_INITIAL_USER_ROLE:-annotator}"
 fi
 
 python3 /label-studio/label_studio/manage.py shell << 'EOF'
@@ -53,6 +53,7 @@ if User.objects.filter(email=first_user_email).exists():
     exit()
 
 manager_group, _ = Group.objects.get_or_create(name='Manager')
+annotator_group, _ = Group.objects.get_or_create(name='Annotator')
 
 org = None
 created_users = []
@@ -96,6 +97,7 @@ for i in range(1, users_count + 1):
         user.groups.add(manager_group)
         print(f"User {email} created and assigned Manager role")
     else:
+        user.groups.add(annotator_group)
         print(f"User {email} created with default role")
 
     created_users.append(email)
