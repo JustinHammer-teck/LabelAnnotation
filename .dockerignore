@@ -8,19 +8,76 @@
 !deploy/uwsgi.ini
 !deploy/default.conf
 !label_studio/**
-# Re-ignore pyc files and frontend
 label_studio/frontend
 label_studio/**/*.pyc
+label_studio/**/__pycache__
 
 # FRONTEND
 !web
 !.git
-# Re-ignore node_modules and nx cache
 **/node_modules
 **/.nx
+**/.yarn
+web/dist
+web/.cache
 
 !README.md
 !licenses/**
 !LICENSE
 !pyproject.toml
 !poetry.lock
+
+# Development files
+.env
+.env.*
+!.env.example
+*.log
+.pytest_cache
+.coverage
+htmlcov
+.tox
+.mypy_cache
+.ruff_cache
+*.egg-info
+dist-python
+.venv
+venv
+*.pyc
+*.pyo
+*.pyd
+__pycache__
+.DS_Store
+.idea
+.vscode
+*.swp
+*.swo
+*~
+
+# Documentation
+docs
+*.md
+!README.md
+
+# CI/CD
+.github
+.gitlab-ci.yml
+.travis.yml
+Jenkinsfile
+
+# Testing
+tests
+test
+*.test.js
+*.spec.js
+*.test.ts
+*.spec.ts
+coverage
+
+# Git
+.gitignore
+.gitattributes
+
+# Project notes
+project_note
+releases
+.claude

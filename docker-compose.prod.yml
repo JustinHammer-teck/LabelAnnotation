@@ -1,0 +1,300 @@
+# Production Docker Compose configuration for Label Studio
+# Optimized for reliability, security, and performance
+
+x-logging:
+  logging: &default-logging
+    driver: "json-file"
+    options:
+      max-size: "10m"
+      max-file: "3"
+
+x-healthcheck-defaults:
+  healthcheck-defaults: &healthcheck-defaults
+    interval: 30s
+    timeout: 5s
+    retries: 3
+    start_period: 60s
+
+networks:
+  internal:
+    driver: bridge
+
+volumes:
+  app-data-prod:
+  minio-data-prod:
+  valkey-data-prod:
+
+services:
+  app:
+    stdin_open: true
+    tty: true
+    build: .
+    image: lbstudio:latest
+    restart: unless-stopped
+    user: "1001:1001"
+    networks:
+      - internal
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env.list
+    volumes:
+      - app-data-prod:/label-studio/data:rw
+    depends_on:
+      minio:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health/"]
+      <<: *healthcheck-defaults
+    stop_grace_period: 30s
+    logging: *default-logging
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4G
+        reservations:
+          cpus: '1.0'
+          memory: 2G
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+    command: label-studio-daphne
+
+  worker-low:
+    image: lbstudio:latest
+    restart: unless-stopped
+    user: "1001:1001"
+    networks:
+      - internal
+    depends_on:
+      app:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    env_file:
+      - .env.list
+    volumes:
+      - app-data-prod:/label-studio/data:rw
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -f 'rqworker low' || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    stop_grace_period: 30s
+    logging: *default-logging
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 512M
+        reservations:
+          cpus: '0.1'
+          memory: 256M
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+    command: python3 label_studio/manage.py rqworker low
+
+  worker-default:
+    image: lbstudio:latest
+    restart: unless-stopped
+    user: "1001:1001"
+    networks:
+      - internal
+    depends_on:
+      app:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    env_file:
+      - .env.list
+    volumes:
+      - app-data-prod:/label-studio/data:rw
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -f 'rqworker default' || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    stop_grace_period: 30s
+    logging: *default-logging
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 512M
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+    command: python3 label_studio/manage.py rqworker default
+
+  worker-high:
+    image: lbstudio:latest
+    restart: unless-stopped
+    user: "1001:1001"
+    networks:
+      - internal
+    depends_on:
+      app:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+    env_file:
+      - .env.list
+    volumes:
+      - app-data-prod:/label-studio/data:rw
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -f 'rqworker high' || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    stop_grace_period: 30s
+    logging: *default-logging
+    security_opt:
+      - no-new-privileges:true
+    command: python3 label_studio/manage.py rqworker high
+
+  worker-critical:
+    image: lbstudio:latest
+    restart: unless-stopped
+    user: "1001:1001"
+    networks:
+      - internal
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4G
+        reservations:
+          cpus: '1.0'
+          memory: 2G
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+    depends_on:
+      app:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    env_file:
+      - .env.list
+    volumes:
+      - app-data-prod:/label-studio/data:rw
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -f 'rqworker critical' || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    stop_grace_period: 30s
+    logging: *default-logging
+    security_opt:
+      - no-new-privileges:true
+    command: python3 label_studio/manage.py rqworker critical
+
+  minio:
+    image: "minio/minio:${MINIO_VERSION:-RELEASE.2025-04-22T22-12-26Z}"
+    command: server /data --console-address ":9009"
+    restart: unless-stopped
+    logging: *default-logging
+    env_file:
+      - .env.list
+    ports:
+      - "127.0.0.1:9009:9009"
+    volumes:
+      - minio-data-prod:/data
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    stop_grace_period: 10s
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+
+  redis:
+    image: docker.io/valkey/valkey:8-alpine
+    command: valkey-server --save 30 1 --loglevel warning
+    restart: unless-stopped
+    networks:
+      - internal
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - valkey-data-prod:/data
+    cap_drop:
+      - ALL
+    cap_add:
+      - SETGID
+      - SETUID
+      - DAC_OVERRIDE
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    stop_grace_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+        max-file: "1"
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M

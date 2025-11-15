@@ -16,7 +16,7 @@ ARG BRANCH_OVERRIDE
 # 5. "prod" - Creates the final production image with the Label Studio, Nginx, and other dependencies.
 
 ################################ Stage: frontend-builder (build frontend assets)
-FROM --platform=${BUILDPLATFORM} node:${NODE_VERSION}-trixie AS frontend-builder
+FROM --platform=${BUILDPLATFORM} node:${NODE_VERSION}-alpine AS frontend-builder
 ENV BUILD_NO_SERVER=true \
     BUILD_NO_HASH=true \
     BUILD_NO_CHUNKS=true \
@@ -27,12 +27,12 @@ ENV BUILD_NO_SERVER=true \
 
 WORKDIR /label-studio/web
 
-# Fix Docker Arm64 Build
-RUN yarn config set registry https://registry.npmjs.org/
-RUN yarn config set network-timeout 1200000 # HTTP timeout used when downloading packages, set to 20 minutes
+RUN apk add --no-cache python3 make g++
 
-COPY web/package.json .
-COPY web/yarn.lock .
+RUN yarn config set registry https://registry.npmjs.org/ && \
+    yarn config set network-timeout 1200000
+
+COPY web/package.json web/yarn.lock ./
 COPY web/tools tools
 RUN --mount=type=cache,target=/root/web/.yarn,id=yarn-cache,sharing=locked \
     --mount=type=cache,target=/root/web/.nx,id=nx-cache,sharing=locked \
@@ -42,14 +42,43 @@ COPY web/ .
 COPY pyproject.toml ../pyproject.toml
 RUN --mount=type=cache,target=/root/web/.yarn,id=yarn-cache,sharing=locked \
     --mount=type=cache,target=/root/web/.nx,id=nx-cache,sharing=locked \
-    yarn run build
+    yarn run build && \
+    rm -rf node_modules .yarn .nx
 
 ################################ Stage: frontend-version-generator
 FROM frontend-builder AS frontend-version-generator
+
+RUN apk add --no-cache git
+
 RUN --mount=type=cache,target=/root/web/.yarn,id=yarn-cache,sharing=locked \
     --mount=type=cache,target=/root/web/.nx,id=nx-cache,sharing=locked \
     --mount=type=bind,source=.git,target=../.git \
+    yarn install --production=false --frozen-lockfile && \
     yarn version:libs
+
+################################ Stage: easyocr-models (download OCR models)
+FROM python:${PYTHON_VERSION}-slim-trixie AS easyocr-models
+
+ENV PYTHONUNBUFFERED=1 \
+    EASYOCR_MODULE_PATH=/opt/easyocr/models
+
+WORKDIR /tmp
+
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
+    set -eux; \
+    apt-get update; \
+    apt-get install --no-install-recommends -y \
+        libgl1 libglib2.0-0t64; \
+    apt-get autoremove -y
+
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --no-cache-dir easyocr==1.7.2
+
+RUN mkdir -p ${EASYOCR_MODULE_PATH} && \
+    python3 -c "import easyocr; easyocr.Reader(['ch_sim', 'en'], gpu=False, download_enabled=True, model_storage_directory='${EASYOCR_MODULE_PATH}')" && \
+    echo "EasyOCR models downloaded successfully" && \
+    ls -lh ${EASYOCR_MODULE_PATH}
 
 ################################ Stage: venv-builder (prepare the virtualenv)
 FROM python:${PYTHON_VERSION}-slim-trixie AS venv-builder
@@ -68,14 +97,13 @@ ENV PYTHONUNBUFFERED=1 \
     PATH="/opt/poetry/bin:$PATH"
 
 ADD https://install.python-poetry.org /tmp/install-poetry.py
-RUN python /tmp/install-poetry.py
+RUN python /tmp/install-poetry.py && rm /tmp/install-poetry.py
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
     set -eux; \
     apt-get update; \
-    apt-get install --no-install-recommends -y \
-            build-essential git; \
+    apt-get install --no-install-recommends -y build-essential git; \
     apt-get autoremove -y
 
 WORKDIR /label-studio
@@ -83,15 +111,10 @@ WORKDIR /label-studio
 ENV VENV_PATH="/label-studio/.venv"
 ENV PATH="$VENV_PATH/bin:$PATH"
 
-## Starting from this line all packages will be installed in $VENV_PATH
-
-# Copy dependency files
 COPY pyproject.toml poetry.lock README.md ./
 
-# Set a default build argument for including dev dependencies
 ARG INCLUDE_DEV=false
 
-# Install dependencies
 RUN --mount=type=cache,target=/.poetry-cache,id=poetry-cache,sharing=locked \
     poetry check --lock && \
     if [ "$INCLUDE_DEV" = "true" ]; then \
@@ -100,19 +123,22 @@ RUN --mount=type=cache,target=/.poetry-cache,id=poetry-cache,sharing=locked \
         poetry install --no-root --without test --extras uwsgi; \
     fi
 
-# Install LS
 COPY label_studio label_studio
 RUN --mount=type=cache,target=/.poetry-cache,id=poetry-cache,sharing=locked \
-    # `--extras uwsgi` is mandatory here due to poetry bug: https://github.com/python-poetry/poetry/issues/7302
     poetry install --only-root --extras uwsgi && \
-    python3 label_studio/manage.py collectstatic --no-input
+    python3 label_studio/manage.py collectstatic --no-input && \
+    find $VENV_PATH -type d -name '__pycache__' -exec rm -rf {} + 2>/dev/null || true && \
+    find $VENV_PATH -type f -name '*.pyc' -delete && \
+    find $VENV_PATH -type f -name '*.pyo' -delete && \
+    find $VENV_PATH/lib/python*/site-packages -type d -name 'tests' ! -path '*/django/*' -exec rm -rf {} + 2>/dev/null || true && \
+    find $VENV_PATH/lib/python*/site-packages -type d -name 'test' ! -path '*/django/*' -exec rm -rf {} + 2>/dev/null || true && \
+    rm -rf $VENV_PATH/src
 
 ################################ Stage: py-version-generator
 FROM venv-builder AS py-version-generator
 ARG VERSION_OVERRIDE
 ARG BRANCH_OVERRIDE
 
-# Create version_.py and ls-version_.py
 RUN --mount=type=bind,source=.git,target=./.git \
     VERSION_OVERRIDE=${VERSION_OVERRIDE} BRANCH_OVERRIDE=${BRANCH_OVERRIDE} poetry run python label_studio/core/version.py
 
@@ -123,57 +149,51 @@ ENV LS_DIR=/label-studio \
     HOME=/label-studio \
     LABEL_STUDIO_BASE_DATA_DIR=/label-studio/data \
     OPT_DIR=/opt/heartex/instance-data/etc \
-    PATH="/label-studio/.venv/bin:$PATH" \
+    VENV_PATH=/label-studio/.venv \
     DJANGO_SETTINGS_MODULE=core.settings.label_studio \
     PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1
+    PYTHONDONTWRITEBYTECODE=1 \
+    EASYOCR_MODULE_PATH=/opt/easyocr/models
+
+ENV PATH="$VENV_PATH/bin:$PATH"
 
 WORKDIR $LS_DIR
 
-# install prerequisites for app
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
     set -eux; \
     apt-get update; \
     apt-get upgrade -y; \
-    apt-get install --no-install-recommends -y libexpat1 libgl1 libglx-mesa0 libglib2.0-0t64 \
+    apt-get install --no-install-recommends -y \
+        libexpat1 libgl1 libglx-mesa0 libglib2.0-0t64 \
         gnupg2 curl nginx; \
-    apt-get autoremove -y
+    apt-get autoremove -y; \
+    rm -rf /tmp/* /var/tmp/*
 
 RUN set -eux; \
-    mkdir -p $LS_DIR $LABEL_STUDIO_BASE_DATA_DIR $OPT_DIR && \
+    mkdir -p $LS_DIR $LABEL_STUDIO_BASE_DATA_DIR $OPT_DIR \
+        $LABEL_STUDIO_BASE_DATA_DIR/media \
+        $LABEL_STUDIO_BASE_DATA_DIR/upload && \
     chown -R 1001:0 $LS_DIR $LABEL_STUDIO_BASE_DATA_DIR $OPT_DIR /var/log/nginx /etc/nginx
 
 COPY --chown=1001:0 deploy/default.conf /etc/nginx/nginx.conf
-
-# Copy essential files for installing Label Studio and its dependencies
-COPY --chown=1001:0 pyproject.toml .
-COPY --chown=1001:0 poetry.lock .
-COPY --chown=1001:0 README.md .
+COPY --chown=1001:0 pyproject.toml poetry.lock README.md ./
 COPY --chown=1001:0 LICENSE LICENSE
 COPY --chown=1001:0 licenses licenses
 COPY --chown=1001:0 deploy deploy
 
-# Fix symlinks for Windows Docker builds (Hyper-V doesn't support symlinks, use file copies instead)
-RUN cd $LS_DIR/deploy/docker-entrypoint.d && \
-    rm -f app/11-configure-custom-cabundle.sh app/20-wait-for-db.sh app/30-run-db-migrations.sh && \
-    rm -f app-init/11-configure-custom-cabundle.sh app-init/20-wait-for-db.sh && \
-    rm -f nginx/10-configure-nginx.sh && \
-    cp common/11-configure-custom-cabundle.sh app/11-configure-custom-cabundle.sh && \
-    cp common/20-wait-for-db.sh app/20-wait-for-db.sh && \
-    cp common/30-run-db-migrations.sh app/30-run-db-migrations.sh && \
-    cp common/11-configure-custom-cabundle.sh app-init/11-configure-custom-cabundle.sh && \
-    cp common/20-wait-for-db.sh app-init/20-wait-for-db.sh && \
-    cp common/10-configure-nginx.sh nginx/10-configure-nginx.sh && \
+RUN set -eux; \
+    cd $LS_DIR/deploy/docker-entrypoint.d; \
     chmod +x common/*.sh app/*.sh app-init/*.sh nginx/*.sh
 
-# Copy files from build stages
-COPY --chown=1001:0 --from=venv-builder               $LS_DIR                                           $LS_DIR
-COPY --chown=1001:0 --from=py-version-generator       $LS_DIR/label_studio/core/version_.py             $LS_DIR/label_studio/core/version_.py
-COPY --chown=1001:0 --from=frontend-builder           $LS_DIR/web/dist                                  $LS_DIR/web/dist
-COPY --chown=1001:0 --from=frontend-version-generator $LS_DIR/web/dist/apps/labelstudio/version.json    $LS_DIR/web/dist/apps/labelstudio/version.json
-COPY --chown=1001:0 --from=frontend-version-generator $LS_DIR/web/dist/libs/editor/version.json         $LS_DIR/web/dist/libs/editor/version.json
-COPY --chown=1001:0 --from=frontend-version-generator $LS_DIR/web/dist/libs/datamanager/version.json    $LS_DIR/web/dist/libs/datamanager/version.json
+COPY --chown=1001:0 --from=venv-builder $VENV_PATH $VENV_PATH
+COPY --chown=1001:0 --from=venv-builder $LS_DIR/label_studio $LS_DIR/label_studio
+COPY --chown=1001:0 --from=py-version-generator $LS_DIR/label_studio/core/version_.py $LS_DIR/label_studio/core/version_.py
+COPY --chown=1001:0 --from=frontend-builder $LS_DIR/web/dist $LS_DIR/web/dist
+COPY --chown=1001:0 --from=frontend-version-generator $LS_DIR/web/dist/apps/labelstudio/version.json $LS_DIR/web/dist/apps/labelstudio/version.json
+COPY --chown=1001:0 --from=frontend-version-generator $LS_DIR/web/dist/libs/editor/version.json $LS_DIR/web/dist/libs/editor/version.json
+COPY --chown=1001:0 --from=frontend-version-generator $LS_DIR/web/dist/libs/datamanager/version.json $LS_DIR/web/dist/libs/datamanager/version.json
+COPY --chown=1001:0 --from=easyocr-models /opt/easyocr/models /opt/easyocr/models
 
 USER 1001
 

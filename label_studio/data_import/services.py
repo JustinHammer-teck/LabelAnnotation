@@ -4,6 +4,7 @@ import fitz
 import logging
 import io
 import numpy as np
+import os
 
 from PIL import Image
 from typing import Dict, List
@@ -50,9 +51,21 @@ def get_easyocr_reader():
         if not EASYOCR_AVAILABLE:
             logger.warning("EasyOCR not available, cannot create reader")
             return None
-        logger.info("Initializing EasyOCR reader (this may take 30-60 seconds)...")
-        _easyocr_reader = easyocr.Reader(['ch_sim', 'en'], gpu=False)
-        logger.info("EasyOCR reader initialized and cached for reuse")
+
+        model_storage_dir = os.environ.get('EASYOCR_MODULE_PATH')
+        if model_storage_dir:
+            logger.info(f"Initializing EasyOCR reader from preloaded models at {model_storage_dir}...")
+            _easyocr_reader = easyocr.Reader(
+                ['ch_sim', 'en'],
+                gpu=False,
+                model_storage_directory=model_storage_dir,
+                download_enabled=False
+            )
+            logger.info("EasyOCR reader initialized from cached models")
+        else:
+            logger.info("Initializing EasyOCR reader (this may take 30-60 seconds)...")
+            _easyocr_reader = easyocr.Reader(['ch_sim', 'en'], gpu=False)
+            logger.info("EasyOCR reader initialized and cached for reuse")
     return _easyocr_reader
 
 def is_support_document(task):
