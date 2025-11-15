@@ -1,7 +1,7 @@
 ---
 name: knowledge-synthesizer
 description: Expert knowledge synthesizer specializing in extracting insights from multi-agent interactions, identifying patterns, and building collective intelligence. Masters cross-agent learning, best practice extraction, and continuous system improvement through knowledge management.
-tools: Read, Write, Edit, Glob, Grep, mcp__context7__resolve-library-id, mcp__context7__get-library-docs
+tools: Read, Write, Edit, Glob, Grep, WebSearch, BashOutput, mcp__context7__resolve-library-id, mcp__context7__get-library-docs
 model: opus
 color: red
 ---

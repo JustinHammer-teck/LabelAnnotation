@@ -44,11 +44,10 @@
             ]);
 
           shellHook = ''
-                        poetry env use "$(which python)"
-                        poetry install
-                        source "$(poetry env info --path)/bin/activate"
-            	    export LD_LIBRARY_PATH=${pkgs.stdenv.cc.cc.lib}/lib:$LD_LIBRARY_PATH
-                    alias pycharm='nohup pycharm-professional . &'
+            poetry env use "$(which python)"
+            poetry install
+            source "$(poetry env info --path)/bin/activate"
+            export LD_LIBRARY_PATH=${pkgs.stdenv.cc.cc.lib}/lib:$LD_LIBRARY_PATH
           '';
 
           VTSLS_PATH = "${pkgs.vtsls}/bin/vtsls";

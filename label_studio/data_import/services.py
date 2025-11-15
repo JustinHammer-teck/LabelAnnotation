@@ -41,6 +41,48 @@ DEFAULT_OCR_DPI = 300
 
 _easyocr_reader = None
 
+def preprocess_image_for_chinese_ocr(image_array: np.ndarray) -> np.ndarray:
+    """
+    Preprocess image for improved Chinese character recognition.
+
+    Applies CLAHE contrast enhancement, denoising, and sharpening.
+
+    Args:
+        image_array: Input image as numpy array
+
+    Returns:
+        Preprocessed image as numpy array
+    """
+    if not CV2_AVAILABLE:
+        logger.warning("OpenCV not available, skipping preprocessing")
+        return image_array
+
+    try:
+        if len(image_array.shape) == 3:
+            gray = cv2.cvtColor(image_array, cv2.COLOR_RGB2GRAY)
+        else:
+            gray = image_array
+
+        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+        enhanced = clahe.apply(gray)
+
+        denoised = cv2.fastNlMeansDenoising(enhanced, h=10)
+
+        kernel = np.array([[-1, -1, -1],
+                          [-1,  9, -1],
+                          [-1, -1, -1]])
+        sharpened = cv2.filter2D(denoised, -1, kernel)
+
+        if len(image_array.shape) == 3:
+            sharpened = cv2.cvtColor(sharpened, cv2.COLOR_GRAY2RGB)
+
+        logger.debug("Applied CLAHE, denoising, and sharpening for Chinese OCR")
+        return sharpened
+
+    except Exception as e:
+        logger.error(f"Error preprocessing image: {e}")
+        return image_array
+
 def get_easyocr_reader():
     """
     Get or create cached EasyOCR reader instance.
@@ -52,20 +94,42 @@ def get_easyocr_reader():
             logger.warning("EasyOCR not available, cannot create reader")
             return None
 
+        use_gpu = settings.OCR_USE_GPU
+        if use_gpu:
+            try:
+                import torch
+                if not torch.cuda.is_available():
+                    logger.warning("GPU requested but CUDA not available, falling back to CPU")
+                    use_gpu = False
+            except ImportError:
+                logger.warning("GPU requested but PyTorch not available, falling back to CPU")
+                use_gpu = False
+
         model_storage_dir = os.environ.get('EASYOCR_MODULE_PATH')
+        reader_kwargs = {
+            'lang_list': ['ch_sim', 'en'],
+            'gpu': use_gpu,
+            'recog_network': 'chinese_g2'
+        }
+
         if model_storage_dir:
             logger.info(f"Initializing EasyOCR reader from preloaded models at {model_storage_dir}...")
-            _easyocr_reader = easyocr.Reader(
-                ['ch_sim', 'en'],
-                gpu=False,
-                model_storage_directory=model_storage_dir,
-                download_enabled=False
-            )
-            logger.info("EasyOCR reader initialized from cached models")
+            reader_kwargs['model_storage_directory'] = model_storage_dir
+            reader_kwargs['download_enabled'] = False
         else:
             logger.info("Initializing EasyOCR reader (this may take 30-60 seconds)...")
-            _easyocr_reader = easyocr.Reader(['ch_sim', 'en'], gpu=False)
-            logger.info("EasyOCR reader initialized and cached for reuse")
+
+        try:
+            _easyocr_reader = easyocr.Reader(**reader_kwargs)
+            gpu_status = "GPU" if use_gpu else "CPU"
+            logger.info(f"EasyOCR reader initialized on {gpu_status} with Gen2 Chinese model")
+        except Exception as e:
+            logger.warning(f"Failed to initialize with Gen2 model: {e}, trying default model")
+            reader_kwargs.pop('recog_network', None)
+            _easyocr_reader = easyocr.Reader(**reader_kwargs)
+            gpu_status = "GPU" if use_gpu else "CPU"
+            logger.info(f"EasyOCR reader initialized on {gpu_status} with default model")
+
     return _easyocr_reader
 
 def is_support_document(task):
@@ -347,7 +411,7 @@ def extract_characters_from_image_content(image_content: bytes, page_number: int
     if not EASYOCR_AVAILABLE:
         logger.warning("EasyOCR not available, skipping character extraction")
         return []
-    
+
     logger.info(f"Extracting characters from image content, page {page_number}")
 
     try:
@@ -361,7 +425,25 @@ def extract_characters_from_image_content(image_content: bytes, page_number: int
             return []
 
         image_array = np.array(image)
-        results = reader.readtext(image_array)
+
+        if settings.OCR_PREPROCESS_CHINESE:
+            image_array = preprocess_image_for_chinese_ocr(image_array)
+
+        results = reader.readtext(
+            image_array,
+            paragraph=False,
+            decoder='greedy',
+            batch_size=settings.OCR_BATCH_SIZE,
+            min_size=10,
+            text_threshold=0.7,
+            low_text=0.4,
+            link_threshold=0.3,
+            contrast_ths=0.1,
+            adjust_contrast=0.5,
+            mag_ratio=1.5,
+            width_ths=0.5,
+            height_ths=0.5
+        )
 
         logger.info(f"Found {len(results)} text regions")
         

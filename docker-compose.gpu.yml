@@ -1,0 +1,61 @@
+# GPU Configuration Overlay for Label Studio
+# Use this with base compose files to enable GPU acceleration for OCR
+#
+# Usage:
+#   Development with GPU: docker-compose -f docker-compose.dev.yml -f docker-compose.gpu.yml up
+#   Production with GPU:  docker-compose -f docker-compose.prod.yml -f docker-compose.gpu.yml up
+#
+# Prerequisites:
+#   - NVIDIA GPU with CUDA capability >= 3.5
+#   - NVIDIA GPU drivers (>= 525.60.13 for CUDA 12)
+#   - NVIDIA Container Toolkit installed on host
+#   - Docker Engine >= 19.03
+
+services:
+  app:
+    environment:
+      - OCR_USE_GPU=true
+      - OCR_BATCH_SIZE=4
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  worker-default:
+    environment:
+      - OCR_USE_GPU=true
+      - OCR_BATCH_SIZE=4
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  worker-high:
+    environment:
+      - OCR_USE_GPU=true
+      - OCR_BATCH_SIZE=8
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  worker-critical:
+    environment:
+      - OCR_USE_GPU=true
+      - OCR_BATCH_SIZE=8
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]

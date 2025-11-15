@@ -7,6 +7,7 @@ from functools import partial
 
 import django_rq
 import redis
+from django.db import connection, transaction
 from django_rq import get_connection
 from rq.command import send_stop_job_command
 from rq.exceptions import InvalidJobOperation
@@ -85,34 +86,42 @@ def start_job_async_or_sync(job, *args, in_seconds=0, **kwargs):
     :param kwargs: Function keywords arguments
     :return: Job or function result
     """
+    use_on_commit = kwargs.pop('use_on_commit', True)
 
-    redis = redis_connected() and kwargs.get('redis', True)
-    queue_name = kwargs.get('queue_name', 'default')
-    if 'queue_name' in kwargs:
-        del kwargs['queue_name']
-    if 'redis' in kwargs:
-        del kwargs['redis']
-    job_timeout = None
-    if 'job_timeout' in kwargs:
-        job_timeout = kwargs['job_timeout']
-        del kwargs['job_timeout']
-    if redis:
-        logger.info(f'Start async job {job.__name__} on queue {queue_name}.')
-        queue = django_rq.get_queue(queue_name)
-        enqueue_method = queue.enqueue
-        if in_seconds > 0:
-            enqueue_method = partial(queue.enqueue_in, timedelta(seconds=in_seconds))
-        job = enqueue_method(job, *args, **kwargs, job_timeout=job_timeout)
-        return job
+    def _enqueue():
+        redis = redis_connected() and kwargs.get('redis', True)
+        queue_name = kwargs.get('queue_name', 'default')
+        if 'queue_name' in kwargs:
+            del kwargs['queue_name']
+        if 'redis' in kwargs:
+            del kwargs['redis']
+        job_timeout = None
+        if 'job_timeout' in kwargs:
+            job_timeout = kwargs['job_timeout']
+            del kwargs['job_timeout']
+        if redis:
+            logger.info(f'Start async job {job.__name__} on queue {queue_name}.')
+            queue = django_rq.get_queue(queue_name)
+            enqueue_method = queue.enqueue
+            if in_seconds > 0:
+                enqueue_method = partial(queue.enqueue_in, timedelta(seconds=in_seconds))
+            job_result = enqueue_method(job, *args, **kwargs, job_timeout=job_timeout)
+            return job_result
+        else:
+            on_failure = kwargs.pop('on_failure', None)
+            try:
+                return job(*args, **kwargs)
+            except Exception:
+                exc_info = sys.exc_info()
+                if on_failure:
+                    on_failure(job, *exc_info)
+                raise
+
+    if use_on_commit and connection.in_atomic_block:
+        transaction.on_commit(_enqueue)
+        return None
     else:
-        on_failure = kwargs.pop('on_failure', None)
-        try:
-            return job(*args, **kwargs)
-        except Exception:
-            exc_info = sys.exc_info()
-            if on_failure:
-                on_failure(job, *exc_info)
-            raise
+        return _enqueue()
 
 
 def is_job_in_queue(queue, func_name, meta):

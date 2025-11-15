@@ -4,6 +4,7 @@ import json
 import logging
 import mimetypes
 import time
+from typing import TYPE_CHECKING
 from urllib.parse import unquote, urlparse
 
 import drf_yasg.openapi as openapi
@@ -17,6 +18,7 @@ from csp.decorators import csp
 from data_import.services import process_ocr_for_tasks_background, is_support_document
 from django.conf import settings
 from django.db import transaction
+from django.db.models import QuerySet
 from django.http import HttpResponse
 from django.utils.decorators import method_decorator
 from django.utils.timezone import now
@@ -39,6 +41,7 @@ from webhooks.utils import emit_webhooks_for_instance
 
 from label_studio.core.utils.common import load_func
 
+from .constants import ALLOWED_FILE_EXTENSIONS, VALID_ORDERINGS
 from .functions import (
     async_import_background,
     async_reimport_background,
@@ -335,49 +338,46 @@ class ImportAPI(generics.CreateAPIView):
     @timeit
     def async_import(self, request, project, preannotated_from_fields, commit_to_project, return_task_ids):
 
-        project_import = ProjectImport.objects.create(
-            project=project,
-            preannotated_from_fields=preannotated_from_fields,
-            commit_to_project=commit_to_project,
-            return_task_ids=return_task_ids,
-        )
+        with transaction.atomic():
+            project_import = ProjectImport.objects.create(
+                project=project,
+                preannotated_from_fields=preannotated_from_fields,
+                commit_to_project=commit_to_project,
+                return_task_ids=return_task_ids,
+            )
 
-        if len(request.FILES):
-            logger.debug(f'Import from files: {request.FILES}')
-            file_upload_ids, could_be_tasks_list = create_file_uploads(request.user, project, request.FILES)
-            project_import.file_upload_ids = file_upload_ids
-            project_import.could_be_tasks_list = could_be_tasks_list
-            project_import.save(update_fields=['file_upload_ids', 'could_be_tasks_list'])
-        elif 'application/x-www-form-urlencoded' in request.content_type:
-            logger.debug(f'Import from url: {request.data.get("url")}')
-            # empty url
-            url = request.data.get('url')
-            if not url:
-                raise ValidationError('"url" is not found in request data')
-            project_import.url = url
-            project_import.save(update_fields=['url'])
-        # take one task from request DATA
-        elif 'application/json' in request.content_type and isinstance(request.data, dict):
-            project_import.tasks = [request.data]
-            project_import.save(update_fields=['tasks'])
+            if len(request.FILES):
+                logger.debug(f'Import from files: {request.FILES}')
+                file_upload_ids, could_be_tasks_list = create_file_uploads(request.user, project, request.FILES)
+                project_import.file_upload_ids = file_upload_ids
+                project_import.could_be_tasks_list = could_be_tasks_list
+                project_import.save(update_fields=['file_upload_ids', 'could_be_tasks_list'])
+            elif 'application/x-www-form-urlencoded' in request.content_type:
+                logger.debug(f'Import from url: {request.data.get("url")}')
+                url = request.data.get('url')
+                if not url:
+                    raise ValidationError('"url" is not found in request data')
+                project_import.url = url
+                project_import.save(update_fields=['url'])
+            elif 'application/json' in request.content_type and isinstance(request.data, dict):
+                project_import.tasks = [request.data]
+                project_import.save(update_fields=['tasks'])
+            elif 'application/json' in request.content_type and isinstance(request.data, list):
+                project_import.tasks = request.data
+                project_import.save(update_fields=['tasks'])
+            else:
+                raise ValidationError('load_tasks: No data found in DATA or in FILES')
 
-        # take many tasks from request DATA
-        elif 'application/json' in request.content_type and isinstance(request.data, list):
-            project_import.tasks = request.data
-            project_import.save(update_fields=['tasks'])
-
-        # incorrect data source
-        else:
-            raise ValidationError('load_tasks: No data found in DATA or in FILES')
-
-        start_job_async_or_sync(
-            async_import_background,
-            project_import.id,
-            request.user.id,
-            queue_name='high',
-            on_failure=set_import_background_failure,
-            project_id=project.id,
-            organization_id=request.user.active_organization.id,
+        transaction.on_commit(
+            lambda: start_job_async_or_sync(
+                async_import_background,
+                project_import.id,
+                request.user.id,
+                queue_name='high',
+                on_failure=set_import_background_failure,
+                project_id=project.id,
+                organization_id=request.user.active_organization.id,
+            )
         )
 
         response = {'import': project_import.id}
@@ -648,7 +648,22 @@ class FileUploadListAPI(generics.ListAPIView):
     )
     pagination_class = FileUploadPagination
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet[FileUpload]:
+        """
+        Get filtered and ordered queryset of FileUpload objects for the project.
+
+        Query Parameters:
+            is_parent (bool): Filter for parent documents only (default: True)
+            file_type (str): Filter by file extension (e.g., ".pdf", ".png")
+            ordering (str): Sort order, must be one of VALID_ORDERINGS
+
+        Returns:
+            QuerySet[FileUpload]: Filtered and ordered queryset
+
+        Raises:
+            ValidationError: If file_type extension is not in ALLOWED_FILE_EXTENSIONS
+            ValidationError: If ordering is not in VALID_ORDERINGS
+        """
         project_pk = self.kwargs.get('pk')
         project = generics.get_object_or_404(
             Project.objects.for_user(self.request.user),
@@ -666,14 +681,26 @@ class FileUploadListAPI(generics.ListAPIView):
 
         file_type = self.request.query_params.get('file_type')
         if file_type:
-            queryset = queryset.filter(file__endswith=file_type)
+            normalized_ext = file_type.strip().lower()
+            if not normalized_ext.startswith('.'):
+                normalized_ext = f'.{normalized_ext}'
+
+            if normalized_ext not in ALLOWED_FILE_EXTENSIONS:
+                raise ValidationError(
+                    f'Invalid file_type "{file_type}". '
+                    f'Must be one of: {", ".join(sorted(ALLOWED_FILE_EXTENSIONS))}'
+                )
+
+            queryset = queryset.filter(file__endswith=normalized_ext)
 
         ordering = self.request.query_params.get('ordering', '-created_at')
-        valid_orderings = ['created_at', '-created_at', 'id', '-id']
-        if ordering in valid_orderings:
-            queryset = queryset.order_by(ordering)
-        else:
-            queryset = queryset.order_by('-created_at')
+        if ordering not in VALID_ORDERINGS:
+            raise ValidationError(
+                f'Invalid ordering "{ordering}". '
+                f'Must be one of: {", ".join(sorted(VALID_ORDERINGS))}'
+            )
+
+        queryset = queryset.order_by(ordering)
 
         return queryset
 

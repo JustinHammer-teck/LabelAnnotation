@@ -68,9 +68,7 @@ class FileUpload(models.Model):
     @property
     def task_count(self):
         """Count of tasks associated with this upload"""
-        if not hasattr(self, '_task_count_cache'):
-            self._task_count_cache = self.tasks.count()
-        return self._task_count_cache
+        return self.tasks.count()
 
     @property
     def is_parent_document(self):

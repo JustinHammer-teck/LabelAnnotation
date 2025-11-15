@@ -128,6 +128,65 @@ class TestFileUploadListAPI(APITestCase):
 
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
+    def test_file_type_normalization_without_dot(self):
+        """Test file_type parameter normalization without leading dot"""
+        FileUploadFactory.create_with_format('.pdf', project=self.project, user=self.user)
+        FileUploadFactory.create_with_format('.csv', project=self.project, user=self.user)
+
+        response = self.client.get(
+            f'/api/projects/{self.project.id}/file-uploads',
+            {'file_type': 'pdf'}
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data['count'] == 1
+
+    def test_file_type_normalization_uppercase(self):
+        """Test file_type parameter normalization with uppercase"""
+        FileUploadFactory.create_with_format('.png', project=self.project, user=self.user)
+
+        response = self.client.get(
+            f'/api/projects/{self.project.id}/file-uploads',
+            {'file_type': 'PNG'}
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data['count'] == 1
+
+    def test_file_type_normalization_with_whitespace(self):
+        """Test file_type parameter normalization with whitespace"""
+        FileUploadFactory.create_with_format('.jpg', project=self.project, user=self.user)
+
+        response = self.client.get(
+            f'/api/projects/{self.project.id}/file-uploads',
+            {'file_type': ' .JPG '}
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data['count'] == 1
+
+    def test_file_type_invalid_extension(self):
+        """Test file_type parameter with invalid extension"""
+        response = self.client.get(
+            f'/api/projects/{self.project.id}/file-uploads',
+            {'file_type': '.exe'}
+        )
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert 'Invalid file_type' in str(response.data)
+
+    def test_ordering_invalid_parameter(self):
+        """Test ordering parameter with invalid value"""
+        FileUploadFactory(project=self.project, user=self.user)
+
+        response = self.client.get(
+            f'/api/projects/{self.project.id}/file-uploads',
+            {'ordering': 'invalid_field'}
+        )
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert 'Invalid ordering' in str(response.data)
+
 
 class TestFileUploadDownloadAPI(APITestCase):
     @classmethod

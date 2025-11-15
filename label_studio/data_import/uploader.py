@@ -15,6 +15,7 @@ from core.utils.common import timeit
 from core.utils.io import ssrf_safe_get
 from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.db import transaction
 from rest_framework.exceptions import ValidationError
 from data_import.services import process_pdf_if_needed
 
@@ -71,22 +72,26 @@ def check_request_files_size(files):
 
 
 def create_file_upload(user, project, file):
-    instance = FileUpload(user=user, project=project, file=file)
-    if settings.SVG_SECURITY_CLEANUP:
-        content_type, encoding = mimetypes.guess_type(str(instance.file.name))
-        if content_type in ['image/svg+xml']:
-            clean_xml = allowlist_svg(instance.file.read().decode())
-            instance.file.seek(0)
-            instance.file.write(clean_xml.encode())
-            instance.file.truncate()
-    instance.save()
-    
+    with transaction.atomic():
+        instance = FileUpload(user=user, project=project, file=file)
+        if settings.SVG_SECURITY_CLEANUP:
+            content_type, encoding = mimetypes.guess_type(str(instance.file.name))
+            if content_type in ['image/svg+xml']:
+                clean_xml = allowlist_svg(instance.file.read().decode())
+                instance.file.seek(0)
+                instance.file.write(clean_xml.encode())
+                instance.file.truncate()
+        instance.save()
+
     if settings.OCR_ENABLED:
-        try:
-            process_pdf_if_needed(instance)
-        except Exception as e:
-            logger.error(f'PDF processing failed for {instance.file_name}: {e}', exc_info=True)
-    
+        def _process_pdf():
+            try:
+                process_pdf_if_needed(instance)
+            except Exception as e:
+                logger.error(f'PDF processing failed for {instance.file_name}: {e}', exc_info=True)
+
+        transaction.on_commit(_process_pdf)
+
     return instance
 
 
