@@ -29,3 +29,8 @@ rundev: dev_setting
 frontend:
     yarn --cwd ./web/ dev
 
+dev *ARG:
+    docker compose -f docker-compose.dev.yml {{ ARG }}
+
+dev-full *ARG:
+    docker compose --profile full -f docker-compose.dev.yml {{ ARG }}

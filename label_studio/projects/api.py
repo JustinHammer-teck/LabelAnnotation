@@ -992,11 +992,19 @@ class ProjectAPIProxy(ProjectAPI):
         serializer.is_valid(raise_exception=True)
         fields = serializer.validated_data.get('include')
 
-        projects = get_objects_for_user(
-            self.request.user,
-            ['assigned_to_project'],
-            klass=Project.objects.with_counts(fields=fields)
-        ).filter(organization=self.request.user.active_organization)
+        user_groups = set(self.request.user.groups.values_list('name', flat=True))
+        is_annotator = 'Annotator' in user_groups and 'Manager' not in user_groups and 'Researcher' not in user_groups
+
+        if is_annotator:
+            projects = get_objects_for_user(
+                self.request.user,
+                ['assigned_to_project'],
+                klass=Project.objects.with_counts(fields=fields)
+            ).filter(organization=self.request.user.active_organization)
+        else:
+            projects = Project.objects.with_counts(fields=fields).filter(
+                organization=self.request.user.active_organization
+            )
 
         return projects
 
@@ -1016,7 +1024,13 @@ class ProjectListApiProxy(ProjectListAPI):
         fields = serializer.validated_data.get('include')
         filter = serializer.validated_data.get('filter')
 
-        t_project = get_objects_for_user(self.request.user, ['assigned_to_project'], klass=Project.objects.all())
+        user_groups = set(self.request.user.groups.values_list('name', flat=True))
+        is_annotator = 'Annotator' in user_groups and 'Manager' not in user_groups and 'Researcher' not in user_groups
+
+        if is_annotator:
+            t_project = get_objects_for_user(self.request.user, ['assigned_to_project'], klass=Project.objects.all())
+        else:
+            t_project = Project.objects.all()
 
         projects = t_project.filter(organization=self.request.user.active_organization).order_by(
             F('pinned_at').desc(nulls_last=True), '-created_at'
@@ -1044,11 +1058,17 @@ class ProjectDashboardAnalyticsAPI(APIView):
 
         organization = request.user.active_organization
 
-        projects = get_objects_for_user(
-            request.user,
-            ['assigned_to_project'],
-            klass=Project.objects.with_counts()
-        ).filter(organization=organization)
+        user_groups = set(request.user.groups.values_list('name', flat=True))
+        is_annotator = 'Annotator' in user_groups and 'Manager' not in user_groups and 'Researcher' not in user_groups
+
+        if is_annotator:
+            projects = get_objects_for_user(
+                request.user,
+                ['assigned_to_project'],
+                klass=Project.objects.with_counts()
+            ).filter(organization=organization)
+        else:
+            projects = Project.objects.with_counts().filter(organization=organization)
 
         members_count = organization.users.filter(
             om_through__deleted_at__isnull=True

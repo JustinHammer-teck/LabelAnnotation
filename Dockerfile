@@ -184,6 +184,19 @@ COPY --chown=1001:0 deploy deploy
 
 RUN set -eux; \
     cd $LS_DIR/deploy/docker-entrypoint.d; \
+    # Resolve symlinks for Windows container compatibility
+    for link in app/11-configure-custom-cabundle.sh \
+                app/20-wait-for-db.sh \
+                app/30-run-db-migrations.sh \
+                app-init/11-configure-custom-cabundle.sh \
+                app-init/20-wait-for-db.sh \
+                nginx/10-configure-nginx.sh; do \
+        if [ -L "$link" ]; then \
+            target=$(readlink "$link"); \
+            rm "$link"; \
+            cp "$(dirname "$link")/$target" "$link"; \
+        fi; \
+    done; \
     chmod +x common/*.sh app/*.sh app-init/*.sh nginx/*.sh
 
 COPY --chown=1001:0 --from=venv-builder $VENV_PATH $VENV_PATH
