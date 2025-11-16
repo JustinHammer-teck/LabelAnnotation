@@ -108,8 +108,7 @@ def get_easyocr_reader():
         model_storage_dir = os.environ.get('EASYOCR_MODULE_PATH')
         reader_kwargs = {
             'lang_list': ['ch_sim', 'en'],
-            'gpu': use_gpu,
-            'recog_network': 'chinese_g2'
+            'gpu': use_gpu
         }
 
         if model_storage_dir:
@@ -119,16 +118,9 @@ def get_easyocr_reader():
         else:
             logger.info("Initializing EasyOCR reader (this may take 30-60 seconds)...")
 
-        try:
-            _easyocr_reader = easyocr.Reader(**reader_kwargs)
-            gpu_status = "GPU" if use_gpu else "CPU"
-            logger.info(f"EasyOCR reader initialized on {gpu_status} with Gen2 Chinese model")
-        except Exception as e:
-            logger.warning(f"Failed to initialize with Gen2 model: {e}, trying default model")
-            reader_kwargs.pop('recog_network', None)
-            _easyocr_reader = easyocr.Reader(**reader_kwargs)
-            gpu_status = "GPU" if use_gpu else "CPU"
-            logger.info(f"EasyOCR reader initialized on {gpu_status} with default model")
+        _easyocr_reader = easyocr.Reader(**reader_kwargs)
+        gpu_status = "GPU" if use_gpu else "CPU"
+        logger.info(f"EasyOCR reader initialized on {gpu_status} with Chinese model")
 
     return _easyocr_reader
 
