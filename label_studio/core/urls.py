@@ -117,6 +117,7 @@ urlpatterns = [
     re_path(r'^', include('session_policy.urls')),
     # Support new notifications application
     re_path(r'^', include('notifications.urls')),
+    re_path(r'^api/', include('aviation.urls')),
     # path('silk/', include('silk.urls', namespace='silk')),
 ]
 
