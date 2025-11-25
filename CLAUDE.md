@@ -57,7 +57,7 @@ lbstudio
 ├── label_studio
 │   ├── CLAUDE.md
 │   ├── core 
-│   │   ├── CLAUDE.md (instruction for async worker pattern)
+│   │   ├── CLAUDE.md
 ├── web
 │   ├── apps
 │   │   ├── labelstudio
