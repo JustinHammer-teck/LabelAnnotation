@@ -65,5 +65,84 @@
       "enable_browser_notification": "Enable Browser Notification",
       "no_new_notification": "You have no new notifications"
     }
+  },
+  "aviation": {
+    "page_title": "Aviation Safety",
+    "back_to_tasks": "Back to Tasks",
+    "event_number": "Event #",
+    "mock_mode": "Mock Mode",
+    "unsaved_changes": "You have unsaved changes. Are you sure you want to leave?",
+    "loading": "Loading annotation data...",
+    "error_loading": "Error Loading Data",
+    "retry": "Retry",
+    "basic_info": {
+      "date": "Date",
+      "aircraft_type": "Aircraft Type",
+      "location": "Location",
+      "event_labels": "Event Labels",
+      "flight_phase": "Flight Phase",
+      "notes": "Notes",
+      "select_aircraft": "Select Aircraft",
+      "select_phase": "Select Flight Phase",
+      "placeholder_date": "Date",
+      "placeholder_location": "Location",
+      "placeholder_notes": "Notes"
+    },
+    "results": {
+      "category": "Result Category",
+      "training_details": "Training Details",
+      "crm_training_topics": "CRM Training Topics",
+      "competency_summary": "Competency Summary",
+      "likelihood": "Likelihood",
+      "severity": "Severity",
+      "training_effect": "Training Effect",
+      "training_plan": "Training Plan Ideas",
+      "training_topics": "Training Topics",
+      "goals": "Goals to Achieve",
+      "single_select": "Single Select",
+      "dropdown_single_desc": "Dropdown & Description",
+      "level_1_menu": "Level 1 Menu",
+      "dropdown_multi_desc": "Dropdown Multi-select & Description",
+      "select": "Select",
+      "fill_in": "Fill in"
+    },
+    "recognition": {
+      "threat": {
+        "title": "Threat Recognition",
+        "type": "Threat Type",
+        "management": "Threat Management",
+        "outcome": "Threat Outcome",
+        "capability": "Threat Capability"
+      },
+      "error": {
+        "title": "Error Recognition",
+        "type": "Error Type",
+        "management": "Error Management",
+        "outcome": "Error Outcome",
+        "capability": "Error Capability"
+      },
+      "uas": {
+        "title": "UAS Recognition",
+        "type": "UAS Type",
+        "management": "UAS Management",
+        "capability": "UAS Capability"
+      },
+      "relevancy": "Relevancy",
+      "relevancy_driver": "Relevancy (Driver)",
+      "dropdown_single": "Dropdown Single Select",
+      "level_2_menu": "Level 2 Menu",
+      "level_3_menu": "Level 3 Menu"
+    },
+    "training_panel": {
+      "title": "Training Topics",
+      "threat_related": "Threat Related",
+      "error_related": "Error Related",
+      "uas_related": "UAS Related",
+      "auto_fill": "Auto-fill",
+      "add_annotation": "Add Annotation Tag"
+    },
+    "crm": {
+      "dropdown_multi": "Dropdown Multi-select"
+    }
   }
 }

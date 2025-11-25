@@ -14,6 +14,7 @@ import {
   IconPin,
   IconDoor,
   IconSettings,
+  IconDocument,
 } from '@humansignal/icons';
 import { Userpic, ThemeToggle } from '@humansignal/ui';
 import { useConfig } from '../../providers/ConfigProvider';
@@ -242,6 +243,13 @@ export const Menubar = ({
                   label="Organization"
                   to="/organization"
                   icon={<IconPersonInCircle />}
+                  data-external
+                  exact
+                />
+                <Menu.Item
+                  label="Aviation Safety"
+                  to="/aviation"
+                  icon={<IconDocument />}
                   data-external
                   exact
                 />

@@ -1,0 +1,87 @@
+.trainingPanel {
+  background: #c8e6c9;
+  border: 2px solid #81c784;
+  border-radius: 6px;
+  padding: 16px;
+  min-width: 250px;
+  max-width: 300px;
+  height: fit-content;
+}
+
+.panelHeader {
+  font-size: 18px;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 16px;
+  color: var(--content-primary, #333);
+}
+
+.topicSection {
+  margin-bottom: 16px;
+
+  &:last-of-type {
+    margin-bottom: 20px;
+  }
+}
+
+.topicHeader {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: var(--content-primary, #333);
+}
+
+.topicBox {
+  background: var(--surface-primary, #fff);
+  border: 1px solid var(--border-neutral, #d0d0d0);
+  border-radius: 4px;
+  padding: 4px;
+  min-height: 80px;
+}
+
+.textarea {
+  width: 100%;
+  min-height: 70px;
+  padding: 6px 8px;
+  border: none;
+  background: transparent;
+  font-size: 12px;
+  resize: vertical;
+  color: var(--content-subtler, #666);
+
+  &:focus {
+    outline: none;
+  }
+
+  &::placeholder {
+    color: var(--content-subtler, #999);
+  }
+}
+
+.addButton {
+  width: 100%;
+  padding: 10px 16px;
+  background: var(--surface-primary, #fff);
+  border: 2px dashed var(--border-neutral, #999);
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--content-primary, #333);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.2s;
+
+  &:hover {
+    background: var(--surface-hover, #f5f5f5);
+    border-color: var(--border-bold, #666);
+  }
+
+  .plusIcon {
+    font-size: 18px;
+    font-weight: 700;
+    color: #2e7d32;
+  }
+}

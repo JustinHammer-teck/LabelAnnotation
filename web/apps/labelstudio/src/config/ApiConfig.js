@@ -110,7 +110,29 @@ export const API_CONFIG = {
     sendNotification: 'POST:/notifications/send',
 
     // OCR
-    taskOCRExtractions: 'GET:/tasks/:pk/ocr-extractions'
+    taskOCRExtractions: 'GET:/tasks/:pk/ocr-extractions',
+
+    // Aviation
+    aviationIncidents: '/aviation/incidents',
+    aviationIncident: '/aviation/incidents/:pk',
+    createAviationIncident: 'POST:/aviation/incidents',
+    updateAviationIncident: 'PATCH:/aviation/incidents/:pk',
+    deleteAviationIncident: 'DELETE:/aviation/incidents/:pk',
+
+    aviationAnnotations: '/aviation/annotations',
+    aviationAnnotation: '/aviation/annotations/:pk',
+    createAviationAnnotation: 'POST:/aviation/annotations',
+    updateAviationAnnotation: 'PATCH:/aviation/annotations/:pk',
+
+    aviationDropdowns: '/aviation/dropdowns',
+    aviationDropdownsByCategory: '/aviation/dropdowns/:category',
+
+    aviationTaskLock: '/aviation/tasks/:taskId/lock',
+    acquireAviationTaskLock: 'POST:/aviation/tasks/:taskId/lock',
+    releaseAviationTaskLock: 'DELETE:/aviation/tasks/:taskId/lock',
+
+    aviationExport: 'POST:/aviation/export',
+    aviationTrainingMappings: '/aviation/training-mappings'
   },
   alwaysExpectJSON: false
 };
