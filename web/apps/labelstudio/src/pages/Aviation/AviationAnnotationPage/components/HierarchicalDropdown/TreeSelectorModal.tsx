@@ -14,8 +14,8 @@ interface TreeSelectorModalProps {
   isOpen: boolean;
   onClose: () => void;
   category: 'threat' | 'error' | 'uas';
-  value: HierarchicalSelection | null;
-  onConfirm: (selection: HierarchicalSelection) => void;
+  value: HierarchicalSelection;
+  onConfirm: (selection: HierarchicalSelection, trainingTopics: string[]) => void;
 }
 
 export const TreeSelectorModal: React.FC<TreeSelectorModalProps> = ({
@@ -26,9 +26,9 @@ export const TreeSelectorModal: React.FC<TreeSelectorModalProps> = ({
   onConfirm,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedL1, setSelectedL1] = useState<DropdownOption | null>(value?.level1 || null);
-  const [selectedL2, setSelectedL2] = useState<DropdownOption | null>(value?.level2 || null);
-  const [selectedL3, setSelectedL3] = useState<DropdownOption | null>(value?.level3 || null);
+  const [selectedL1, setSelectedL1] = useState<DropdownOption | null>(null);
+  const [selectedL2, setSelectedL2] = useState<DropdownOption | null>(null);
+  const [selectedL3, setSelectedL3] = useState<DropdownOption | null>(null);
 
   const modalRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -65,7 +65,26 @@ export const TreeSelectorModal: React.FC<TreeSelectorModalProps> = ({
     return searchHierarchicalOptions(allOptions, searchTerm);
   }, [allOptions, searchTerm]);
 
-  // Focus management
+  const findOptionByCode = useCallback(
+    (code: string): DropdownOption | null => {
+      if (!code) return null;
+      return allOptions.find((opt) => opt.code === code) || null;
+    },
+    [allOptions]
+  );
+
+  useEffect(() => {
+    if (isOpen && allOptions.length > 0) {
+      const l1 = findOptionByCode(value?.level1 || '');
+      const l2 = findOptionByCode(value?.level2 || '');
+      const l3 = findOptionByCode(value?.level3 || '');
+      setSelectedL1(l1);
+      setSelectedL2(l2);
+      setSelectedL3(l3);
+      setSearchTerm('');
+    }
+  }, [isOpen, value, allOptions, findOptionByCode]);
+
   useEffect(() => {
     if (isOpen) {
       previousFocusRef.current = document.activeElement as HTMLElement;
@@ -159,22 +178,18 @@ export const TreeSelectorModal: React.FC<TreeSelectorModalProps> = ({
   );
 
   const handleConfirm = useCallback(() => {
-    if (!selectedL3) return;
+    const deepestSelected = selectedL3 || selectedL2 || selectedL1;
+    if (!deepestSelected) return;
 
-    const fullPath = [
-      selectedL1?.code || selectedL1?.label,
-      selectedL2?.code || selectedL2?.label,
-      selectedL3?.code || selectedL3?.label,
-    ]
-      .filter(Boolean)
-      .join(' > ');
+    const selection: HierarchicalSelection = {
+      level1: selectedL1?.code || '',
+      level2: selectedL2?.code || '',
+      level3: selectedL3?.code || '',
+    };
 
-    onConfirm({
-      level1: selectedL1,
-      level2: selectedL2,
-      level3: selectedL3,
-      fullPath,
-    });
+    const trainingTopics = deepestSelected.training_topics || [];
+
+    onConfirm(selection, trainingTopics);
   }, [selectedL1, selectedL2, selectedL3, onConfirm]);
 
   const handleBackdropClick = useCallback(
@@ -333,7 +348,7 @@ export const TreeSelectorModal: React.FC<TreeSelectorModalProps> = ({
             type="button"
             className={styles.confirmButton}
             onClick={handleConfirm}
-            disabled={!selectedL3}
+            disabled={!selectedL1}
           >
             Confirm
           </button>

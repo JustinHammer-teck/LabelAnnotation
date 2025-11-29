@@ -2,6 +2,7 @@ import React, { useEffect, useMemo } from 'react';
 import { useParams, useHistory } from 'react-router-dom';
 import { Provider } from 'jotai';
 import { useTranslation } from 'react-i18next';
+import { ExportOutlined } from '@ant-design/icons';
 import { BasicInfoTable } from './components/BasicInfoTable/BasicInfoTable';
 import { ResultsTable } from './components/ResultsTable/ResultsTable';
 import { RecognitionSection } from './components/RecognitionSection/RecognitionSection';
@@ -140,6 +141,14 @@ export const AviationAnnotationPage: React.FC = () => {
           </span>
         </div>
         <div className={styles.headerActions}>
+          <button
+            type="button"
+            className={styles.exportButton}
+            onClick={() => window.open(`/api/aviation/tasks/${taskId}/export/`, '_blank')}
+            disabled={!taskId}
+          >
+            <ExportOutlined /> {t('aviation.export')}
+          </button>
           <button
             type="button"
             className={styles.saveButton}

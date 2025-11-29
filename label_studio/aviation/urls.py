@@ -5,12 +5,22 @@ app_name = 'aviation'
 
 urlpatterns = [
     path(
-        'projects/<int:pk>/aviation/upload',
+        'aviation/projects',
+        api.AviationProjectListAPI.as_view(),
+        name='aviation-project-list'
+    ),
+    path(
+        'aviation/projects/<int:pk>',
+        api.AviationProjectDetailAPI.as_view(),
+        name='aviation-project-detail'
+    ),
+    path(
+        'projects/<int:pk>/aviation/upload/',
         api.AviationExcelUploadAPI.as_view(),
         name='aviation-excel-upload'
     ),
     path(
-        'projects/<int:pk>/aviation/validate',
+        'projects/<int:pk>/aviation/validate/',
         api.AviationExcelValidateAPI.as_view(),
         name='aviation-excel-validate'
     ),
@@ -73,5 +83,10 @@ urlpatterns = [
         'aviation/training-mappings',
         api.AviationTrainingMappingsAPI.as_view(),
         name='aviation-training-mappings'
+    ),
+    path(
+        'aviation/tasks/<int:task_id>/export/',
+        api.AviationTaskExportAPI.as_view(),
+        name='aviation-task-export'
     ),
 ]

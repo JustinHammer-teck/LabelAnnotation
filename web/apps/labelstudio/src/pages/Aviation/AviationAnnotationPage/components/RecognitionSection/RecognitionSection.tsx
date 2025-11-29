@@ -5,6 +5,7 @@ import { annotationDataAtom, updateFieldAtom } from '../../stores/aviation-annot
 import { useDropdownOptions } from '../../hooks/use-dropdown-options.hook';
 import { DropdownOption, HierarchicalSelection } from '../../types/aviation.types';
 import { MultiSelectDropdown } from '../MultiSelectDropdown/MultiSelectDropdown';
+import { TreeSelectorModal } from '../HierarchicalDropdown/TreeSelectorModal';
 import styles from './RecognitionSection.module.scss';
 
 interface RecognitionSectionProps {
@@ -17,10 +18,9 @@ export const RecognitionSection: React.FC<RecognitionSectionProps> = ({ type, ba
   const data = useAtomValue(annotationDataAtom);
   const updateField = useSetAtom(updateFieldAtom);
   const { options } = useDropdownOptions();
-  const [showHierarchy, setShowHierarchy] = useState(false);
+  const [typeModalOpen, setTypeModalOpen] = useState(false);
   const [showManagement, setShowManagement] = useState(false);
   const [showOutcome, setShowOutcome] = useState(false);
-  const hierarchyRef = useRef<HTMLDivElement>(null);
   const managementRef = useRef<HTMLDivElement>(null);
   const outcomeRef = useRef<HTMLDivElement>(null);
 
@@ -41,9 +41,6 @@ export const RecognitionSection: React.FC<RecognitionSectionProps> = ({ type, ba
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (hierarchyRef.current && !hierarchyRef.current.contains(event.target as Node)) {
-        setShowHierarchy(false);
-      }
       if (managementRef.current && !managementRef.current.contains(event.target as Node)) {
         setShowManagement(false);
       }
@@ -60,23 +57,6 @@ export const RecognitionSection: React.FC<RecognitionSectionProps> = ({ type, ba
     updateField({ field, value });
   };
 
-  const handleHierarchicalSelection = (level1: DropdownOption | null, level2?: DropdownOption | null, level3?: DropdownOption | null) => {
-    const selection: HierarchicalSelection = {
-      level1: level1?.code || '',
-      level2: level2?.code || '',
-      level3: level3?.code || '',
-    };
-    handleFieldUpdate(typeField, selection);
-
-    const selectedOption = level3 || level2 || level1;
-    const trainingTopics = selectedOption?.training_topics || [];
-    handleFieldUpdate(trainingTopicsField, trainingTopics);
-
-    if (level3 || (level2 && !getLevel2ChildrenByCode(level2.code).length)) {
-      setShowHierarchy(false);
-    }
-  };
-
   const getCategoryOptions = () => {
     return options?.[type === 'error' ? 'error_type' : type] || [];
   };
@@ -85,106 +65,17 @@ export const RecognitionSection: React.FC<RecognitionSectionProps> = ({ type, ba
     return getCategoryOptions().find(opt => opt.code === code);
   };
 
-  const getLevel1Options = () => {
-    return getCategoryOptions().filter(opt => opt.level === 1 && opt.parent_id === null);
-  };
-
-  const getLevel2Children = (parent: DropdownOption) => {
-    return getCategoryOptions().filter(opt => opt.level === 2 && opt.parent_id === parent.id);
-  };
-
-  const getLevel2ChildrenByCode = (code: string) => {
-    const parent = getOptionByCode(code);
-    if (!parent) return [];
-    return getCategoryOptions().filter(opt => opt.level === 2 && opt.parent_id === parent.id);
-  };
-
-  const getLevel3Children = (parent: DropdownOption) => {
-    return getCategoryOptions().filter(opt => opt.level === 3 && opt.parent_id === parent.id);
-  };
-
-  const getLevel3ChildrenByCode = (code: string) => {
-    const parent = getOptionByCode(code);
-    if (!parent) return [];
-    return getCategoryOptions().filter(opt => opt.level === 3 && opt.parent_id === parent.id);
-  };
-
-  const renderHierarchicalDropdown = () => {
-    const level1Options = getLevel1Options();
+  const getFullPath = (): string => {
     const selectedLevel1 = typeValue?.level1 ? getOptionByCode(typeValue.level1) : undefined;
     const selectedLevel2 = typeValue?.level2 ? getOptionByCode(typeValue.level2) : undefined;
     const selectedLevel3 = typeValue?.level3 ? getOptionByCode(typeValue.level3) : undefined;
-    const level2Options = selectedLevel1 ? getLevel2Children(selectedLevel1) : [];
-    const level3Options = selectedLevel2 ? getLevel3Children(selectedLevel2) : [];
-    const fullPath = [selectedLevel1, selectedLevel2, selectedLevel3].filter(Boolean).map(opt => opt!.label).join(' > ');
-
-    return (
-      <div className={styles.hierarchicalContainer} ref={hierarchyRef}>
-        <button
-          className={styles.hierarchyButton}
-          onClick={() => setShowHierarchy(!showHierarchy)}
-          type="button"
-        >
-          {fullPath || t('aviation.recognition.select_option')}
-          <span className={styles.dropdownIcon}>▼</span>
-        </button>
-        {showHierarchy && (
-          <div className={styles.dropdownMenu}>
-            <div className={styles.levelSection}>
-              <div className={styles.levelHeader}>Level 1</div>
-              {level1Options.map(opt => (
-                <div
-                  key={opt.id}
-                  className={`${styles.dropdownItem} ${selectedLevel1?.id === opt.id ? styles.selected : ''}`}
-                  onClick={() => handleHierarchicalSelection(opt)}
-                >
-                  {opt.label}
-                </div>
-              ))}
-            </div>
-            {selectedLevel1 && level2Options.length > 0 && (
-              <div className={styles.levelSection}>
-                <div className={styles.levelHeader}>Level 2</div>
-                {level2Options.map(opt => (
-                  <div
-                    key={opt.id}
-                    className={`${styles.dropdownItem} ${selectedLevel2?.id === opt.id ? styles.selected : ''}`}
-                    onClick={() => handleHierarchicalSelection(selectedLevel1, opt)}
-                  >
-                    {opt.label}
-                  </div>
-                ))}
-              </div>
-            )}
-            {selectedLevel2 && level3Options.length > 0 && (
-              <div className={styles.levelSection}>
-                <div className={styles.levelHeader}>Level 3</div>
-                {level3Options.map(opt => (
-                  <div
-                    key={opt.id}
-                    className={`${styles.dropdownItem} ${selectedLevel3?.id === opt.id ? styles.selected : ''}`}
-                    onClick={() => handleHierarchicalSelection(selectedLevel1, selectedLevel2, opt)}
-                  >
-                    {opt.label}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-        <div className={styles.hierarchyDesc}>
-          一级菜单<br/>下拉单选&描述
-        </div>
-        {typeValue?.level1 && (
-          <div className={styles.hierarchyLevel}>
-            <span className={styles.levelBadge}>二级菜单</span>
-            <span>下拉单选&描述</span>
-            <span className={styles.requiredStar}>★</span>
-          </div>
-        )}
-      </div>
-    );
+    return [selectedLevel1, selectedLevel2, selectedLevel3]
+      .filter(Boolean)
+      .map(opt => opt!.label)
+      .join(' > ');
   };
+
+  const fullPath = getFullPath();
 
   return (
     <div className={styles.recognitionSection} style={{ backgroundColor }}>
@@ -221,7 +112,25 @@ export const RecognitionSection: React.FC<RecognitionSectionProps> = ({ type, ba
               </td>
             )}
             <td>
-              {renderHierarchicalDropdown()}
+              <button
+                className={styles.hierarchyButton}
+                onClick={() => setTypeModalOpen(true)}
+                type="button"
+              >
+                {fullPath || 'Select Type'}
+                <span className={styles.dropdownIcon}>▼</span>
+              </button>
+              <TreeSelectorModal
+                isOpen={typeModalOpen}
+                onClose={() => setTypeModalOpen(false)}
+                category={type}
+                value={typeValue}
+                onConfirm={(selection, trainingTopics) => {
+                  handleFieldUpdate(typeField, selection);
+                  handleFieldUpdate(trainingTopicsField, trainingTopics);
+                  setTypeModalOpen(false);
+                }}
+              />
             </td>
             <td>
               <div className={styles.dropdownWrapper} ref={managementRef}>

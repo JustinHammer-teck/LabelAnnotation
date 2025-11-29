@@ -528,7 +528,7 @@ class AviationDropdownSearchAPI(APIView):
 
 
 class AviationExportAPI(APIView):
-    """Generate Excel exports with annotations"""
+    """Generate JSON exports with annotations"""
     permission_required = ViewClassPermission(
         GET=all_permissions.projects_view,
     )
@@ -538,7 +538,7 @@ class AviationExportAPI(APIView):
 
     @swagger_auto_schema(
         tags=['Aviation'],
-        operation_summary='Export aviation annotations to Excel',
+        operation_summary='Export aviation annotations to JSON',
         manual_parameters=[
             openapi.Parameter(
                 name='project_id',
@@ -557,8 +557,8 @@ class AviationExportAPI(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        from .services import ExcelExportService
-        exporter = ExcelExportService()
+        from .services import JsonExportService
+        exporter = JsonExportService()
 
         project = self.get_queryset().filter(id=project_id).first()
         if not project:
@@ -588,9 +588,9 @@ class AviationExportAPI(APIView):
         try:
             response = FileResponse(
                 open(validated_path, 'rb'),
-                content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                content_type='application/json',
                 as_attachment=True,
-                filename=f'aviation_export_{project_id}.xlsx'
+                filename=f'aviation_export_{project_id}.json'
             )
             return response
         except FileNotFoundError:
@@ -602,16 +602,16 @@ class AviationExportAPI(APIView):
 
 
 class AviationExportTemplateAPI(APIView):
-    """Generate empty Excel template"""
+    """Generate empty JSON template"""
     permission_classes = (IsAuthenticated,)
 
     @swagger_auto_schema(
         tags=['Aviation'],
-        operation_summary='Download empty aviation Excel template',
+        operation_summary='Download empty aviation JSON template',
     )
     def get(self, request):
-        from .services import ExcelExportService
-        exporter = ExcelExportService()
+        from .services import JsonExportService
+        exporter = JsonExportService()
 
         try:
             file_path = exporter.generate_template()
@@ -637,9 +637,9 @@ class AviationExportTemplateAPI(APIView):
         try:
             response = FileResponse(
                 open(validated_path, 'rb'),
-                content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                content_type='application/json',
                 as_attachment=True,
-                filename='aviation_template.xlsx'
+                filename='aviation_template.json'
             )
             return response
         except FileNotFoundError:
@@ -851,3 +851,58 @@ class AviationTrainingMappingsAPI(APIView):
             }
 
         return Response(mappings, status=status.HTTP_200_OK)
+
+
+class AviationTaskExportAPI(APIView):
+    """Export single task's incident and annotation data as JSON"""
+    permission_required = ViewClassPermission(
+        GET=all_permissions.tasks_view,
+    )
+
+    @swagger_auto_schema(
+        tags=['Aviation'],
+        operation_summary='Export single task as JSON',
+        operation_description='Export a single task with its incident and annotations as JSON file',
+    )
+    def get(self, request, task_id):
+        from tasks.models import Task
+        from .services import JsonExportService
+
+        task = Task.objects.filter(
+            id=task_id,
+            project__organization=request.user.active_organization
+        ).first()
+
+        if not task:
+            raise NotFound('Task not found')
+
+        exporter = JsonExportService()
+        file_path = exporter.export_task(task)
+
+        if not file_path:
+            return Response(
+                {'error': 'Export failed'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+        validated_path = _validate_export_path(file_path)
+        if validated_path is None:
+            return Response(
+                {'error': 'Invalid file path'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            response = FileResponse(
+                open(validated_path, 'rb'),
+                content_type='application/json',
+                as_attachment=True,
+                filename=f'aviation_task_{task_id}.json'
+            )
+            return response
+        except FileNotFoundError:
+            logger.error(f"Export file not found: {validated_path}")
+            return Response(
+                {'error': 'Export file not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
