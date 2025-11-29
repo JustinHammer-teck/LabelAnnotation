@@ -19,11 +19,12 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from projects.models import Project
 
-from .models import AviationAnnotation, AviationDropdownOption, AviationIncident
+from .models import AviationAnnotation, AviationDropdownOption, AviationIncident, AviationProject
 from .serializers import (
     AviationAnnotationSerializer,
     AviationDropdownOptionSerializer,
     AviationIncidentSerializer,
+    AviationProjectSerializer,
     ExcelUploadSerializer
 )
 
@@ -48,6 +49,79 @@ class AviationDropdownPagination(PageNumberPagination):
     page_size = 100
     page_size_query_param = 'page_size'
     max_page_size = 1000
+
+
+@method_decorator(
+    name='get',
+    decorator=swagger_auto_schema(
+        tags=['Aviation'],
+        operation_summary='List aviation projects',
+        operation_description='Get list of aviation projects for current organization',
+    )
+)
+@method_decorator(
+    name='post',
+    decorator=swagger_auto_schema(
+        tags=['Aviation'],
+        operation_summary='Create aviation project',
+        operation_description='Create new aviation project with base project wrapper',
+    )
+)
+class AviationProjectListAPI(generics.ListCreateAPIView):
+    """List and create aviation projects"""
+    serializer_class = AviationProjectSerializer
+    pagination_class = AviationDropdownPagination
+    permission_required = ViewClassPermission(
+        GET=all_permissions.projects_view,
+        POST=all_permissions.projects_create,
+    )
+
+    def get_queryset(self):
+        return AviationProject.objects.filter(
+            project__organization=self.request.user.active_organization
+        ).select_related('project').order_by('-created_at')
+
+
+@method_decorator(
+    name='get',
+    decorator=swagger_auto_schema(
+        tags=['Aviation'],
+        operation_summary='Get aviation project',
+    )
+)
+@method_decorator(
+    name='patch',
+    decorator=swagger_auto_schema(
+        tags=['Aviation'],
+        operation_summary='Update aviation project',
+    )
+)
+@method_decorator(
+    name='delete',
+    decorator=swagger_auto_schema(
+        tags=['Aviation'],
+        operation_summary='Delete aviation project',
+    )
+)
+class AviationProjectDetailAPI(generics.RetrieveUpdateDestroyAPIView):
+    """Get, update, or delete aviation project"""
+    serializer_class = AviationProjectSerializer
+    permission_required = ViewClassPermission(
+        GET=all_permissions.projects_view,
+        PATCH=all_permissions.projects_change,
+        DELETE=all_permissions.projects_delete,
+    )
+
+    def get_queryset(self):
+        return AviationProject.objects.filter(
+            project__organization=self.request.user.active_organization
+        ).select_related('project')
+
+    def perform_destroy(self, instance):
+        with transaction.atomic():
+            project = instance.project
+            instance.delete()
+            project.delete()
 
 
 @method_decorator(
@@ -156,17 +230,18 @@ class AviationAnnotationListAPI(generics.ListCreateAPIView):
 
     def get_queryset(self):
         task_id = self.request.query_params.get('task_id')
+        project_id = self.request.query_params.get('project')
         queryset = AviationAnnotation.objects.for_organization(
             self.request.user.active_organization
         )
         if task_id:
             queryset = queryset.filter(annotation__task_id=task_id)
+        if project_id:
+            queryset = queryset.filter(annotation__task__project_id=project_id)
         return queryset
 
     def perform_create(self, serializer):
-        from .services import TrainingCalculationService
         from tasks.models import Annotation, Task
-        calculator = TrainingCalculationService()
 
         with transaction.atomic():
             task_id = self.request.data.get('task_id')
@@ -187,11 +262,7 @@ class AviationAnnotationListAPI(generics.ListCreateAPIView):
             if created:
                 logger.debug(f'Auto-created annotation for task={task_id} user={self.request.user.id}')
 
-            instance = serializer.save(annotation=annotation)
-            try:
-                calculator.calculate_and_update(instance)
-            except NotImplementedError:
-                pass
+            serializer.save(annotation=annotation)
 
 
 @method_decorator(
@@ -230,15 +301,8 @@ class AviationAnnotationDetailAPI(generics.RetrieveUpdateDestroyAPIView):
         )
 
     def perform_update(self, serializer):
-        from .services import TrainingCalculationService
-        calculator = TrainingCalculationService()
-
         with transaction.atomic():
-            instance = serializer.save()
-            try:
-                calculator.calculate_and_update(instance)
-            except NotImplementedError:
-                pass
+            serializer.save()
 
 
 DROPDOWN_CATEGORY_MAPPING = {
@@ -464,7 +528,7 @@ class AviationDropdownSearchAPI(APIView):
 
 
 class AviationExportAPI(APIView):
-    """Generate Excel exports with annotations"""
+    """Generate JSON exports with annotations"""
     permission_required = ViewClassPermission(
         GET=all_permissions.projects_view,
     )
@@ -474,7 +538,7 @@ class AviationExportAPI(APIView):
 
     @swagger_auto_schema(
         tags=['Aviation'],
-        operation_summary='Export aviation annotations to Excel',
+        operation_summary='Export aviation annotations to JSON',
         manual_parameters=[
             openapi.Parameter(
                 name='project_id',
@@ -493,8 +557,8 @@ class AviationExportAPI(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        from .services import ExcelExportService
-        exporter = ExcelExportService()
+        from .services import JsonExportService
+        exporter = JsonExportService()
 
         project = self.get_queryset().filter(id=project_id).first()
         if not project:
@@ -524,9 +588,9 @@ class AviationExportAPI(APIView):
         try:
             response = FileResponse(
                 open(validated_path, 'rb'),
-                content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                content_type='application/json',
                 as_attachment=True,
-                filename=f'aviation_export_{project_id}.xlsx'
+                filename=f'aviation_export_{project_id}.json'
             )
             return response
         except FileNotFoundError:
@@ -538,16 +602,16 @@ class AviationExportAPI(APIView):
 
 
 class AviationExportTemplateAPI(APIView):
-    """Generate empty Excel template"""
+    """Generate empty JSON template"""
     permission_classes = (IsAuthenticated,)
 
     @swagger_auto_schema(
         tags=['Aviation'],
-        operation_summary='Download empty aviation Excel template',
+        operation_summary='Download empty aviation JSON template',
     )
     def get(self, request):
-        from .services import ExcelExportService
-        exporter = ExcelExportService()
+        from .services import JsonExportService
+        exporter = JsonExportService()
 
         try:
             file_path = exporter.generate_template()
@@ -573,9 +637,9 @@ class AviationExportTemplateAPI(APIView):
         try:
             response = FileResponse(
                 open(validated_path, 'rb'),
-                content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                content_type='application/json',
                 as_attachment=True,
-                filename='aviation_template.xlsx'
+                filename='aviation_template.json'
             )
             return response
         except FileNotFoundError:
@@ -787,3 +851,58 @@ class AviationTrainingMappingsAPI(APIView):
             }
 
         return Response(mappings, status=status.HTTP_200_OK)
+
+
+class AviationTaskExportAPI(APIView):
+    """Export single task's incident and annotation data as JSON"""
+    permission_required = ViewClassPermission(
+        GET=all_permissions.tasks_view,
+    )
+
+    @swagger_auto_schema(
+        tags=['Aviation'],
+        operation_summary='Export single task as JSON',
+        operation_description='Export a single task with its incident and annotations as JSON file',
+    )
+    def get(self, request, task_id):
+        from tasks.models import Task
+        from .services import JsonExportService
+
+        task = Task.objects.filter(
+            id=task_id,
+            project__organization=request.user.active_organization
+        ).first()
+
+        if not task:
+            raise NotFound('Task not found')
+
+        exporter = JsonExportService()
+        file_path = exporter.export_task(task)
+
+        if not file_path:
+            return Response(
+                {'error': 'Export failed'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+        validated_path = _validate_export_path(file_path)
+        if validated_path is None:
+            return Response(
+                {'error': 'Invalid file path'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            response = FileResponse(
+                open(validated_path, 'rb'),
+                content_type='application/json',
+                as_attachment=True,
+                filename=f'aviation_task_{task_id}.json'
+            )
+            return response
+        except FileNotFoundError:
+            logger.error(f"Export file not found: {validated_path}")
+            return Response(
+                {'error': 'Export file not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )

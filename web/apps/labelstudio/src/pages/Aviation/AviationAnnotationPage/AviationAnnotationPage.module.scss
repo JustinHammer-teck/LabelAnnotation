@@ -54,6 +54,70 @@
   padding: 4px 8px;
 }
 
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.exportButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 20px;
+  background: transparent;
+  color: var(--color-primary, #1976d2);
+  border: 1px solid var(--color-primary, #1976d2);
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover:not(:disabled) {
+    background: rgba(25, 118, 210, 0.08);
+  }
+
+  &:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.3);
+  }
+
+  &:disabled {
+    border-color: var(--surface-disabled, #e0e0e0);
+    color: var(--content-disabled, #999);
+    cursor: not-allowed;
+  }
+}
+
+.saveButton {
+  padding: 8px 20px;
+  background: var(--color-primary, #1976d2);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 80px;
+
+  &:hover:not(:disabled) {
+    background: var(--color-primary-dark, #1565c0);
+  }
+
+  &:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.3);
+  }
+
+  &:disabled {
+    background: var(--surface-disabled, #e0e0e0);
+    color: var(--content-disabled, #999);
+    cursor: not-allowed;
+  }
+}
+
 .pageContent {
   flex: 1;
   display: flex;

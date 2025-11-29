@@ -46,6 +46,11 @@ export interface AviationAnnotationData {
   uas_management: string;
   uas_description: string;
 
+  // Capability (per section)
+  threat_capability: string[];
+  error_capability: string[];
+  uas_capability: string[];
+
   // Results
   competency_indicators: string[];
   likelihood: string;

@@ -2,6 +2,7 @@ import React, { useEffect, useMemo } from 'react';
 import { useParams, useHistory } from 'react-router-dom';
 import { Provider } from 'jotai';
 import { useTranslation } from 'react-i18next';
+import { ExportOutlined } from '@ant-design/icons';
 import { BasicInfoTable } from './components/BasicInfoTable/BasicInfoTable';
 import { ResultsTable } from './components/ResultsTable/ResultsTable';
 import { RecognitionSection } from './components/RecognitionSection/RecognitionSection';
@@ -43,7 +44,7 @@ export const AviationAnnotationPage: React.FC = () => {
 
   const hasUnsavedChanges = useAtomValue(hasUnsavedChangesAtom);
 
-  const { retrySave } = useAutoSave(taskId, annotationId, {
+  const { retrySave, saveNow, isSaving } = useAutoSave(taskId, annotationId, {
     enabled: true,
     debounceMs: 2000,
   });
@@ -139,7 +140,26 @@ export const AviationAnnotationPage: React.FC = () => {
             {incident?.event_number || taskId}
           </span>
         </div>
-        <SaveStatusIndicator onRetry={retrySave} />
+        <div className={styles.headerActions}>
+          <button
+            type="button"
+            className={styles.exportButton}
+            onClick={() => window.open(`/api/aviation/tasks/${taskId}/export/`, '_blank')}
+            disabled={!taskId}
+          >
+            <ExportOutlined /> {t('aviation.export')}
+          </button>
+          <button
+            type="button"
+            className={styles.saveButton}
+            onClick={saveNow}
+            disabled={!hasUnsavedChanges || isSaving}
+            aria-label={t('aviation.save_annotation')}
+          >
+            {isSaving ? t('aviation.saving') : t('aviation.save')}
+          </button>
+          <SaveStatusIndicator onRetry={retrySave} />
+        </div>
       </div>
 
       <div className={styles.pageContent}>

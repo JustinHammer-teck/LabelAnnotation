@@ -142,7 +142,13 @@ export const API_CONFIG = {
     releaseAviationTaskLock: 'DELETE:/aviation/tasks/:taskId/lock',
 
     aviationExport: '/aviation/export/',
-    aviationTrainingMappings: '/aviation/training-mappings/'
+    aviationTrainingMappings: '/aviation/training-mappings/',
+
+    aviationProjects: '/aviation/projects',
+    aviationProject: '/aviation/projects/:pk',
+    createAviationProject: 'POST:/aviation/projects',
+    updateAviationProject: 'PATCH:/aviation/projects/:pk',
+    deleteAviationProject: 'DELETE:/aviation/projects/:pk'
   },
   alwaysExpectJSON: false
 };

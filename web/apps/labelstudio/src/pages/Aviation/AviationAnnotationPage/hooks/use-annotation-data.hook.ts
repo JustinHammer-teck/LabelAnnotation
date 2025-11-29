@@ -37,6 +37,24 @@ export const useAnnotationData = (taskId: number | null): UseAnnotationDataResul
   const updateFields = useSetAtom(updateFieldsAtom);
   const resetAnnotation = useSetAtom(resetAnnotationAtom);
 
+  const { data: taskData, isLoading: isLoadingTask } = useQuery({
+    queryKey: ['task', taskId],
+    queryFn: async () => {
+      const result = await api.callApi<{ data?: Record<string, any>; [key: string]: any }>('task', {
+        params: { pk: taskId },
+        suppressError: true,
+      });
+
+      if (!result || result.error) {
+        return null;
+      }
+
+      return result;
+    },
+    enabled: !!taskId,
+    staleTime: 30000,
+  });
+
   const { data: incidentData, isLoading: isLoadingIncident, error: incidentError, refetch: refetchIncident } = useQuery({
     queryKey: ['aviation-incident', taskId],
     queryFn: async () => {
@@ -46,10 +64,10 @@ export const useAnnotationData = (taskId: number | null): UseAnnotationDataResul
       });
 
       if (!result || result.error) {
-        throw new Error(result?.error || 'Failed to fetch incident');
+        return null;
       }
 
-      return result.results?.[0] || result;
+      return result.results?.[0] || null;
     },
     enabled: !!taskId,
     staleTime: 30000,
@@ -91,28 +109,47 @@ export const useAnnotationData = (taskId: number | null): UseAnnotationDataResul
   useEffect(() => {
     if (incidentData) {
       setIncident(incidentData as AviationIncident);
+    } else if (!isLoadingIncident && !isLoadingTask && taskData?.data) {
+      const data = taskData.data;
+      setIncident({
+        id: 0,
+        task_id: taskId || 0,
+        event_number: data.event_number || '',
+        event_description: data.event_description || '',
+        date: data.event_date || '',
+        time: '',
+        location: data.event_location || '',
+        airport: data.airport_name || '',
+        flight_phase: data.flight_phase || '',
+        aircraft_type: data.aircraft_type || '',
+        event_labels: data.event_labels || '',
+      } as AviationIncident);
     }
-  }, [incidentData, setIncident]);
+  }, [incidentData, isLoadingIncident, isLoadingTask, taskData, taskId, setIncident]);
 
   useEffect(() => {
     if (annotationData) {
       setAnnotationId(annotationData.id || null);
       setAnnotationData(annotationData);
-    } else if (!isLoadingAnnotation && taskId && incidentData) {
+    } else if (!isLoadingAnnotation && !isLoadingTask && taskId) {
       resetAnnotation();
       setAnnotationId(null);
       const initialFields: Partial<AviationAnnotationData> = {};
-      if (incidentData.flight_phase) {
-        initialFields.flight_phase = incidentData.flight_phase;
+      const sourceData = incidentData || (taskData?.data ? {
+        flight_phase: taskData.data.flight_phase,
+        event_description: taskData.data.event_description,
+      } : null);
+      if (sourceData?.flight_phase) {
+        initialFields.flight_phase = sourceData.flight_phase;
       }
-      if (incidentData.event_description) {
-        initialFields.notes = incidentData.event_description;
+      if (sourceData?.event_description) {
+        initialFields.notes = sourceData.event_description;
       }
       if (Object.keys(initialFields).length > 0) {
         updateFields(initialFields);
       }
     }
-  }, [annotationData, isLoadingAnnotation, taskId, incidentData, setAnnotationData, resetAnnotation, updateFields]);
+  }, [annotationData, isLoadingAnnotation, isLoadingTask, taskId, incidentData, taskData, setAnnotationData, resetAnnotation, updateFields]);
 
   const refetch = () => {
     refetchIncident();

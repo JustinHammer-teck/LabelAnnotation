@@ -1,12 +1,15 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useHistory } from 'react-router-dom';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
+import { useTranslation } from 'react-i18next';
 import { Button, Pagination, Spinner } from '../../../components';
-import { Block, Elem } from '../../../utils/bem';
 import { ApiContext } from '../../../providers/ApiProvider';
 import { Oneof } from '../../../components/Oneof/Oneof';
 import { ExcelUploadModal } from '../components/ExcelUploadModal/ExcelUploadModal';
+import { AviationProjectModal } from '../components/AviationProjectModal/AviationProjectModal';
 import { useAbortController } from '@humansignal/core';
+import { Empty } from 'antd';
+import { PlusOutlined, UploadOutlined, FolderOpenOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import styles from './AviationProjectList.module.scss';
 
 interface Project {
@@ -21,12 +24,14 @@ interface Project {
 export const AviationProjectList: React.FC = () => {
   const api = useContext(ApiContext);
   const history = useHistory();
+  const { t } = useTranslation();
   const abortController = useAbortController();
   const [projects, setProjects] = useState<Project[]>([]);
   const [networkState, setNetworkState] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
+  const [projectModalOpen, setProjectModalOpen] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
   const pageSize = 12;
 
@@ -35,11 +40,10 @@ export const AviationProjectList: React.FC = () => {
     abortController.renew();
 
     try {
-      const data = await api.callApi('projects', {
+      const data = await api.callApi('aviationProjects', {
         params: {
           page,
           page_size: pageSize,
-          include: 'id,title,description,created_at,task_number',
         },
         signal: abortController.controller.current.signal,
         errorFilter: (e: any) => e.error.includes('aborted'),
@@ -75,34 +79,74 @@ export const AviationProjectList: React.FC = () => {
     fetchProjects();
   };
 
+  const handleEditClick = (projectId: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedProjectId(projectId);
+    setProjectModalOpen(true);
+  };
+
+  const handleDeleteClick = async (projectId: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!confirm(t('aviation.project.confirm_delete', 'Are you sure you want to delete this project?'))) {
+      return;
+    }
+    try {
+      await api.callApi('deleteAviationProject', {
+        params: { pk: projectId },
+      });
+      fetchProjects();
+    } catch (error) {
+      console.error('Error deleting project:', error);
+    }
+  };
+
+  const handleProjectModalSuccess = () => {
+    setProjectModalOpen(false);
+    setSelectedProjectId(null);
+    fetchProjects();
+  };
+
   useEffect(() => {
     fetchProjects();
   }, []);
 
   return (
-    <Block name="aviation-projects">
-      <Elem name="header">
-        <Elem name="title">Aviation Safety Projects</Elem>
-        <Button
-          look="primary"
-          onClick={() => {
-            setSelectedProjectId(null);
-            setUploadModalOpen(true);
-          }}
-        >
-          Upload Incidents
-        </Button>
-      </Elem>
+    <div className={styles.container}>
+      {projects.length > 0 && (
+        <div className={styles.header}>
+          <div className={styles.headerButtons}>
+            <Button
+              look="primary"
+              icon={<PlusOutlined />}
+              onClick={() => {
+                setSelectedProjectId(null);
+                setProjectModalOpen(true);
+              }}
+            >
+              {t('aviation.project.create_project')}
+            </Button>
+            <Button
+              icon={<UploadOutlined />}
+              onClick={() => {
+                setSelectedProjectId(null);
+                setUploadModalOpen(true);
+              }}
+            >
+              {t('aviation.project.upload_incidents', 'Upload Incidents')}
+            </Button>
+          </div>
+        </div>
+      )}
 
       <Oneof value={networkState}>
-        <Elem name="loading" case="loading">
+        <div className={styles.loading} case="loading">
           <Spinner size={64} />
-        </Elem>
+        </div>
 
-        <Elem name="content" case="loaded">
+        <div className={styles.content} case="loaded">
           {projects.length > 0 ? (
             <>
-              <Elem name="list">
+              <div className={styles.list}>
                 {projects.map((project) => (
                   <div
                     key={project.id}
@@ -111,12 +155,29 @@ export const AviationProjectList: React.FC = () => {
                   >
                     <div className={styles.cardHeader}>
                       <div className={styles.cardTitle}>{project.title}</div>
-                      <Button
-                        size="small"
-                        onClick={(e) => handleUploadClick(project.id, e)}
-                      >
-                        Upload
-                      </Button>
+                      <div className={styles.cardActions}>
+                        <Button
+                          size="small"
+                          icon={<UploadOutlined />}
+                          onClick={(e) => handleUploadClick(project.id, e)}
+                        >
+                          {t('aviation.project.upload', 'Upload')}
+                        </Button>
+                        <Button
+                          size="small"
+                          icon={<EditOutlined />}
+                          onClick={(e) => handleEditClick(project.id, e)}
+                        >
+                          {t('aviation.project.edit', 'Edit')}
+                        </Button>
+                        <Button
+                          size="small"
+                          icon={<DeleteOutlined />}
+                          onClick={(e) => handleDeleteClick(project.id, e)}
+                        >
+                          {t('aviation.project.delete', 'Delete')}
+                        </Button>
+                      </div>
                     </div>
 
                     <div className={styles.cardBody}>
@@ -136,14 +197,14 @@ export const AviationProjectList: React.FC = () => {
 
                     <div className={styles.cardFooter}>
                       <span className={styles.cardDate}>
-                        {format(new Date(project.created_at), "dd MMM 'yy, HH:mm")}
+                        {format(parseISO(project.created_at), "dd MMM yyyy, HH:mm")}
                       </span>
                     </div>
                   </div>
                 ))}
-              </Elem>
+              </div>
 
-              <Elem name="pagination">
+              <div className={styles.pagination}>
                 <Pagination
                   name="aviation-projects"
                   label="Projects"
@@ -154,25 +215,43 @@ export const AviationProjectList: React.FC = () => {
                   pageSizeOptions={[12, 24, 48]}
                   onPageLoad={(page) => loadNextPage(page)}
                 />
-              </Elem>
+              </div>
             </>
           ) : (
-            <Elem name="empty">
-              <p>No projects found. Create a project and upload aviation incidents to get started.</p>
-              <Button
-                look="primary"
-                onClick={() => setUploadModalOpen(true)}
+            <div className={styles.empty}>
+              <Empty
+                image={<FolderOpenOutlined className={styles.emptyIcon} />}
+                imageStyle={{ height: 'auto' }}
+                description={
+                  <div className={styles.emptyDescription}>
+                    <div className={styles.emptyTitle}>
+                      {t('aviation.project.empty_state_title', 'No Projects Yet')}
+                    </div>
+                    <div className={styles.emptyText}>
+                      {t('aviation.project.empty_state_message', 'Create your first aviation safety project to start tracking and analyzing safety incidents.')}
+                    </div>
+                  </div>
+                }
               >
-                Upload Incidents
-              </Button>
-            </Elem>
+                <div className={styles.emptyAction}>
+                  <Button
+                    look="primary"
+                    icon={<PlusOutlined />}
+                    size="large"
+                    onClick={() => setProjectModalOpen(true)}
+                  >
+                    {t('aviation.project.create_project')}
+                  </Button>
+                </div>
+              </Empty>
+            </div>
           )}
-        </Elem>
+        </div>
 
-        <Elem name="error" case="error">
+        <div className={styles.error} case="error">
           <p>Failed to load projects. Please try again.</p>
           <Button onClick={() => fetchProjects()}>Retry</Button>
-        </Elem>
+        </div>
       </Oneof>
 
       {uploadModalOpen && (
@@ -185,6 +264,17 @@ export const AviationProjectList: React.FC = () => {
           onSuccess={handleUploadComplete}
         />
       )}
-    </Block>
+
+      {projectModalOpen && (
+        <AviationProjectModal
+          projectId={selectedProjectId}
+          onClose={() => {
+            setProjectModalOpen(false);
+            setSelectedProjectId(null);
+          }}
+          onSuccess={handleProjectModalSuccess}
+        />
+      )}
+    </div>
   );
 };

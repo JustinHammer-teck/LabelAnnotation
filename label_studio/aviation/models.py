@@ -45,6 +45,9 @@ class AviationProject(models.Model):
     def __str__(self):
         return f'Aviation Project for {self.project.title}'
 
+    def has_permission(self, user):
+        return self.project.has_permission(user)
+
 
 class AviationIncident(models.Model):
     """Aviation safety incident data from Excel upload"""
@@ -309,6 +312,27 @@ class AviationAnnotation(models.Model):
         blank=True,
         default=list,
         help_text='Array of selected competency indicators'
+    )
+
+    threat_capability = JSONField(
+        null=True,
+        blank=True,
+        default=list,
+        help_text='Capability indicators for threat recognition'
+    )
+
+    error_capability = JSONField(
+        null=True,
+        blank=True,
+        default=list,
+        help_text='Capability indicators for error recognition'
+    )
+
+    uas_capability = JSONField(
+        null=True,
+        blank=True,
+        default=list,
+        help_text='Capability indicators for UAS recognition'
     )
 
     likelihood = models.CharField(

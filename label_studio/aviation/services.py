@@ -525,27 +525,17 @@ class TaskLockService:
         return {'success': True, 'message': 'Lock force released'}
 
 
-class ExcelExportService:
-    """Generate Excel exports with annotations"""
-
-    def _apply_header_style(self, ws, headers):
-        """Apply consistent header styling to worksheet."""
-        from openpyxl.styles import Font, Alignment, PatternFill
-
-        header_fill = PatternFill(start_color='366092', end_color='366092', fill_type='solid')
-        header_font = Font(bold=True, color='FFFFFF')
-
-        for col_idx, header in enumerate(headers, 1):
-            cell = ws.cell(row=1, column=col_idx, value=header)
-            cell.fill = header_fill
-            cell.font = header_font
-            cell.alignment = Alignment(horizontal='center', vertical='center')
+class JsonExportService:
+    """Generate JSON exports with annotations"""
 
     def export_annotations(self, project):
-        """Export project annotations to Excel"""
-        from openpyxl import Workbook
-        from .models import AviationAnnotation
+        """Export project annotations to JSON file, return temp file path."""
+        import json
+        import uuid
         import tempfile
+        from django.utils import timezone
+        from .models import AviationIncident, AviationAnnotation
+        from .serializers import AviationIncidentSerializer, AviationAnnotationSerializer
 
         if not project:
             raise ValidationError('Project is required for export')
@@ -553,26 +543,9 @@ class ExcelExportService:
         if not hasattr(project, 'id'):
             raise ValidationError('Invalid project object')
 
-        wb = Workbook()
-        ws = wb.active
-        ws.title = "Aviation Annotations"
-
-        headers = [
-            'Event Number', 'Date', 'Location', 'Airport', 'Flight Phase',
-            'Aircraft Type', 'Event Labels',
-            'Threat Type L1', 'Threat Type L2', 'Threat Type L3',
-            'Threat Management', 'Threat Outcome', 'Threat Description',
-            'Error Relevancy', 'Error Type L1', 'Error Type L2', 'Error Type L3',
-            'Error Management', 'Error Outcome', 'Error Description',
-            'UAS Relevancy', 'UAS Type L1', 'UAS Type L2', 'UAS Type L3',
-            'UAS Management', 'UAS Description',
-            'Likelihood', 'Severity', 'Training Benefit',
-            'Threat Training Topics', 'Error Training Topics', 'UAS Training Topics',
-            'CRM Training Topics', 'Competency Indicators',
-            'Training Plan Ideas', 'Goals to Achieve', 'Notes'
-        ]
-
-        self._apply_header_style(ws, headers)
+        incidents = AviationIncident.objects.filter(
+            task__project=project
+        ).select_related('task').order_by('-date', '-created_at')
 
         annotations = AviationAnnotation.objects.filter(
             annotation__task__project=project
@@ -581,111 +554,99 @@ class ExcelExportService:
             'annotation__task'
         ).order_by('-created_at')
 
-        for row_idx, annotation in enumerate(annotations, 2):
-            incident = getattr(annotation.annotation.task, 'aviation_incident', None)
+        incidents_data = AviationIncidentSerializer(incidents, many=True).data
+        annotations_data = AviationAnnotationSerializer(annotations, many=True).data
 
-            ws.cell(row=row_idx, column=1, value=incident.event_number if incident else '')
-            ws.cell(row=row_idx, column=2, value=str(incident.date) if incident else '')
-            ws.cell(row=row_idx, column=3, value=incident.location if incident else '')
-            ws.cell(row=row_idx, column=4, value=incident.airport if incident else '')
-            ws.cell(row=row_idx, column=5, value=incident.flight_phase if incident else '')
+        export_data = {
+            'metadata': {
+                'export_date': timezone.now().isoformat(),
+                'project_id': project.id,
+                'project_title': project.title,
+                'total_incidents': len(incidents_data),
+                'total_annotations': len(annotations_data),
+            },
+            'incidents': incidents_data,
+            'annotations': annotations_data,
+        }
 
-            ws.cell(row=row_idx, column=6, value=annotation.aircraft_type)
-            ws.cell(row=row_idx, column=7, value=', '.join(annotation.event_labels) if annotation.event_labels else '')
+        temp_file = tempfile.NamedTemporaryFile(
+            delete=False,
+            suffix='.json',
+            mode='w',
+            encoding='utf-8'
+        )
+        json.dump(export_data, temp_file, ensure_ascii=False, indent=2)
+        temp_file.close()
 
-            ws.cell(row=row_idx, column=8, value=annotation.threat_type_l1)
-            ws.cell(row=row_idx, column=9, value=annotation.threat_type_l2)
-            ws.cell(row=row_idx, column=10, value=annotation.threat_type_l3)
-            ws.cell(row=row_idx, column=11, value=annotation.threat_management)
-            ws.cell(row=row_idx, column=12, value=annotation.threat_outcome)
-            ws.cell(row=row_idx, column=13, value=annotation.threat_description)
+        return temp_file.name
 
-            ws.cell(row=row_idx, column=14, value=annotation.error_relevancy)
-            ws.cell(row=row_idx, column=15, value=annotation.error_type_l1)
-            ws.cell(row=row_idx, column=16, value=annotation.error_type_l2)
-            ws.cell(row=row_idx, column=17, value=annotation.error_type_l3)
-            ws.cell(row=row_idx, column=18, value=annotation.error_management)
-            ws.cell(row=row_idx, column=19, value=annotation.error_outcome)
-            ws.cell(row=row_idx, column=20, value=annotation.error_description)
+    def export_task(self, task):
+        """Export single task's incident and annotation data to JSON file."""
+        import json
+        import tempfile
+        from django.utils import timezone
+        from .models import AviationIncident, AviationAnnotation
+        from .serializers import AviationIncidentSerializer, AviationAnnotationSerializer
 
-            ws.cell(row=row_idx, column=21, value=annotation.uas_relevancy)
-            ws.cell(row=row_idx, column=22, value=annotation.uas_type_l1)
-            ws.cell(row=row_idx, column=23, value=annotation.uas_type_l2)
-            ws.cell(row=row_idx, column=24, value=annotation.uas_type_l3)
-            ws.cell(row=row_idx, column=25, value=annotation.uas_management)
-            ws.cell(row=row_idx, column=26, value=annotation.uas_description)
+        if not task:
+            raise ValidationError('Task is required for export')
 
-            ws.cell(row=row_idx, column=27, value=annotation.likelihood)
-            ws.cell(row=row_idx, column=28, value=annotation.severity)
-            ws.cell(row=row_idx, column=29, value=annotation.training_benefit)
+        if not hasattr(task, 'id'):
+            raise ValidationError('Invalid task object')
 
-            ws.cell(row=row_idx, column=30, value=', '.join(annotation.threat_training_topics) if annotation.threat_training_topics else '')
-            ws.cell(row=row_idx, column=31, value=', '.join(annotation.error_training_topics) if annotation.error_training_topics else '')
-            ws.cell(row=row_idx, column=32, value=', '.join(annotation.uas_training_topics) if annotation.uas_training_topics else '')
-            ws.cell(row=row_idx, column=33, value=', '.join(annotation.crm_training_topics) if annotation.crm_training_topics else '')
-            ws.cell(row=row_idx, column=34, value=', '.join(annotation.competency_indicators) if annotation.competency_indicators else '')
+        incident = AviationIncident.objects.filter(task=task).first()
+        annotations = AviationAnnotation.objects.filter(
+            annotation__task=task
+        ).select_related('annotation')
 
-            ws.cell(row=row_idx, column=35, value=annotation.training_plan_ideas)
-            ws.cell(row=row_idx, column=36, value=annotation.goals_to_achieve)
-            ws.cell(row=row_idx, column=37, value=annotation.notes)
+        incident_data = AviationIncidentSerializer(incident).data if incident else None
+        annotations_data = AviationAnnotationSerializer(annotations, many=True).data
 
-        for col in ws.columns:
-            max_length = 0
-            column = col[0].column_letter
-            for cell in col:
-                try:
-                    if len(str(cell.value)) > max_length:
-                        max_length = len(str(cell.value))
-                except:
-                    pass
-            adjusted_width = min(max_length + 2, 50)
-            ws.column_dimensions[column].width = adjusted_width
+        export_data = {
+            'metadata': {
+                'export_date': timezone.now().isoformat(),
+                'task_id': task.id,
+            },
+            'incident': incident_data,
+            'annotations': annotations_data,
+        }
 
-        temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx')
-        wb.save(temp_file.name)
-        wb.close()
+        temp_file = tempfile.NamedTemporaryFile(
+            delete=False,
+            suffix='.json',
+            mode='w',
+            encoding='utf-8'
+        )
+        json.dump(export_data, temp_file, ensure_ascii=False, indent=2)
+        temp_file.close()
 
         return temp_file.name
 
     def generate_template(self):
-        """Generate empty Excel template for incident upload"""
-        from openpyxl import Workbook
-        from openpyxl.utils import get_column_letter
+        """Generate empty JSON template."""
+        import json
         import tempfile
+        from django.utils import timezone
 
-        wb = Workbook()
-        ws = wb.active
-        ws.title = "Aviation Incidents"
+        template_data = {
+            'metadata': {
+                'export_date': timezone.now().isoformat(),
+                'project_id': None,
+                'project_title': None,
+                'total_incidents': 0,
+                'total_annotations': 0,
+            },
+            'incidents': [],
+            'annotations': [],
+        }
 
-        headers = [
-            'Event Number',
-            'Event Description',
-            'Date',
-            'Time',
-            'Location',
-            'Airport',
-            'Flight Phase'
-        ]
-
-        self._apply_header_style(ws, headers)
-        for col_idx in range(1, len(headers) + 1):
-            ws.column_dimensions[get_column_letter(col_idx)].width = 20
-
-        example_row = [
-            'EVT-001',
-            'Example incident description',
-            '2024-01-15',
-            '14:30',
-            'Los Angeles',
-            'LAX',
-            'Approach'
-        ]
-
-        for col_idx, value in enumerate(example_row, 1):
-            ws.cell(row=2, column=col_idx, value=value)
-
-        temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx')
-        wb.save(temp_file.name)
-        wb.close()
+        temp_file = tempfile.NamedTemporaryFile(
+            delete=False,
+            suffix='.json',
+            mode='w',
+            encoding='utf-8'
+        )
+        json.dump(template_data, temp_file, ensure_ascii=False, indent=2)
+        temp_file.close()
 
         return temp_file.name
