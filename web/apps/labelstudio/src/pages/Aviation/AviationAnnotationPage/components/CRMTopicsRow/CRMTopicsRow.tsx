@@ -1,45 +1,66 @@
 import React from 'react';
-import { useAtom } from 'jotai';
+import { useAtomValue, useSetAtom } from 'jotai';
 import { useTranslation } from 'react-i18next';
-import { annotationDataAtom } from '../../stores/aviation-annotation.store';
+import { annotationDataAtom, updateFieldAtom } from '../../stores/aviation-annotation.store';
+import { useDropdownOptions } from '../../hooks/use-dropdown-options.hook';
+import { MultiSelectDropdown } from '../MultiSelectDropdown/MultiSelectDropdown';
 import styles from './CRMTopicsRow.module.scss';
 
-const CRM_TOPICS = [
-  { code: 'KNO', label: 'KNO' },
-  { code: 'PRO', label: 'PRO' },
-  { code: 'FPA', label: 'FPA' },
-  { code: 'FPM', label: 'FPM' },
-  { code: 'COM', label: 'COM' },
-  { code: 'LTW', label: 'LTW' },
-  { code: 'SAW', label: 'SAW' },
-  { code: 'WLM', label: 'WLM' },
-  { code: 'PSD', label: 'PSD' },
-];
+const CRM_TOPIC_CODES = ['KNO', 'PRO', 'FPA', 'FPM', 'COM', 'LTW', 'SAW', 'WLM', 'PSD'];
 
 export const CRMTopicsRow: React.FC = () => {
   const { t } = useTranslation();
-  const [data, setData] = useAtom(annotationDataAtom);
+  const data = useAtomValue(annotationDataAtom);
+  const updateField = useSetAtom(updateFieldAtom);
+  const { options } = useDropdownOptions();
 
-  const toggleTopic = (code: string) => {
-    const current = data.crm_training_topics || [];
-    const updated = current.includes(code)
-      ? current.filter(t => t !== code)
-      : [...current, code];
-    setData({ ...data, crm_training_topics: updated });
+  const crmTopics: Record<string, string[]> =
+    data.crm_training_topics && typeof data.crm_training_topics === 'object' && !Array.isArray(data.crm_training_topics)
+      ? data.crm_training_topics as Record<string, string[]>
+      : {};
+
+  const handleTopicsChange = (topicCode: string, selected: string[]) => {
+    const updatedTopics: Record<string, string[]> = {
+      ...crmTopics,
+      [topicCode]: selected,
+    };
+    updateField({ field: 'crm_training_topics', value: updatedTopics });
+  };
+
+  const getTopicValue = (code: string): string[] => {
+    const value = crmTopics[code];
+    return Array.isArray(value) ? value : [];
   };
 
   return (
     <div className={styles.crmRow}>
-      {CRM_TOPICS.map((topic) => (
-        <div key={topic.code} className={styles.crmTopic}>
-          <div className={styles.topicLabel}>{topic.label}</div>
-          <div className={styles.topicContent}>
-            <button className={styles.multiSelectButton}>
-              {t('aviation.crm.dropdown_multi')}
-            </button>
-          </div>
-        </div>
-      ))}
+      <table className={styles.crmTable}>
+        <thead>
+          <tr>
+            {CRM_TOPIC_CODES.map(code => (
+              <th key={code} className={styles.topicHeader}>
+                {code}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            {CRM_TOPIC_CODES.map(code => (
+              <td key={code} className={styles.topicCell}>
+                <MultiSelectDropdown
+                  options={options?.crm_topics || []}
+                  value={getTopicValue(code)}
+                  onChange={(selected) => handleTopicsChange(code, selected)}
+                  placeholder={t('aviation.crm.dropdown_multi')}
+                  maxChipsDisplay={2}
+                  title={`${code} - ${t('aviation.crm.title')}`}
+                />
+              </td>
+            ))}
+          </tr>
+        </tbody>
+      </table>
     </div>
   );
 };

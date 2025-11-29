@@ -22,7 +22,8 @@
 
   .input,
   .select,
-  .multiSelect {
+  .multiSelect,
+  .inputReadonly {
     width: 100%;
     padding: 6px 8px;
     border: 1px solid var(--border-neutral, #d0d0d0);
@@ -34,6 +35,17 @@
       outline: none;
       border-color: var(--color-primary, #1976d2);
       box-shadow: 0 0 0 1px rgba(25, 118, 210, 0.2);
+    }
+  }
+
+  .inputReadonly {
+    background: var(--surface-disabled, #f5f5f5);
+    color: var(--content-subtler, #666);
+    cursor: not-allowed;
+
+    &:focus {
+      border-color: var(--border-neutral, #d0d0d0);
+      box-shadow: none;
     }
   }
 

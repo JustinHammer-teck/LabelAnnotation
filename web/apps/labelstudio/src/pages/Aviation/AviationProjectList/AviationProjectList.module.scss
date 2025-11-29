@@ -1,0 +1,170 @@
+.aviation-projects {
+  min-height: calc(100vh - var(--header-height));
+  background: var(--color-neutral-background-subtle);
+
+  &__header {
+    padding: 24px 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--color-neutral-background);
+    border-bottom: 1px solid var(--color-neutral-border);
+  }
+
+  &__title {
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--color-neutral-content);
+  }
+
+  &__loading {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: calc(100vh - var(--header-height) - 100px);
+  }
+
+  &__content {
+    display: flex;
+    flex-direction: column;
+    min-height: calc(100vh - var(--header-height) - 100px);
+  }
+
+  &__list {
+    padding: 40px;
+    display: grid;
+    grid-gap: 24px;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    flex: 1;
+  }
+
+  &__pagination {
+    background: var(--color-neutral-background);
+    border-top: 1px solid var(--color-neutral-border);
+    padding: 16px 40px;
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  &__empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 40px;
+    text-align: center;
+    flex: 1;
+
+    p {
+      font-size: 16px;
+      color: var(--color-neutral-content-subtle);
+      margin-bottom: 24px;
+    }
+  }
+
+  &__error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 40px;
+    text-align: center;
+    flex: 1;
+
+    p {
+      font-size: 16px;
+      color: var(--color-negative-content);
+      margin-bottom: 24px;
+    }
+  }
+}
+
+.projectCard {
+  background: var(--color-neutral-background);
+  border: 1px solid var(--color-neutral-border);
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+
+  &:hover {
+    border-color: var(--color-primary-border);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transform: translateY(-2px);
+  }
+}
+
+.cardHeader {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--color-neutral-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--color-neutral-surface);
+}
+
+.cardTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-neutral-content);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  margin-right: 12px;
+}
+
+.cardBody {
+  padding: 16px 20px;
+  flex: 1;
+}
+
+.cardDescription {
+  font-size: 14px;
+  color: var(--color-neutral-content-subtle);
+  line-height: 1.5;
+  margin-bottom: 16px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.cardStats {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.statItem {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.statLabel {
+  font-size: 13px;
+  color: var(--color-neutral-content-subtler);
+}
+
+.statValue {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-neutral-content);
+}
+
+.cardFooter {
+  padding: 12px 20px;
+  border-top: 1px solid var(--color-neutral-border);
+  background: var(--color-neutral-surface);
+}
+
+.cardDate {
+  font-size: 12px;
+  color: var(--color-neutral-content-subtler);
+}

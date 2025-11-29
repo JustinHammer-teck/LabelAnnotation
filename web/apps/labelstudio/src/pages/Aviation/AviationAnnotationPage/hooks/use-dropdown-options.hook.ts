@@ -12,8 +12,6 @@ import {
   uasOptionsAtom,
 } from '../stores/dropdown-options.store';
 import { DropdownCategory } from '../types/aviation.types';
-import { isAviationMockEnabled } from '../utils/feature-flags';
-import { mockDropdownOptions } from '../mocks/aviation-mock-data';
 
 interface UseDropdownOptionsResult {
   options: DropdownCategory | null;
@@ -35,18 +33,18 @@ export const useDropdownOptions = (): UseDropdownOptionsResult => {
   const setUasOptions = useSetAtom(uasOptionsAtom);
 
   const { data, isLoading, error, refetch } = useQuery<DropdownCategory>({
-    queryKey: ['aviation-dropdowns'],
+    queryKey: ['aviation-dropdowns-all'],
     queryFn: async () => {
-      if (isAviationMockEnabled()) {
-        return mockDropdownOptions;
-      }
-
-      const result = await api.callApi<DropdownCategory>('aviationDropdowns', {
+      const result = await api.callApi<DropdownCategory>('aviationDropdownsAll', {
         suppressError: true,
       });
 
-      if (!result || result.error) {
-        throw new Error(result?.error || 'Failed to fetch dropdown options');
+      if (!result) {
+        throw new Error('Failed to fetch dropdown options');
+      }
+
+      if ('status_code' in result && (result as any).status_code >= 400) {
+        throw new Error((result as any).detail || 'Failed to fetch dropdown options');
       }
 
       return result;
@@ -66,8 +64,8 @@ export const useDropdownOptions = (): UseDropdownOptionsResult => {
       if (data.threat) {
         setThreatOptions(data.threat);
       }
-      if (data.error) {
-        setErrorOptions(data.error);
+      if (data.error_type) {
+        setErrorOptions(data.error_type);
       }
       if (data.uas) {
         setUasOptions(data.uas);

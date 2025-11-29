@@ -118,6 +118,7 @@ urlpatterns = [
     # Support new notifications application
     re_path(r'^', include('notifications.urls')),
     re_path(r'^api/', include('aviation.urls')),
+    re_path(r'^aviation(?:/.*)?$', views.main, name='aviation-spa'),
     # path('silk/', include('silk.urls', namespace='silk')),
 ]
 

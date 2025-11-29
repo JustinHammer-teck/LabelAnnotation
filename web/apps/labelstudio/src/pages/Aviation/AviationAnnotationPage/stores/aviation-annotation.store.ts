@@ -12,44 +12,48 @@ import {
 // Current incident (read-only from API)
 export const currentIncidentAtom = atom<AviationIncident | null>(null);
 
+const DEFAULT_HIERARCHICAL: HierarchicalSelection = { level1: '', level2: '', level3: '' };
+
 // Main annotation form data
 export const annotationDataAtom = atom<AviationAnnotationData>({
   aircraft_type: '',
   event_labels: [],
-  flight_phase: '',
-  threat_type: { level1: null, level2: null, level3: null, fullPath: '' },
+  notes: '',
+  threat_type: { ...DEFAULT_HIERARCHICAL },
   threat_management: '',
   threat_outcome: '',
   threat_description: '',
   error_relevancy: '',
-  error_type: { level1: null, level2: null, level3: null, fullPath: '' },
+  error_type: { ...DEFAULT_HIERARCHICAL },
   error_management: '',
   error_outcome: '',
   error_description: '',
   uas_relevancy: '',
-  uas_type: { level1: null, level2: null, level3: null, fullPath: '' },
+  uas_type: { ...DEFAULT_HIERARCHICAL },
   uas_management: '',
   uas_description: '',
   competency_indicators: [],
   likelihood: '',
   severity: '',
   training_benefit: '',
-  crm_training_topics: [],
+  crm_training_topics: {},
+  threat_training_topics: [],
+  error_training_topics: [],
+  uas_training_topics: [],
   training_plan_ideas: '',
   goals_to_achieve: '',
-  notes: '',
 });
 
 // Dropdown options cache (loaded once on mount)
 export const dropdownOptionsAtom = atom<DropdownCategory | null>(null);
 
-// Derived atom: Auto-calculated training topics
+// Derived atom: Training topics (read from backend, auto-calculated server-side)
 export const calculatedTrainingAtom = atom<TrainingTopics>((get) => {
   const data = get(annotationDataAtom);
 
-  const threatTopics = data.threat_type.level3?.training_topics || [];
-  const errorTopics = data.error_type.level3?.training_topics || [];
-  const uasTopics = data.uas_type.level3?.training_topics || [];
+  const threatTopics = data.threat_training_topics ?? [];
+  const errorTopics = data.error_training_topics ?? [];
+  const uasTopics = data.uas_training_topics ?? [];
 
   const combined = Array.from(new Set([...threatTopics, ...errorTopics, ...uasTopics]));
 
@@ -120,28 +124,30 @@ export const resetAnnotationAtom = atom(
     set(annotationDataAtom, {
       aircraft_type: '',
       event_labels: [],
-      flight_phase: '',
-      threat_type: { level1: null, level2: null, level3: null, fullPath: '' },
+      notes: '',
+      threat_type: { ...DEFAULT_HIERARCHICAL },
       threat_management: '',
       threat_outcome: '',
       threat_description: '',
       error_relevancy: '',
-      error_type: { level1: null, level2: null, level3: null, fullPath: '' },
+      error_type: { ...DEFAULT_HIERARCHICAL },
       error_management: '',
       error_outcome: '',
       error_description: '',
       uas_relevancy: '',
-      uas_type: { level1: null, level2: null, level3: null, fullPath: '' },
+      uas_type: { ...DEFAULT_HIERARCHICAL },
       uas_management: '',
       uas_description: '',
       competency_indicators: [],
       likelihood: '',
       severity: '',
       training_benefit: '',
-      crm_training_topics: [],
+      crm_training_topics: {},
+      threat_training_topics: [],
+      error_training_topics: [],
+      uas_training_topics: [],
       training_plan_ideas: '',
       goals_to_achieve: '',
-      notes: '',
     });
     set(annotationDirtyAtom, false);
     set(validationErrorsAtom, {});

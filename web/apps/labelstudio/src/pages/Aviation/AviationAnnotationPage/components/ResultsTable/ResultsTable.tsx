@@ -1,17 +1,30 @@
-import React from 'react';
-import { useAtom } from 'jotai';
+import React, { useMemo } from 'react';
+import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { useTranslation } from 'react-i18next';
-import { annotationDataAtom } from '../../stores/aviation-annotation.store';
+import { annotationDataAtom, updateFieldAtom } from '../../stores/aviation-annotation.store';
 import { useDropdownOptions } from '../../hooks/use-dropdown-options.hook';
 import styles from './ResultsTable.module.scss';
 
 export const ResultsTable: React.FC = () => {
   const { t } = useTranslation();
-  const [data, setData] = useAtom(annotationDataAtom);
+  const data = useAtomValue(annotationDataAtom);
+  const updateField = useSetAtom(updateFieldAtom);
   const { options } = useDropdownOptions();
 
-  const updateField = <K extends keyof typeof data>(field: K, value: typeof data[K]) => {
-    setData({ ...data, [field]: value });
+  const competencySummary = useMemo(() => {
+    const indicators = data.competency_indicators || [];
+    if (indicators.length === 0) return '';
+
+    const competencyOptions = options?.competency || [];
+    const selectedLabels = indicators
+      .map(id => competencyOptions.find(opt => String(opt.id) === id)?.label)
+      .filter(Boolean);
+
+    return selectedLabels.join(', ');
+  }, [data.competency_indicators, options]);
+
+  const handleFieldChange = <K extends keyof typeof data>(field: K, value: typeof data[K]) => {
+    updateField({ field, value });
   };
 
   return (
@@ -39,7 +52,7 @@ export const ResultsTable: React.FC = () => {
             <td>
               <select
                 value={data.likelihood}
-                onChange={(e) => updateField('likelihood', e.target.value)}
+                onChange={(e) => handleFieldChange('likelihood', e.target.value)}
                 className={styles.select}
               >
                 <option value="">{t('aviation.results.select')}</option>
@@ -53,7 +66,7 @@ export const ResultsTable: React.FC = () => {
             <td>
               <select
                 value={data.severity}
-                onChange={(e) => updateField('severity', e.target.value)}
+                onChange={(e) => handleFieldChange('severity', e.target.value)}
                 className={styles.select}
               >
                 <option value="">{t('aviation.results.select')}</option>
@@ -67,7 +80,7 @@ export const ResultsTable: React.FC = () => {
             <td>
               <select
                 value={data.training_benefit}
-                onChange={(e) => updateField('training_benefit', e.target.value)}
+                onChange={(e) => handleFieldChange('training_benefit', e.target.value)}
                 className={styles.select}
               >
                 <option value="">{t('aviation.results.select')}</option>
@@ -81,7 +94,7 @@ export const ResultsTable: React.FC = () => {
             <td rowSpan={2}>
               <textarea
                 value={data.training_plan_ideas}
-                onChange={(e) => updateField('training_plan_ideas', e.target.value)}
+                onChange={(e) => handleFieldChange('training_plan_ideas', e.target.value)}
                 placeholder={t('aviation.results.fill_in')}
                 className={styles.textarea}
               />
@@ -90,12 +103,14 @@ export const ResultsTable: React.FC = () => {
             <td rowSpan={2}>
               <textarea
                 value={data.goals_to_achieve}
-                onChange={(e) => updateField('goals_to_achieve', e.target.value)}
+                onChange={(e) => handleFieldChange('goals_to_achieve', e.target.value)}
                 placeholder={t('aviation.results.fill_in')}
                 className={styles.textarea}
               />
             </td>
-            <td rowSpan={2} className={styles.competencyCell}></td>
+            <td rowSpan={2} className={styles.competencyCell}>
+              {competencySummary}
+            </td>
           </tr>
           <tr>
             <td className={styles.rowLabel}>{t('aviation.results.dropdown_single_desc')}</td>

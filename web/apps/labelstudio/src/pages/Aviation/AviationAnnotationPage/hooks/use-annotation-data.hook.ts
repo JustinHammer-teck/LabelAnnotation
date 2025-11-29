@@ -11,8 +11,6 @@ import {
   resetAnnotationAtom,
 } from '../stores/aviation-annotation.store';
 import { AviationIncident, AviationAnnotationData } from '../types/aviation.types';
-import { isAviationMockEnabled } from '../utils/feature-flags';
-import { mockIncident, mockAnnotation } from '../mocks/aviation-mock-data';
 
 interface UseAnnotationDataResult {
   incident: AviationIncident | null;
@@ -35,16 +33,13 @@ export const useAnnotationData = (taskId: number | null): UseAnnotationDataResul
   const setIncident = useSetAtom(currentIncidentAtom);
   const setLoadingIncident = useSetAtom(loadingIncidentAtom);
   const setLoadingAnnotation = useSetAtom(loadingAnnotationAtom);
+  const setAnnotationData = useSetAtom(annotationDataAtom);
   const updateFields = useSetAtom(updateFieldsAtom);
   const resetAnnotation = useSetAtom(resetAnnotationAtom);
 
   const { data: incidentData, isLoading: isLoadingIncident, error: incidentError, refetch: refetchIncident } = useQuery({
     queryKey: ['aviation-incident', taskId],
     queryFn: async () => {
-      if (isAviationMockEnabled()) {
-        return mockIncident;
-      }
-
       const result = await api.callApi<{ results?: AviationIncident[]; [key: string]: any }>('aviationIncidents', {
         params: { task_id: taskId },
         suppressError: true,
@@ -63,10 +58,6 @@ export const useAnnotationData = (taskId: number | null): UseAnnotationDataResul
   const { data: annotationData, isLoading: isLoadingAnnotation, error: annotationError, refetch: refetchAnnotation } = useQuery({
     queryKey: ['aviation-annotation', taskId],
     queryFn: async () => {
-      if (isAviationMockEnabled()) {
-        return mockAnnotation;
-      }
-
       const result = await api.callApi<{ results?: AviationAnnotationData[]; [key: string]: any }>('aviationAnnotations', {
         params: { task_id: taskId },
         suppressError: true,
@@ -106,12 +97,22 @@ export const useAnnotationData = (taskId: number | null): UseAnnotationDataResul
   useEffect(() => {
     if (annotationData) {
       setAnnotationId(annotationData.id || null);
-      updateFields(annotationData);
-    } else if (!isLoadingAnnotation && taskId) {
+      setAnnotationData(annotationData);
+    } else if (!isLoadingAnnotation && taskId && incidentData) {
       resetAnnotation();
       setAnnotationId(null);
+      const initialFields: Partial<AviationAnnotationData> = {};
+      if (incidentData.flight_phase) {
+        initialFields.flight_phase = incidentData.flight_phase;
+      }
+      if (incidentData.event_description) {
+        initialFields.notes = incidentData.event_description;
+      }
+      if (Object.keys(initialFields).length > 0) {
+        updateFields(initialFields);
+      }
     }
-  }, [annotationData, isLoadingAnnotation, taskId, updateFields, resetAnnotation]);
+  }, [annotationData, isLoadingAnnotation, taskId, incidentData, setAnnotationData, resetAnnotation, updateFields]);
 
   const refetch = () => {
     refetchIncident();

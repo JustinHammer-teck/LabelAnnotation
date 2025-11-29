@@ -2,31 +2,30 @@ import React, { useEffect, useMemo } from 'react';
 import { useParams, useHistory } from 'react-router-dom';
 import { Provider } from 'jotai';
 import { useTranslation } from 'react-i18next';
-import { IncidentDisplayPanel } from './components/IncidentDisplayPanel/IncidentDisplayPanel';
 import { BasicInfoTable } from './components/BasicInfoTable/BasicInfoTable';
 import { ResultsTable } from './components/ResultsTable/ResultsTable';
 import { RecognitionSection } from './components/RecognitionSection/RecognitionSection';
 import { TrainingTopicsPanel } from './components/TrainingTopicsPanel/TrainingTopicsPanel';
 import { CRMTopicsRow } from './components/CRMTopicsRow/CRMTopicsRow';
+import { SaveStatusIndicator } from './components/SaveStatusIndicator/SaveStatusIndicator';
 import { useAnnotationData } from './hooks/use-annotation-data.hook';
 import { useDropdownOptions } from './hooks/use-dropdown-options.hook';
+import { useAutoSave } from './hooks/use-auto-save.hook';
 import { useAtomValue } from 'jotai';
 import { hasUnsavedChangesAtom } from './stores/aviation-annotation.store';
-import { isAviationMockEnabled } from './utils/feature-flags';
 import styles from './AviationAnnotationPage.module.scss';
 
 export const AviationAnnotationPage: React.FC = () => {
   const { t } = useTranslation();
-  const { taskId: taskIdParam } = useParams<{ taskId: string }>();
+  const { taskId: taskIdParam, projectId } = useParams<{ taskId: string; projectId: string }>();
   const history = useHistory();
-  const isMockMode = isAviationMockEnabled();
 
   const taskId = useMemo(() => {
     if (taskIdParam) {
       return parseInt(taskIdParam, 10);
     }
-    return isMockMode ? 1 : null;
-  }, [taskIdParam, isMockMode]);
+    return null;
+  }, [taskIdParam]);
 
   const {
     incident,
@@ -43,6 +42,11 @@ export const AviationAnnotationPage: React.FC = () => {
   } = useDropdownOptions();
 
   const hasUnsavedChanges = useAtomValue(hasUnsavedChangesAtom);
+
+  const { retrySave } = useAutoSave(taskId, annotationId, {
+    enabled: true,
+    debounceMs: 2000,
+  });
 
   // Handle navigation with unsaved changes warning
   useEffect(() => {
@@ -62,10 +66,14 @@ export const AviationAnnotationPage: React.FC = () => {
   }, [hasUnsavedChanges]);
 
   useEffect(() => {
-    if (!isMockMode && (!taskIdParam || (dataError && !dataLoading))) {
-      history.push('/tasks');
+    if (!taskIdParam || (dataError && !dataLoading)) {
+      if (projectId) {
+        history.push(`/aviation/${projectId}/tasks`);
+      } else {
+        history.push('/aviation');
+      }
     }
-  }, [taskIdParam, dataError, dataLoading, history, isMockMode]);
+  }, [taskIdParam, projectId, dataError, dataLoading, history]);
 
   const loading = dataLoading || optionsLoading;
 
@@ -104,34 +112,37 @@ export const AviationAnnotationPage: React.FC = () => {
   return (
     <div className={styles.pageContainer}>
       <div className={styles.pageHeader}>
-        <button
-          className={styles.backButton}
-          onClick={() => {
-            if (hasUnsavedChanges) {
-              if (window.confirm(t('aviation.unsaved_changes'))) {
-                history.push('/tasks');
+        <div className={styles.breadcrumb}>
+          <button
+            className={styles.breadcrumbLink}
+            onClick={() => history.push('/aviation')}
+          >
+            Aviation
+          </button>
+          <span className={styles.breadcrumbSeparator}>/</span>
+          <button
+            className={styles.breadcrumbLink}
+            onClick={() => {
+              if (hasUnsavedChanges) {
+                if (window.confirm(t('aviation.unsaved_changes'))) {
+                  history.push(`/aviation/${projectId}/tasks`);
+                }
+              } else {
+                history.push(`/aviation/${projectId}/tasks`);
               }
-            } else {
-              history.push('/tasks');
-            }
-          }}
-        >
-          ← {t('aviation.back_to_tasks')}
-        </button>
-        <span className={styles.eventNumber}>
-          {t('aviation.event_number')}{incident?.event_number || taskId}
-          {isMockMode && <span style={{ marginLeft: '8px', fontSize: '12px', color: '#ff9800' }}>({t('aviation.mock_mode')})</span>}
-        </span>
+            }}
+          >
+            Tasks
+          </button>
+          <span className={styles.breadcrumbSeparator}>/</span>
+          <span className={styles.breadcrumbCurrent}>
+            {incident?.event_number || taskId}
+          </span>
+        </div>
+        <SaveStatusIndicator onRetry={retrySave} />
       </div>
 
       <div className={styles.pageContent}>
-        <div className={styles.leftPanel}>
-          <IncidentDisplayPanel
-            incident={incident}
-            loading={dataLoading}
-          />
-        </div>
-
         <div className={styles.mainContent}>
           <BasicInfoTable />
           <ResultsTable />

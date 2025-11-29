@@ -3,10 +3,8 @@ import { useAtomValue, useSetAtom } from 'jotai';
 import {
   annotationDataAtom,
   updateFieldAtom,
-  dropdownOptionsAtom,
   calculatedTrainingAtom,
 } from '../../stores/aviation-annotation.store';
-import { MultiSelectDropdown } from '../MultiSelectDropdown/MultiSelectDropdown';
 import { AutoCalculatedField } from '../AutoCalculatedField/AutoCalculatedField';
 import { SectionContainer } from '../SectionContainer/SectionContainer';
 import { FieldRow } from '../FieldRow/FieldRow';
@@ -14,11 +12,8 @@ import styles from './Sections.module.scss';
 
 export const TrainingSection: React.FC = () => {
   const annotationData = useAtomValue(annotationDataAtom);
-  const dropdownOptions = useAtomValue(dropdownOptionsAtom);
   const calculatedTraining = useAtomValue(calculatedTrainingAtom);
   const updateField = useSetAtom(updateFieldAtom);
-
-  if (!dropdownOptions) return null;
 
   return (
     <>
@@ -43,16 +38,6 @@ export const TrainingSection: React.FC = () => {
           emptyText="No UAS-related training topics"
           variant="green"
         />
-
-        <FieldRow label="CRM Training Topics">
-          <MultiSelectDropdown
-            options={dropdownOptions.crm_topics}
-            value={annotationData.crm_training_topics}
-            onChange={(value) => updateField({ field: 'crm_training_topics', value })}
-            placeholder="Select CRM training topics..."
-            maxChipsDisplay={3}
-          />
-        </FieldRow>
       </SectionContainer>
 
       <SectionContainer title="训练计划" variant="default">

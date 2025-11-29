@@ -8,13 +8,14 @@ export interface AviationIncident {
   location: string;
   airport: string;
   flight_phase: string;
+  aircraft_type: string;
+  event_labels: string;
 }
 
 export interface HierarchicalSelection {
-  level1: DropdownOption | null;
-  level2: DropdownOption | null;
-  level3: DropdownOption | null;
-  fullPath: string;
+  level1: string;
+  level2: string;
+  level3: string;
 }
 
 export interface AviationAnnotationData {
@@ -24,7 +25,7 @@ export interface AviationAnnotationData {
   // Basic Info
   aircraft_type: string;
   event_labels: string[];
-  flight_phase: string;
+  notes: string;
 
   // Threat
   threat_type: HierarchicalSelection;
@@ -45,17 +46,21 @@ export interface AviationAnnotationData {
   uas_management: string;
   uas_description: string;
 
-  // Competency & Training
+  // Results
   competency_indicators: string[];
   likelihood: string;
   severity: string;
   training_benefit: string;
-  crm_training_topics: string[];
 
-  // Manual Fields
+  // Training
+  crm_training_topics: Record<string, string[]>;
+  threat_training_topics: string[];
+  error_training_topics: string[];
+  uas_training_topics: string[];
+
+  // Additional
   training_plan_ideas: string;
   goals_to_achieve: string;
-  notes: string;
 }
 
 export interface SaveStatus {
@@ -77,7 +82,7 @@ export interface DropdownOption {
 export interface DropdownCategory {
   aircraft: DropdownOption[];
   threat: DropdownOption[];
-  error: DropdownOption[];
+  error_type: DropdownOption[];
   uas: DropdownOption[];
   event_labels: DropdownOption[];
   competency: DropdownOption[];

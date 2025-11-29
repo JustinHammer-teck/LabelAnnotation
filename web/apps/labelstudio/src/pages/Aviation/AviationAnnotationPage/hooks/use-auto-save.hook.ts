@@ -1,6 +1,6 @@
 import { useAtomValue, useSetAtom } from 'jotai';
-import { useEffect, useRef, useCallback } from 'react';
-import { debounce } from 'lodash';
+import { useEffect, useRef, useCallback, useMemo } from 'react';
+import { debounce, DebouncedFunc } from 'lodash';
 import { useAPI } from '../../../../providers/ApiProvider';
 import {
   annotationDataAtom,
@@ -9,7 +9,6 @@ import {
   lastSavedAtom,
 } from '../stores/aviation-annotation.store';
 import { AviationAnnotationData } from '../types/aviation.types';
-import { isAviationMockEnabled } from '../utils/feature-flags';
 
 interface UseAutoSaveOptions {
   enabled?: boolean;
@@ -39,21 +38,20 @@ export const useAutoSave = (
 
   const annotationIdRef = useRef(annotationId);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const onSaveSuccessRef = useRef(onSaveSuccess);
+  const onSaveErrorRef = useRef(onSaveError);
 
   useEffect(() => {
     annotationIdRef.current = annotationId;
   }, [annotationId]);
 
-  const saveFunction = useCallback(
-    debounce(async (data: AviationAnnotationData, currentTaskId: number) => {
-      if (isAviationMockEnabled()) {
-        const now = new Date();
-        setSaveStatus({ state: 'saved', lastSaved: now, error: null });
-        setLastSaved(now);
-        setDirty(false);
-        return;
-      }
+  useEffect(() => {
+    onSaveSuccessRef.current = onSaveSuccess;
+    onSaveErrorRef.current = onSaveError;
+  }, [onSaveSuccess, onSaveError]);
 
+  const saveFunction = useMemo<DebouncedFunc<(data: AviationAnnotationData, currentTaskId: number) => Promise<void>>>(
+    () => debounce(async (data: AviationAnnotationData, currentTaskId: number) => {
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
@@ -65,12 +63,12 @@ export const useAutoSave = (
         setSaveStatus({ state: 'saving', lastSaved: null, error: null });
 
         const method = annotationIdRef.current ? 'updateAviationAnnotation' : 'createAviationAnnotation';
-        const params: any = annotationIdRef.current
-          ? { pk: annotationIdRef.current, ...data }
-          : { task_id: currentTaskId, ...data };
+        const isUpdate = !!annotationIdRef.current;
+        const bodyData = isUpdate ? data : { task_id: currentTaskId, ...data };
 
         const result = await api.callApi<AviationAnnotationData>(method, {
-          params,
+          params: isUpdate ? { pk: annotationIdRef.current } : {},
+          body: bodyData,
           signal,
           suppressError: false,
         });
@@ -92,8 +90,8 @@ export const useAutoSave = (
         setLastSaved(now);
         setDirty(false);
 
-        if (onSaveSuccess) {
-          onSaveSuccess(response);
+        if (onSaveSuccessRef.current) {
+          onSaveSuccessRef.current(response);
         }
       } catch (error: any) {
         if (error.name === 'AbortError' || signal.aborted) return;
@@ -105,19 +103,20 @@ export const useAutoSave = (
           error: error.message || 'Failed to save changes',
         });
 
-        if (onSaveError) {
-          onSaveError(error);
+        if (onSaveErrorRef.current) {
+          onSaveErrorRef.current(error);
         }
       }
     }, debounceMs),
-    [api, debounceMs, setSaveStatus, setLastSaved, setDirty, onSaveSuccess, onSaveError]
+    [api, debounceMs, setSaveStatus, setLastSaved, setDirty]
   );
 
   useEffect(() => {
     if (enabled && isDirty && taskId) {
       saveFunction(annotationData, taskId);
     }
-  }, [annotationData, isDirty, enabled, taskId, saveFunction]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- annotationData and saveFunction intentionally omitted to prevent repeated saves on every data change; isDirty flag controls when saves trigger
+  }, [isDirty, enabled, taskId]);
 
   useEffect(() => {
     return () => {
@@ -125,20 +124,11 @@ export const useAutoSave = (
         abortControllerRef.current.abort();
       }
       saveFunction.cancel();
-      saveFunction.flush();
     };
   }, [saveFunction]);
 
   const saveNow = useCallback(async () => {
     if (!taskId) return;
-
-    if (isAviationMockEnabled()) {
-      const now = new Date();
-      setSaveStatus({ state: 'saved', lastSaved: now, error: null });
-      setLastSaved(now);
-      setDirty(false);
-      return;
-    }
 
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
@@ -153,12 +143,12 @@ export const useAutoSave = (
       setSaveStatus({ state: 'saving', lastSaved: null, error: null });
 
       const method = annotationIdRef.current ? 'updateAviationAnnotation' : 'createAviationAnnotation';
-      const params: any = annotationIdRef.current
-        ? { pk: annotationIdRef.current, ...annotationData }
-        : { task_id: taskId, ...annotationData };
+      const isUpdate = !!annotationIdRef.current;
+      const bodyData = isUpdate ? annotationData : { task_id: taskId, ...annotationData };
 
       const result = await api.callApi<AviationAnnotationData>(method, {
-        params,
+        params: isUpdate ? { pk: annotationIdRef.current } : {},
+        body: bodyData,
         signal,
         suppressError: false,
       });

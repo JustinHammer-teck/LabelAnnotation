@@ -131,7 +131,8 @@
       "relevancy_driver": "相关性(驱动)",
       "dropdown_single": "下拉单选",
       "level_2_menu": "二级菜单",
-      "level_3_menu": "三级菜单"
+      "level_3_menu": "三级菜单",
+      "select_option": "选择选项"
     },
     "training_panel": {
       "title": "训练主题",

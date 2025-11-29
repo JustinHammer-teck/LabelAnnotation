@@ -112,7 +112,15 @@ export const API_CONFIG = {
     // OCR
     taskOCRExtractions: 'GET:/tasks/:pk/ocr-extractions',
 
+    // Tasks
+    tasks: '/tasks',
+    task: '/tasks/:pk',
+
     // Aviation
+    aviationUpload: 'POST:/projects/:pk/aviation/upload/',
+    aviationValidate: 'POST:/projects/:pk/aviation/validate/',
+    aviationExportTemplate: '/aviation/export/template/',
+
     aviationIncidents: '/aviation/incidents',
     aviationIncident: '/aviation/incidents/:pk',
     createAviationIncident: 'POST:/aviation/incidents',
@@ -125,14 +133,16 @@ export const API_CONFIG = {
     updateAviationAnnotation: 'PATCH:/aviation/annotations/:pk',
 
     aviationDropdowns: '/aviation/dropdowns',
-    aviationDropdownsByCategory: '/aviation/dropdowns/:category',
+    aviationDropdownsAll: '/aviation/dropdowns/all/',
+    aviationDropdownsHierarchy: '/aviation/dropdowns/hierarchy/',
+    aviationDropdownsSearch: '/aviation/dropdowns/search/',
 
     aviationTaskLock: '/aviation/tasks/:taskId/lock',
     acquireAviationTaskLock: 'POST:/aviation/tasks/:taskId/lock',
     releaseAviationTaskLock: 'DELETE:/aviation/tasks/:taskId/lock',
 
-    aviationExport: 'POST:/aviation/export',
-    aviationTrainingMappings: '/aviation/training-mappings'
+    aviationExport: '/aviation/export/',
+    aviationTrainingMappings: '/aviation/training-mappings/'
   },
   alwaysExpectJSON: false
 };

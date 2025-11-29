@@ -20,6 +20,7 @@ export interface MultiSelectDropdownProps {
   required?: boolean;
   error?: string;
   label?: string;
+  title?: string;
 }
 
 export interface TreeSelectorModalProps {

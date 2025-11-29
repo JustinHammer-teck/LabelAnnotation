@@ -1,18 +1,20 @@
 import React from 'react';
-import { useAtom } from 'jotai';
+import { useAtomValue, useSetAtom } from 'jotai';
 import { useTranslation } from 'react-i18next';
-import { annotationDataAtom } from '../../stores/aviation-annotation.store';
-import { useDropdownOptions } from '../../hooks/use-dropdown-options.hook';
+import { annotationDataAtom, currentIncidentAtom, updateFieldAtom } from '../../stores/aviation-annotation.store';
 import styles from './BasicInfoTable.module.scss';
 
 export const BasicInfoTable: React.FC = () => {
   const { t } = useTranslation();
-  const [data, setData] = useAtom(annotationDataAtom);
-  const { options } = useDropdownOptions();
+  const data = useAtomValue(annotationDataAtom);
+  const incident = useAtomValue(currentIncidentAtom);
+  const updateField = useSetAtom(updateFieldAtom);
 
-  const updateField = <K extends keyof typeof data>(field: K, value: typeof data[K]) => {
-    setData({ ...data, [field]: value });
-  };
+  const displayDate = incident?.date || '';
+  const displayLocation = incident?.location || incident?.airport || '';
+  const displayAircraftType = incident?.aircraft_type || '';
+  const displayEventLabels = incident?.event_labels || '';
+  const displayFlightPhase = incident?.flight_phase || '';
 
   return (
     <table className={styles.basicInfoTable}>
@@ -31,71 +33,48 @@ export const BasicInfoTable: React.FC = () => {
           <td>
             <input
               type="text"
-              value={data.aircraft_type}
-              onChange={(e) => updateField('aircraft_type', e.target.value)}
-              placeholder={t('aviation.basic_info.placeholder_date')}
-              className={styles.input}
+              value={displayDate}
+              readOnly
+              className={styles.inputReadonly}
             />
-          </td>
-          <td>
-            <select
-              value={data.aircraft_type}
-              onChange={(e) => updateField('aircraft_type', e.target.value)}
-              className={styles.select}
-            >
-              <option value="">{t('aviation.basic_info.select_aircraft')}</option>
-              {options?.aircraft?.map((aircraft) => (
-                <option key={aircraft.id} value={aircraft.code}>
-                  {aircraft.label}
-                </option>
-              ))}
-            </select>
           </td>
           <td>
             <input
               type="text"
-              value={data.aircraft_type}
-              onChange={(e) => updateField('aircraft_type', e.target.value)}
-              placeholder={t('aviation.basic_info.placeholder_location')}
-              className={styles.input}
+              value={displayAircraftType}
+              readOnly
+              className={styles.inputReadonly}
             />
           </td>
           <td>
-            <select
-              multiple
-              value={data.event_labels}
-              onChange={(e) => {
-                const selected = Array.from(e.target.selectedOptions, option => option.value);
-                updateField('event_labels', selected);
-              }}
-              className={styles.multiSelect}
-            >
-              {options?.event_labels?.map((label) => (
-                <option key={label.id} value={label.code}>
-                  {label.label}
-                </option>
-              ))}
-            </select>
+            <input
+              type="text"
+              value={displayLocation}
+              readOnly
+              className={styles.inputReadonly}
+            />
           </td>
           <td>
-            <select
-              value={data.flight_phase}
-              onChange={(e) => updateField('flight_phase', e.target.value)}
-              className={styles.select}
-            >
-              <option value="">{t('aviation.basic_info.select_phase')}</option>
-              {options?.flight_phases?.map((phase) => (
-                <option key={phase.id} value={phase.code}>
-                  {phase.label}
-                </option>
-              ))}
-            </select>
+            <input
+              type="text"
+              value={displayEventLabels}
+              readOnly
+              className={styles.inputReadonly}
+            />
+          </td>
+          <td>
+            <input
+              type="text"
+              value={displayFlightPhase}
+              readOnly
+              className={styles.inputReadonly}
+            />
           </td>
           <td>
             <input
               type="text"
               value={data.notes}
-              onChange={(e) => updateField('notes', e.target.value)}
+              onChange={(e) => updateField({ field: 'notes', value: e.target.value })}
               placeholder={t('aviation.basic_info.placeholder_notes')}
               className={styles.input}
             />

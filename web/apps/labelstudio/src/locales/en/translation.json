@@ -131,7 +131,8 @@
       "relevancy_driver": "Relevancy (Driver)",
       "dropdown_single": "Dropdown Single Select",
       "level_2_menu": "Level 2 Menu",
-      "level_3_menu": "Level 3 Menu"
+      "level_3_menu": "Level 3 Menu",
+      "select_option": "Select Option"
     },
     "training_panel": {
       "title": "Training Topics",
