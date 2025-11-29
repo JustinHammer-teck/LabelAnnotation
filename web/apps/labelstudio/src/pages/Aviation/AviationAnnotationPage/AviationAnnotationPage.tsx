@@ -43,7 +43,7 @@ export const AviationAnnotationPage: React.FC = () => {
 
   const hasUnsavedChanges = useAtomValue(hasUnsavedChangesAtom);
 
-  const { retrySave } = useAutoSave(taskId, annotationId, {
+  const { retrySave, saveNow, isSaving } = useAutoSave(taskId, annotationId, {
     enabled: true,
     debounceMs: 2000,
   });
@@ -139,7 +139,18 @@ export const AviationAnnotationPage: React.FC = () => {
             {incident?.event_number || taskId}
           </span>
         </div>
-        <SaveStatusIndicator onRetry={retrySave} />
+        <div className={styles.headerActions}>
+          <button
+            type="button"
+            className={styles.saveButton}
+            onClick={saveNow}
+            disabled={!hasUnsavedChanges || isSaving}
+            aria-label={t('aviation.save_annotation')}
+          >
+            {isSaving ? t('aviation.saving') : t('aviation.save')}
+          </button>
+          <SaveStatusIndicator onRetry={retrySave} />
+        </div>
       </div>
 
       <div className={styles.pageContent}>

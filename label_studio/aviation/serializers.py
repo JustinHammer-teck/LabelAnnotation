@@ -4,7 +4,77 @@ from rest_framework import serializers
 from django.db import transaction
 
 from projects.models import Project
-from .models import AviationAnnotation, AviationIncident, AviationDropdownOption
+from .models import AviationAnnotation, AviationIncident, AviationDropdownOption, AviationProject
+
+
+class AviationProjectSerializer(FlexFieldsModelSerializer):
+    """Serializer for aviation project with nested project data"""
+
+    project_id = serializers.IntegerField(source='project.id', read_only=True)
+    title = serializers.CharField(source='project.title')
+    description = serializers.CharField(source='project.description', required=False, allow_blank=True)
+    incident_count = serializers.SerializerMethodField()
+    annotation_count = serializers.SerializerMethodField()
+
+    def get_incident_count(self, obj):
+        return AviationIncident.objects.filter(task__project=obj.project).count()
+
+    def get_annotation_count(self, obj):
+        return AviationAnnotation.objects.filter(annotation__task__project=obj.project).count()
+
+    def create(self, validated_data):
+        project_data = validated_data.pop('project', {})
+        request = self.context.get('request')
+
+        with transaction.atomic():
+            project = Project.objects.create(
+                title=project_data.get('title', ''),
+                description=project_data.get('description', ''),
+                organization=request.user.active_organization,
+                created_by=request.user
+            )
+            aviation_project = AviationProject.objects.create(
+                project=project,
+                threat_mapping=validated_data.get('threat_mapping', {}),
+                error_mapping=validated_data.get('error_mapping', {}),
+                uas_mapping=validated_data.get('uas_mapping', {})
+            )
+        return aviation_project
+
+    def update(self, instance, validated_data):
+        project_data = validated_data.pop('project', {})
+
+        with transaction.atomic():
+            if project_data:
+                project = instance.project
+                if 'title' in project_data:
+                    project.title = project_data['title']
+                if 'description' in project_data:
+                    project.description = project_data['description']
+                project.save()
+
+            for attr, value in validated_data.items():
+                setattr(instance, attr, value)
+            instance.save()
+
+        return instance
+
+    class Meta:
+        model = AviationProject
+        fields = [
+            'id',
+            'project_id',
+            'title',
+            'description',
+            'threat_mapping',
+            'error_mapping',
+            'uas_mapping',
+            'incident_count',
+            'annotation_count',
+            'created_at',
+            'updated_at',
+        ]
+        read_only_fields = ['id', 'project_id', 'incident_count', 'annotation_count', 'created_at', 'updated_at']
 
 
 class AviationIncidentSerializer(FlexFieldsModelSerializer):
@@ -140,9 +210,6 @@ class AviationAnnotationSerializer(FlexFieldsModelSerializer):
         read_only_fields = [
             'created_at',
             'updated_at',
-            'threat_training_topics',
-            'error_training_topics',
-            'uas_training_topics',
             'annotation'
         ]
         extra_kwargs = {

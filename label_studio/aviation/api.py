@@ -19,11 +19,12 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from projects.models import Project
 
-from .models import AviationAnnotation, AviationDropdownOption, AviationIncident
+from .models import AviationAnnotation, AviationDropdownOption, AviationIncident, AviationProject
 from .serializers import (
     AviationAnnotationSerializer,
     AviationDropdownOptionSerializer,
     AviationIncidentSerializer,
+    AviationProjectSerializer,
     ExcelUploadSerializer
 )
 
@@ -48,6 +49,79 @@ class AviationDropdownPagination(PageNumberPagination):
     page_size = 100
     page_size_query_param = 'page_size'
     max_page_size = 1000
+
+
+@method_decorator(
+    name='get',
+    decorator=swagger_auto_schema(
+        tags=['Aviation'],
+        operation_summary='List aviation projects',
+        operation_description='Get list of aviation projects for current organization',
+    )
+)
+@method_decorator(
+    name='post',
+    decorator=swagger_auto_schema(
+        tags=['Aviation'],
+        operation_summary='Create aviation project',
+        operation_description='Create new aviation project with base project wrapper',
+    )
+)
+class AviationProjectListAPI(generics.ListCreateAPIView):
+    """List and create aviation projects"""
+    serializer_class = AviationProjectSerializer
+    pagination_class = AviationDropdownPagination
+    permission_required = ViewClassPermission(
+        GET=all_permissions.projects_view,
+        POST=all_permissions.projects_create,
+    )
+
+    def get_queryset(self):
+        return AviationProject.objects.filter(
+            project__organization=self.request.user.active_organization
+        ).select_related('project').order_by('-created_at')
+
+
+@method_decorator(
+    name='get',
+    decorator=swagger_auto_schema(
+        tags=['Aviation'],
+        operation_summary='Get aviation project',
+    )
+)
+@method_decorator(
+    name='patch',
+    decorator=swagger_auto_schema(
+        tags=['Aviation'],
+        operation_summary='Update aviation project',
+    )
+)
+@method_decorator(
+    name='delete',
+    decorator=swagger_auto_schema(
+        tags=['Aviation'],
+        operation_summary='Delete aviation project',
+    )
+)
+class AviationProjectDetailAPI(generics.RetrieveUpdateDestroyAPIView):
+    """Get, update, or delete aviation project"""
+    serializer_class = AviationProjectSerializer
+    permission_required = ViewClassPermission(
+        GET=all_permissions.projects_view,
+        PATCH=all_permissions.projects_change,
+        DELETE=all_permissions.projects_delete,
+    )
+
+    def get_queryset(self):
+        return AviationProject.objects.filter(
+            project__organization=self.request.user.active_organization
+        ).select_related('project')
+
+    def perform_destroy(self, instance):
+        with transaction.atomic():
+            project = instance.project
+            instance.delete()
+            project.delete()
 
 
 @method_decorator(
@@ -156,17 +230,18 @@ class AviationAnnotationListAPI(generics.ListCreateAPIView):
 
     def get_queryset(self):
         task_id = self.request.query_params.get('task_id')
+        project_id = self.request.query_params.get('project')
         queryset = AviationAnnotation.objects.for_organization(
             self.request.user.active_organization
         )
         if task_id:
             queryset = queryset.filter(annotation__task_id=task_id)
+        if project_id:
+            queryset = queryset.filter(annotation__task__project_id=project_id)
         return queryset
 
     def perform_create(self, serializer):
-        from .services import TrainingCalculationService
         from tasks.models import Annotation, Task
-        calculator = TrainingCalculationService()
 
         with transaction.atomic():
             task_id = self.request.data.get('task_id')
@@ -187,11 +262,7 @@ class AviationAnnotationListAPI(generics.ListCreateAPIView):
             if created:
                 logger.debug(f'Auto-created annotation for task={task_id} user={self.request.user.id}')
 
-            instance = serializer.save(annotation=annotation)
-            try:
-                calculator.calculate_and_update(instance)
-            except NotImplementedError:
-                pass
+            serializer.save(annotation=annotation)
 
 
 @method_decorator(
@@ -230,15 +301,8 @@ class AviationAnnotationDetailAPI(generics.RetrieveUpdateDestroyAPIView):
         )
 
     def perform_update(self, serializer):
-        from .services import TrainingCalculationService
-        calculator = TrainingCalculationService()
-
         with transaction.atomic():
-            instance = serializer.save()
-            try:
-                calculator.calculate_and_update(instance)
-            except NotImplementedError:
-                pass
+            serializer.save()
 
 
 DROPDOWN_CATEGORY_MAPPING = {

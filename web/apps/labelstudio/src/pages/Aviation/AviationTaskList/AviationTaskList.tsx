@@ -10,15 +10,13 @@ import styles from './AviationTaskList.module.scss';
 
 interface Task {
   id: number;
-  data: {
-    event_number?: string;
-    event_date?: string;
-    event_location?: string;
-    airport_name?: string;
-    airline_company?: string;
-    flight_phase?: string;
-    event_description?: string;
-  };
+  task_id: number;
+  event_number?: string;
+  date?: string;
+  location?: string;
+  airport?: string;
+  flight_phase?: string;
+  event_description?: string;
   annotations?: any[];
   total_annotations?: number;
   cancelled_annotations?: number;
@@ -26,6 +24,7 @@ interface Task {
 
 interface Project {
   id: number;
+  project_id: number;
   title: string;
 }
 
@@ -61,7 +60,7 @@ export const AviationTaskList: React.FC = () => {
   const [searchInput, setSearchInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<FilterStatus>('all');
-  const [airlineFilter, setAirlineFilter] = useState<string>('all');
+  const [airportFilter, setAirportFilter] = useState<string>('all');
   const [flightPhaseFilter, setFlightPhaseFilter] = useState<string>('all');
 
   const [selectedTasks, setSelectedTasks] = useState<Set<number>>(new Set());
@@ -90,7 +89,7 @@ export const AviationTaskList: React.FC = () => {
     setNetworkState('loading');
 
     try {
-      const projectData = await api.callApi('project', {
+      const projectData = await api.callApi('aviationProject', {
         params: { pk: projectId },
         errorFilter: (e: any) => e.error?.includes('aborted'),
       });
@@ -99,9 +98,9 @@ export const AviationTaskList: React.FC = () => {
         setProject(projectData as Project);
       }
 
-      const tasksData = await api.callApi('tasks', {
+      const tasksData = await api.callApi('aviationIncidents', {
         params: {
-          project: projectId,
+          project: projectData?.project_id,
           page_size: 1000,
         },
         errorFilter: (e: any) => e.error?.includes('aborted'),
@@ -143,21 +142,21 @@ export const AviationTaskList: React.FC = () => {
     return { status: 'in_progress', label: 'In Progress', progress };
   }, []);
 
-  const uniqueAirlines = useMemo(() => {
-    const airlines = new Set<string>();
+  const uniqueAirports = useMemo(() => {
+    const airports = new Set<string>();
     tasks.forEach(task => {
-      if (task.data.airline_company) {
-        airlines.add(task.data.airline_company);
+      if (task.airport) {
+        airports.add(task.airport);
       }
     });
-    return Array.from(airlines).sort();
+    return Array.from(airports).sort();
   }, [tasks]);
 
   const uniqueFlightPhases = useMemo(() => {
     const phases = new Set<string>();
     tasks.forEach(task => {
-      if (task.data.flight_phase) {
-        phases.add(task.data.flight_phase);
+      if (task.flight_phase) {
+        phases.add(task.flight_phase);
       }
     });
     return Array.from(phases).sort();
@@ -170,22 +169,21 @@ export const AviationTaskList: React.FC = () => {
         if (statusInfo.status !== statusFilter) return false;
       }
 
-      if (airlineFilter !== 'all') {
-        if (task.data.airline_company !== airlineFilter) return false;
+      if (airportFilter !== 'all') {
+        if (task.airport !== airportFilter) return false;
       }
 
       if (flightPhaseFilter !== 'all') {
-        if (task.data.flight_phase !== flightPhaseFilter) return false;
+        if (task.flight_phase !== flightPhaseFilter) return false;
       }
 
       if (searchQuery.trim()) {
         const query = searchQuery.toLowerCase();
         const searchFields = [
-          task.data.event_number,
-          task.data.airline_company,
-          task.data.event_location,
-          task.data.airport_name,
-          task.data.event_description,
+          task.event_number,
+          task.location,
+          task.airport,
+          task.event_description,
         ];
         const matches = searchFields.some(field =>
           field?.toLowerCase().includes(query)
@@ -195,7 +193,7 @@ export const AviationTaskList: React.FC = () => {
 
       return true;
     });
-  }, [tasks, statusFilter, airlineFilter, flightPhaseFilter, searchQuery, getStatusInfo]);
+  }, [tasks, statusFilter, airportFilter, flightPhaseFilter, searchQuery, getStatusInfo]);
 
   const statusCounts = useMemo(() => {
     const counts = { not_started: 0, in_progress: 0, complete: 0, needs_review: 0 };
@@ -209,11 +207,11 @@ export const AviationTaskList: React.FC = () => {
   const activeFilterCount = useMemo(() => {
     let count = 0;
     if (statusFilter !== 'all') count++;
-    if (airlineFilter !== 'all') count++;
+    if (airportFilter !== 'all') count++;
     if (flightPhaseFilter !== 'all') count++;
     if (searchQuery) count++;
     return count;
-  }, [statusFilter, airlineFilter, flightPhaseFilter, searchQuery]);
+  }, [statusFilter, airportFilter, flightPhaseFilter, searchQuery]);
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
@@ -237,11 +235,11 @@ export const AviationTaskList: React.FC = () => {
     setSearchInput('');
     setSearchQuery('');
     setStatusFilter('all');
-    setAirlineFilter('all');
+    setAirportFilter('all');
     setFlightPhaseFilter('all');
   };
 
-  const hasActiveFilters = searchQuery || statusFilter !== 'all' || airlineFilter !== 'all' || flightPhaseFilter !== 'all';
+  const hasActiveFilters = searchQuery || statusFilter !== 'all' || airportFilter !== 'all' || flightPhaseFilter !== 'all';
 
   useEffect(() => {
     fetchProjectAndTasks();
@@ -376,7 +374,7 @@ export const AviationTaskList: React.FC = () => {
             </svg>
             <input
               type="text"
-              placeholder="Search by event #, airline, or description..."
+              placeholder="Search by event #, location, or description..."
               value={searchInput}
               onChange={(e) => handleSearchChange(e.target.value)}
               className={styles.searchInput}
@@ -404,15 +402,15 @@ export const AviationTaskList: React.FC = () => {
               <option value="complete">Complete ({statusCounts.complete})</option>
             </select>
 
-            {uniqueAirlines.length > 0 && (
+            {uniqueAirports.length > 0 && (
               <select
-                value={airlineFilter}
-                onChange={(e) => setAirlineFilter(e.target.value)}
-                className={`${styles.filterSelect} ${airlineFilter !== 'all' ? styles.filterActive : ''}`}
+                value={airportFilter}
+                onChange={(e) => setAirportFilter(e.target.value)}
+                className={`${styles.filterSelect} ${airportFilter !== 'all' ? styles.filterActive : ''}`}
               >
-                <option value="all">All Airlines</option>
-                {uniqueAirlines.map(airline => (
-                  <option key={airline} value={airline}>{airline}</option>
+                <option value="all">All Airports</option>
+                {uniqueAirports.map(airport => (
+                  <option key={airport} value={airport}>{airport}</option>
                 ))}
               </select>
             )}
@@ -463,9 +461,9 @@ export const AviationTaskList: React.FC = () => {
                 <tr>
                   <th style={{ width: '40px' }}></th>
                   <th>Event #</th>
-                  <th>Airline</th>
                   <th>Date</th>
                   <th>Location</th>
+                  <th>Airport</th>
                   <th>Flight Phase</th>
                   <th>Status</th>
                   <th>Actions</th>
@@ -493,9 +491,9 @@ export const AviationTaskList: React.FC = () => {
                       />
                     </th>
                     <th>Event #</th>
-                    <th>Airline</th>
                     <th>Date</th>
                     <th>Location</th>
+                    <th>Airport</th>
                     <th>Flight Phase</th>
                     <th>Status</th>
                     <th>Actions</th>
@@ -507,11 +505,11 @@ export const AviationTaskList: React.FC = () => {
                       <tr
                         key={task.id}
                         className={`${styles.tableRow} ${selectedTasks.has(task.id) ? styles.selectedRow : ''}`}
-                        onClick={() => handleTaskClick(task.id)}
+                        onClick={() => handleTaskClick(task.task_id)}
                         role="row"
                         tabIndex={0}
                         onKeyDown={(e) => {
-                          if (e.key === 'Enter') handleTaskClick(task.id);
+                          if (e.key === 'Enter') handleTaskClick(task.task_id);
                         }}
                       >
                         <td onClick={(e) => e.stopPropagation()}>
@@ -519,27 +517,25 @@ export const AviationTaskList: React.FC = () => {
                             type="checkbox"
                             checked={selectedTasks.has(task.id)}
                             onChange={(e) => handleSelectTask(task.id, e.target.checked)}
-                            aria-label={`Select task ${task.data.event_number || task.id}`}
+                            aria-label={`Select task ${task.event_number || task.id}`}
                           />
                         </td>
-                        <td className={styles.eventNumber}>{task.data.event_number || task.id}</td>
-                        <td className={styles.airline}>{task.data.airline_company || '-'}</td>
+                        <td className={styles.eventNumber}>{task.event_number || task.id}</td>
                         <td className={styles.date}>
-                          {task.data.event_date
-                            ? format(new Date(task.data.event_date), 'MMM dd, yyyy')
+                          {task.date
+                            ? format(new Date(task.date), 'MMM dd, yyyy')
                             : '-'}
                         </td>
-                        <td className={styles.location}>
-                          {task.data.event_location || task.data.airport_name || '-'}
-                        </td>
-                        <td className={styles.flightPhase}>{task.data.flight_phase || '-'}</td>
+                        <td className={styles.location}>{task.location || '-'}</td>
+                        <td className={styles.airport}>{task.airport || '-'}</td>
+                        <td className={styles.flightPhase}>{task.flight_phase || '-'}</td>
                         <td>{renderStatusBadge(task)}</td>
                         <td>
                           <Button
                             size="small"
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleTaskClick(task.id);
+                              handleTaskClick(task.task_id);
                             }}
                           >
                             Annotate
@@ -576,7 +572,7 @@ export const AviationTaskList: React.FC = () => {
 
       {uploadModalOpen && (
         <ExcelUploadModal
-          projectId={parseInt(projectId, 10)}
+          projectId={project?.project_id ?? null}
           onClose={() => setUploadModalOpen(false)}
           onSuccess={handleUploadComplete}
         />

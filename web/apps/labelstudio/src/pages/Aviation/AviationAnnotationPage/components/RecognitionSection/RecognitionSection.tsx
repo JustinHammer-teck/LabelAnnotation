@@ -29,12 +29,15 @@ export const RecognitionSection: React.FC<RecognitionSectionProps> = ({ type, ba
   const managementField = `${type}_management` as keyof typeof data;
   const outcomeField = type === 'uas' ? undefined : `${type}_outcome` as keyof typeof data;
   const descriptionField = `${type}_description` as keyof typeof data;
+  const capabilityField = `${type}_capability` as keyof typeof data;
+  const trainingTopicsField = `${type}_training_topics` as keyof typeof data;
 
   const typeValue = data[typeField] as HierarchicalSelection;
   const relevancyValue = (type !== 'threat' ? data[relevancyField] : '') as string;
   const managementValue = data[managementField] as string;
   const outcomeValue = (outcomeField ? data[outcomeField] : '') as string;
   const descriptionValue = data[descriptionField] as string;
+  const capabilityValue = (data[capabilityField] || []) as string[];
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -64,6 +67,11 @@ export const RecognitionSection: React.FC<RecognitionSectionProps> = ({ type, ba
       level3: level3?.code || '',
     };
     handleFieldUpdate(typeField, selection);
+
+    const selectedOption = level3 || level2 || level1;
+    const trainingTopics = selectedOption?.training_topics || [];
+    handleFieldUpdate(trainingTopicsField, trainingTopics);
+
     if (level3 || (level2 && !getLevel2ChildrenByCode(level2.code).length)) {
       setShowHierarchy(false);
     }
@@ -278,8 +286,8 @@ export const RecognitionSection: React.FC<RecognitionSectionProps> = ({ type, ba
             <td>
               <MultiSelectDropdown
                 options={options?.competency || []}
-                value={data.competency_indicators}
-                onChange={(selected) => handleFieldUpdate('competency_indicators', selected)}
+                value={capabilityValue}
+                onChange={(selected) => handleFieldUpdate(capabilityField, selected)}
                 placeholder={t('aviation.recognition.select_option')}
                 maxChipsDisplay={2}
               />
