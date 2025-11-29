@@ -49,11 +49,26 @@ class AviationAnnotationQuerySet(models.QuerySet):
 
     def with_training_recommendations(self):
         """Annotations that have training recommendations"""
-        return self.exclude(
-            threat_training_topics=[],
-            error_training_topics=[],
-            uas_training_topics=[]
-        )
+        from django.db import connection
+
+        if connection.vendor == 'postgresql':
+            threat_has_data = ~Q(threat_training_topics__isnull=True) & ~Q(threat_training_topics=[])
+            error_has_data = ~Q(error_training_topics__isnull=True) & ~Q(error_training_topics=[])
+            uas_has_data = ~Q(uas_training_topics__isnull=True) & ~Q(uas_training_topics=[])
+            return self.filter(threat_has_data | error_has_data | uas_has_data)
+        else:
+            result_ids = []
+            for ann in self:
+                has_topics = (
+                    (ann.threat_training_topics and len(ann.threat_training_topics) > 0) or
+                    (ann.error_training_topics and len(ann.error_training_topics) > 0) or
+                    (ann.uas_training_topics and len(ann.uas_training_topics) > 0)
+                )
+                if has_topics:
+                    result_ids.append(ann.id)
+            if not result_ids:
+                return self.none()
+            return self.filter(id__in=result_ids)
 
 
 class AviationAnnotationManager(models.Manager.from_queryset(AviationAnnotationQuerySet)):

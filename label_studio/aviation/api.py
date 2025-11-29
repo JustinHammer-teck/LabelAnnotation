@@ -1,5 +1,4 @@
 import logging
-import os
 from pathlib import Path
 
 from rest_framework.views import APIView
@@ -10,24 +9,39 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.pagination import PageNumberPagination
 from django.http import FileResponse
+from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
 from django.db import transaction
 from django.db.models import Q
-from django.core.validators import validate_unicode_slug
 
 from core.permissions import ViewClassPermission, all_permissions
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from projects.models import Project
 
-from .models import AviationAnnotation, AviationDropdownOption
+from .models import AviationAnnotation, AviationDropdownOption, AviationIncident
 from .serializers import (
     AviationAnnotationSerializer,
     AviationDropdownOptionSerializer,
+    AviationIncidentSerializer,
     ExcelUploadSerializer
 )
 
 logger = logging.getLogger(__name__)
+
+ALLOWED_EXPORT_BASE = Path('/tmp').resolve()
+
+
+def _validate_export_path(file_path):
+    """Validate file path to prevent path traversal attacks.
+
+    Returns resolved Path if valid, None if invalid.
+    """
+    resolved_path = Path(file_path).resolve()
+    if not str(resolved_path).startswith(str(ALLOWED_EXPORT_BASE)):
+        logger.error(f"Path traversal attempt: {resolved_path}")
+        return None
+    return resolved_path
 
 
 class AviationDropdownPagination(PageNumberPagination):
@@ -64,11 +78,12 @@ class AviationExcelUploadAPI(generics.CreateAPIView):
         parser = ExcelParserService()
 
         try:
-            incidents = parser.parse_incidents(serializer.validated_data['file'], project)
-            return Response({
-                'created_tasks': len(incidents) if incidents else 0,
-                'project_id': project.id
-            }, status=status.HTTP_201_CREATED)
+            result = parser.parse_incidents(serializer.validated_data['file'], project)
+
+            if result['created'] == 0 and result['total_rows'] > 0:
+                return Response(result, status=status.HTTP_400_BAD_REQUEST)
+
+            return Response(result, status=status.HTTP_200_OK if result['errors'] else status.HTTP_201_CREATED)
         except NotImplementedError as e:
             return Response({'error': str(e)}, status=status.HTTP_501_NOT_IMPLEMENTED)
 
@@ -89,6 +104,11 @@ class AviationExcelValidateAPI(APIView):
     )
 
     def post(self, request, pk=None):
+        get_object_or_404(
+            Project.objects.filter(organization=request.user.active_organization),
+            id=pk
+        )
+
         from .services import ExcelParserService
         parser = ExcelParserService()
 
@@ -98,7 +118,10 @@ class AviationExcelValidateAPI(APIView):
 
         try:
             validation_result = parser.validate_structure(file)
-            return Response(validation_result or {'valid': True}, status=status.HTTP_200_OK)
+            result = validation_result or {'valid': True}
+            if not result.get('valid', True):
+                return Response(result, status=status.HTTP_400_BAD_REQUEST)
+            return Response(result, status=status.HTTP_200_OK)
         except NotImplementedError as e:
             return Response({'error': str(e)}, status=status.HTTP_501_NOT_IMPLEMENTED)
         except ValidationError as e:
@@ -132,22 +155,39 @@ class AviationAnnotationListAPI(generics.ListCreateAPIView):
     )
 
     def get_queryset(self):
-        return AviationAnnotation.objects.filter(
-            annotation__task__project__organization=self.request.user.active_organization
-        ).select_related(
-            'annotation',
-            'annotation__task',
-            'annotation__task__project'
-        ).prefetch_related(
-            'annotation__task__project__organization'
+        task_id = self.request.query_params.get('task_id')
+        queryset = AviationAnnotation.objects.for_organization(
+            self.request.user.active_organization
         )
+        if task_id:
+            queryset = queryset.filter(annotation__task_id=task_id)
+        return queryset
 
     def perform_create(self, serializer):
         from .services import TrainingCalculationService
+        from tasks.models import Annotation, Task
         calculator = TrainingCalculationService()
 
         with transaction.atomic():
-            instance = serializer.save()
+            task_id = self.request.data.get('task_id')
+            if not task_id:
+                raise ValidationError({'task_id': 'This field is required'})
+
+            task = get_object_or_404(
+                Task.objects.for_user(self.request.user),
+                id=task_id
+            )
+
+            annotation, created = Annotation.objects.get_or_create(
+                task=task,
+                completed_by=self.request.user,
+                defaults={'result': []}
+            )
+
+            if created:
+                logger.debug(f'Auto-created annotation for task={task_id} user={self.request.user.id}')
+
+            instance = serializer.save(annotation=annotation)
             try:
                 calculator.calculate_and_update(instance)
             except NotImplementedError:
@@ -185,12 +225,8 @@ class AviationAnnotationDetailAPI(generics.RetrieveUpdateDestroyAPIView):
     )
 
     def get_queryset(self):
-        return AviationAnnotation.objects.filter(
-            annotation__task__project__organization=self.request.user.active_organization
-        ).select_related(
-            'annotation',
-            'annotation__task',
-            'annotation__task__project'
+        return AviationAnnotation.objects.for_organization(
+            self.request.user.active_organization
         )
 
     def perform_update(self, serializer):
@@ -205,12 +241,21 @@ class AviationAnnotationDetailAPI(generics.RetrieveUpdateDestroyAPIView):
                 pass
 
 
+DROPDOWN_CATEGORY_MAPPING = {
+    'flight_phase': 'flight_phases',
+    'threat_mgmt': 'threat_management',
+    'error_mgmt': 'error_management',
+    'uas_mgmt': 'uas_management',
+    'error': 'error_type',
+}
+
+
 @method_decorator(
     name='get',
     decorator=swagger_auto_schema(
         tags=['Aviation'],
         operation_summary='List dropdown options',
-        operation_description='Get dropdown options filtered by category, level, or parent',
+        operation_description='Get dropdown options filtered by category, level, or parent. Use grouped=true to get all options grouped by category.',
         manual_parameters=[
             openapi.Parameter(
                 name='category',
@@ -230,16 +275,50 @@ class AviationAnnotationDetailAPI(generics.RetrieveUpdateDestroyAPIView):
                 in_=openapi.IN_QUERY,
                 description='Filter by parent ID'
             ),
+            openapi.Parameter(
+                name='grouped',
+                type=openapi.TYPE_BOOLEAN,
+                in_=openapi.IN_QUERY,
+                description='Return all options grouped by category (ignores other filters)'
+            ),
         ],
     )
 )
 class AviationDropdownListAPI(generics.ListAPIView):
-    """Provide dropdown options to frontend"""
+    """Provide dropdown options to frontend.
+
+    Supports two modes:
+    - Filtered mode (default): Filter by category, level, or parent
+    - Grouped mode (?grouped=true): Return all options grouped by category
+    """
     serializer_class = AviationDropdownOptionSerializer
     pagination_class = AviationDropdownPagination
     permission_required = ViewClassPermission(
         GET=all_permissions.projects_view,
     )
+
+    def get(self, request, *args, **kwargs):
+        grouped = request.query_params.get('grouped', '').lower() == 'true'
+        if grouped:
+            return self._get_grouped_response()
+        return super().get(request, *args, **kwargs)
+
+    def _get_grouped_response(self):
+        from collections import defaultdict
+
+        options = AviationDropdownOption.objects.filter(
+            is_active=True
+        ).order_by('category', 'display_order')
+
+        grouped = defaultdict(list)
+        serializer = AviationDropdownOptionSerializer(options, many=True)
+
+        for option_data in serializer.data:
+            category = option_data['category']
+            frontend_category = DROPDOWN_CATEGORY_MAPPING.get(category, category)
+            grouped[frontend_category].append(option_data)
+
+        return Response(dict(grouped), status=status.HTTP_200_OK)
 
     def get_queryset(self):
         category = self.request.query_params.get('category')
@@ -435,11 +514,8 @@ class AviationExportAPI(APIView):
                 status=status.HTTP_501_NOT_IMPLEMENTED
             )
 
-        file_path = Path(file_path).resolve()
-        allowed_base = Path('/tmp').resolve()
-
-        if not str(file_path).startswith(str(allowed_base)):
-            logger.error(f"Path traversal attempt: {file_path}")
+        validated_path = _validate_export_path(file_path)
+        if validated_path is None:
             return Response(
                 {'error': 'Invalid file path'},
                 status=status.HTTP_400_BAD_REQUEST
@@ -447,14 +523,14 @@ class AviationExportAPI(APIView):
 
         try:
             response = FileResponse(
-                open(file_path, 'rb'),
+                open(validated_path, 'rb'),
                 content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
                 as_attachment=True,
                 filename=f'aviation_export_{project_id}.xlsx'
             )
             return response
         except FileNotFoundError:
-            logger.error(f"Export file not found: {file_path}")
+            logger.error(f"Export file not found: {validated_path}")
             return Response(
                 {'error': 'Export file not found'},
                 status=status.HTTP_404_NOT_FOUND
@@ -487,11 +563,8 @@ class AviationExportTemplateAPI(APIView):
                 status=status.HTTP_501_NOT_IMPLEMENTED
             )
 
-        file_path = Path(file_path).resolve()
-        allowed_base = Path('/tmp').resolve()
-
-        if not str(file_path).startswith(str(allowed_base)):
-            logger.error(f"Path traversal attempt: {file_path}")
+        validated_path = _validate_export_path(file_path)
+        if validated_path is None:
             return Response(
                 {'error': 'Invalid file path'},
                 status=status.HTTP_400_BAD_REQUEST
@@ -499,15 +572,218 @@ class AviationExportTemplateAPI(APIView):
 
         try:
             response = FileResponse(
-                open(file_path, 'rb'),
+                open(validated_path, 'rb'),
                 content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
                 as_attachment=True,
                 filename='aviation_template.xlsx'
             )
             return response
         except FileNotFoundError:
-            logger.error(f"Template file not found: {file_path}")
+            logger.error(f"Template file not found: {validated_path}")
             return Response(
                 {'error': 'Template file not found'},
                 status=status.HTTP_404_NOT_FOUND
             )
+
+
+@method_decorator(
+    name='get',
+    decorator=swagger_auto_schema(
+        tags=['Aviation'],
+        operation_summary='List aviation incidents',
+        operation_description='Get aviation incidents filtered by task or project',
+        manual_parameters=[
+            openapi.Parameter(
+                name='task_id',
+                type=openapi.TYPE_INTEGER,
+                in_=openapi.IN_QUERY,
+                description='Filter by task ID (returns single incident)'
+            ),
+            openapi.Parameter(
+                name='project',
+                type=openapi.TYPE_INTEGER,
+                in_=openapi.IN_QUERY,
+                description='Filter by project ID'
+            ),
+        ],
+    )
+)
+class AviationIncidentListAPI(generics.ListAPIView):
+    """List aviation incidents for a project"""
+    serializer_class = AviationIncidentSerializer
+    pagination_class = AviationDropdownPagination
+    permission_required = ViewClassPermission(
+        GET=all_permissions.tasks_view,
+    )
+
+    def get_queryset(self):
+        project_id = self.request.query_params.get('project')
+        task_id = self.request.query_params.get('task_id')
+        queryset = AviationIncident.objects.filter(
+            task__project__organization=self.request.user.active_organization
+        ).select_related('task', 'task__project')
+
+        if task_id:
+            queryset = queryset.filter(task_id=task_id)
+        elif project_id:
+            queryset = queryset.filter(task__project_id=project_id)
+
+        return queryset.order_by('-date', '-created_at')
+
+
+@method_decorator(
+    name='get',
+    decorator=swagger_auto_schema(
+        tags=['Aviation'],
+        operation_summary='Get aviation incident',
+    )
+)
+@method_decorator(
+    name='patch',
+    decorator=swagger_auto_schema(
+        tags=['Aviation'],
+        operation_summary='Update aviation incident',
+    )
+)
+@method_decorator(
+    name='delete',
+    decorator=swagger_auto_schema(
+        tags=['Aviation'],
+        operation_summary='Delete aviation incident',
+    )
+)
+class AviationIncidentDetailAPI(generics.RetrieveUpdateDestroyAPIView):
+    """Get, update, or delete aviation incident"""
+    serializer_class = AviationIncidentSerializer
+    permission_required = ViewClassPermission(
+        GET=all_permissions.tasks_view,
+        PATCH=all_permissions.tasks_change,
+        DELETE=all_permissions.tasks_delete,
+    )
+
+    def get_queryset(self):
+        return AviationIncident.objects.filter(
+            task__project__organization=self.request.user.active_organization
+        ).select_related('task', 'task__project')
+
+
+class AviationTaskLockAPI(APIView):
+    """Manage task locks for concurrent editing"""
+    permission_required = ViewClassPermission(
+        GET=all_permissions.tasks_view,
+        POST=all_permissions.tasks_change,
+        DELETE=all_permissions.tasks_change,
+    )
+
+    @swagger_auto_schema(
+        tags=['Aviation'],
+        operation_summary='Get task lock status',
+    )
+    def get(self, request, task_id):
+        from .services import TaskLockService
+        lock_service = TaskLockService()
+        result = lock_service.get_lock_status(task_id)
+        return Response(result, status=status.HTTP_200_OK)
+
+    @swagger_auto_schema(
+        tags=['Aviation'],
+        operation_summary='Acquire task lock',
+    )
+    def post(self, request, task_id):
+        from tasks.models import Task
+
+        task = Task.objects.filter(
+            id=task_id,
+            project__organization=request.user.active_organization
+        ).first()
+
+        if not task:
+            raise NotFound('Task not found')
+
+        from .services import TaskLockService
+        lock_service = TaskLockService()
+        result = lock_service.acquire_lock(task_id, request.user)
+
+        if result['success']:
+            return Response(result, status=status.HTTP_200_OK)
+        return Response(result, status=status.HTTP_409_CONFLICT)
+
+    @swagger_auto_schema(
+        tags=['Aviation'],
+        operation_summary='Release task lock',
+    )
+    def delete(self, request, task_id):
+        from .services import TaskLockService
+        lock_service = TaskLockService()
+        result = lock_service.release_lock(task_id, request.user)
+
+        if result['success']:
+            return Response(result, status=status.HTTP_200_OK)
+        return Response(result, status=status.HTTP_403_FORBIDDEN)
+
+
+class AviationDropdownAllAPI(APIView):
+    """Return all dropdown options grouped by category.
+
+    DEPRECATED: Use AviationDropdownListAPI with ?grouped=true instead.
+    This endpoint is kept for backward compatibility.
+    """
+    permission_required = ViewClassPermission(
+        GET=all_permissions.projects_view,
+    )
+
+    @swagger_auto_schema(
+        tags=['Aviation'],
+        operation_summary='Get all dropdown options (deprecated)',
+        operation_description='DEPRECATED: Use /aviation/dropdowns/?grouped=true instead. Return all active dropdown options grouped by category.',
+        deprecated=True,
+    )
+    def get(self, request):
+        from collections import defaultdict
+
+        options = AviationDropdownOption.objects.filter(
+            is_active=True
+        ).order_by('category', 'display_order')
+
+        grouped = defaultdict(list)
+        serializer = AviationDropdownOptionSerializer(options, many=True)
+
+        for option_data in serializer.data:
+            category = option_data['category']
+            frontend_category = DROPDOWN_CATEGORY_MAPPING.get(category, category)
+            grouped[frontend_category].append(option_data)
+
+        return Response(dict(grouped), status=status.HTTP_200_OK)
+
+
+class AviationTrainingMappingsAPI(APIView):
+    """Get training topic mappings for dropdown options"""
+    permission_required = ViewClassPermission(
+        GET=all_permissions.projects_view,
+    )
+
+    @swagger_auto_schema(
+        tags=['Aviation'],
+        operation_summary='Get training mappings',
+        operation_description='Get all training topic mappings grouped by category',
+    )
+    def get(self, request):
+        from .models import AviationDropdownOption
+
+        mappings = {}
+        categories = ['threat', 'error', 'uas']
+
+        for category in categories:
+            options = AviationDropdownOption.objects.filter(
+                category=category,
+                level=3,
+                is_active=True
+            ).exclude(training_topics=[]).values('label', 'training_topics')
+
+            mappings[category] = {
+                opt['label']: opt['training_topics']
+                for opt in options
+                if opt['training_topics']
+            }
+
+        return Response(mappings, status=status.HTTP_200_OK)

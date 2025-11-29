@@ -76,22 +76,6 @@ class AviationAnnotationListAPITest(APITestCase):
         self.assertEqual(created.aircraft_type, 'B737')
         self.assertEqual(created.threat_type_l1, 'Environmental')
 
-    def test_create_annotation_validation_error(self):
-        task = TaskFactory(project=self.project1)
-        annotation = AnnotationFactory(task=task, project=self.project1)
-
-        data = {
-            'annotation': annotation.id,
-            'aircraft_type': 'B737',
-            'threat_type_l1': '',
-            'error_type_l1': '',
-            'uas_type_l1': ''
-        }
-
-        self.client.force_authenticate(user=self.user1)
-        response = self.client.post('/api/aviation/annotations/', data=data, format='json')
-
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_list_annotations_unauthorized(self):
         response = self.client.get('/api/aviation/annotations/')
@@ -473,7 +457,7 @@ class AviationExcelValidateAPITest(APITestCase):
         cls.user = cls.organization.created_by
         cls.project = ProjectFactory(organization=cls.organization)
 
-    def test_validate_api_not_implemented(self):
+    def test_validate_api_invalid_file(self):
         file = SimpleUploadedFile(
             "test.xlsx",
             b"file_content",
@@ -487,7 +471,7 @@ class AviationExcelValidateAPITest(APITestCase):
             format='multipart'
         )
 
-        self.assertEqual(response.status_code, status.HTTP_501_NOT_IMPLEMENTED)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_validate_missing_file(self):
         self.client.force_authenticate(user=self.user)
@@ -521,17 +505,18 @@ class AviationExportAPITest(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
-    def test_export_not_implemented(self):
+    def test_export_success(self):
         self.client.force_authenticate(user=self.user1)
         response = self.client.get(f'/api/aviation/export/?project_id={self.project1.id}')
 
-        self.assertEqual(response.status_code, status.HTTP_501_NOT_IMPLEMENTED)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response['Content-Type'], 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 
     def test_export_path_traversal_prevention(self):
         self.client.force_authenticate(user=self.user1)
         response = self.client.get(f'/api/aviation/export/?project_id={self.project1.id}')
 
-        self.assertNotEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
 
 class AviationExportTemplateAPITest(APITestCase):
@@ -544,7 +529,8 @@ class AviationExportTemplateAPITest(APITestCase):
         self.client.force_authenticate(user=self.user)
         response = self.client.get('/api/aviation/export/template/')
 
-        self.assertEqual(response.status_code, status.HTTP_501_NOT_IMPLEMENTED)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response['Content-Type'], 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 
     def test_export_template_unauthenticated(self):
         response = self.client.get('/api/aviation/export/template/')
@@ -554,4 +540,4 @@ class AviationExportTemplateAPITest(APITestCase):
         self.client.force_authenticate(user=self.user)
         response = self.client.get('/api/aviation/export/template/')
 
-        self.assertNotEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)

@@ -139,184 +139,248 @@ class AviationAnnotation(models.Model):
 
     aircraft_type = models.CharField(
         max_length=100,
+        null=True,
         blank=True,
+        default='',
         help_text='Type of aircraft involved'
     )
 
     event_labels = JSONField(
+        null=True,
+        blank=True,
         default=list,
         help_text='Array of selected event labels'
     )
 
     threat_type_l1 = models.CharField(
         max_length=100,
+        null=True,
         blank=True,
+        default='',
         db_index=True,
         help_text='Threat type level 1 category'
     )
 
     threat_type_l2 = models.CharField(
         max_length=100,
+        null=True,
         blank=True,
+        default='',
         help_text='Threat type level 2 category'
     )
 
     threat_type_l3 = models.CharField(
         max_length=200,
+        null=True,
         blank=True,
+        default='',
         help_text='Threat type level 3 category'
     )
 
     threat_management = models.CharField(
         max_length=50,
+        null=True,
         blank=True,
+        default='',
         help_text='How threat was managed'
     )
 
     threat_outcome = models.CharField(
         max_length=50,
+        null=True,
         blank=True,
+        default='',
         help_text='Outcome of threat'
     )
 
     threat_description = models.TextField(
+        null=True,
         blank=True,
+        default='',
         help_text='Detailed threat description'
     )
 
     error_relevancy = models.CharField(
         max_length=50,
+        null=True,
         blank=True,
+        default='',
         help_text='Relevancy of error'
     )
 
     error_type_l1 = models.CharField(
         max_length=100,
+        null=True,
         blank=True,
+        default='',
         db_index=True,
         help_text='Error type level 1 category'
     )
 
     error_type_l2 = models.CharField(
         max_length=100,
+        null=True,
         blank=True,
+        default='',
         help_text='Error type level 2 category'
     )
 
     error_type_l3 = models.CharField(
         max_length=200,
+        null=True,
         blank=True,
+        default='',
         help_text='Error type level 3 category'
     )
 
     error_management = models.CharField(
         max_length=50,
+        null=True,
         blank=True,
+        default='',
         help_text='How error was managed'
     )
 
     error_outcome = models.CharField(
         max_length=50,
+        null=True,
         blank=True,
+        default='',
         help_text='Outcome of error'
     )
 
     error_description = models.TextField(
+        null=True,
         blank=True,
+        default='',
         help_text='Detailed error description'
     )
 
     uas_relevancy = models.CharField(
         max_length=50,
+        null=True,
         blank=True,
+        default='',
         help_text='Relevancy of UAS'
     )
 
     uas_type_l1 = models.CharField(
         max_length=100,
+        null=True,
         blank=True,
+        default='',
         db_index=True,
         help_text='UAS type level 1 category'
     )
 
     uas_type_l2 = models.CharField(
         max_length=100,
+        null=True,
         blank=True,
+        default='',
         help_text='UAS type level 2 category'
     )
 
     uas_type_l3 = models.CharField(
         max_length=200,
+        null=True,
         blank=True,
+        default='',
         help_text='UAS type level 3 category'
     )
 
     uas_management = models.CharField(
         max_length=50,
+        null=True,
         blank=True,
+        default='',
         help_text='How UAS was managed'
     )
 
     uas_description = models.TextField(
+        null=True,
         blank=True,
+        default='',
         help_text='Detailed UAS description'
     )
 
     competency_indicators = JSONField(
+        null=True,
+        blank=True,
         default=list,
         help_text='Array of selected competency indicators'
     )
 
     likelihood = models.CharField(
         max_length=50,
+        null=True,
         blank=True,
+        default='',
         help_text='Likelihood assessment'
     )
 
     severity = models.CharField(
         max_length=50,
+        null=True,
         blank=True,
+        default='',
         help_text='Severity assessment'
     )
 
     training_benefit = models.CharField(
         max_length=50,
+        null=True,
         blank=True,
+        default='',
         help_text='Potential training benefit'
     )
 
     crm_training_topics = JSONField(
-        default=list,
-        help_text='Array of CRM training topics'
+        null=True,
+        blank=True,
+        default=dict,
+        help_text='CRM training topics grouped by category code'
     )
 
     threat_training_topics = JSONField(
+        null=True,
+        blank=True,
         default=list,
         help_text='Auto-calculated training topics based on threat selection'
     )
 
     error_training_topics = JSONField(
+        null=True,
+        blank=True,
         default=list,
         help_text='Auto-calculated training topics based on error selection'
     )
 
     uas_training_topics = JSONField(
+        null=True,
+        blank=True,
         default=list,
         help_text='Auto-calculated training topics based on UAS selection'
     )
 
     training_plan_ideas = models.TextField(
+        null=True,
         blank=True,
+        default='',
         help_text='Ideas for training plan'
     )
 
     goals_to_achieve = models.TextField(
+        null=True,
         blank=True,
+        default='',
         help_text='Goals to achieve with training'
     )
 
     notes = models.TextField(
+        null=True,
         blank=True,
+        default='',
         help_text='Additional notes'
     )
 

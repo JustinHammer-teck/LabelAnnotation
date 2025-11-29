@@ -289,28 +289,35 @@ class AviationAnnotationQuerySetTest(TestCase):
         self.assertNotIn(aviation3, queryset)
 
     def test_with_training_recommendations(self):
+        from django.db.models.signals import post_save
+        from aviation.signals import aviation_annotation_post_save
+
         annotation1 = AnnotationFactory(task=self.task, project=self.project)
         annotation2 = AnnotationFactory(task=self.task, project=self.project)
         annotation3 = AnnotationFactory(task=self.task, project=self.project)
 
-        aviation1 = AviationAnnotationFactory(
-            annotation=annotation1,
-            threat_training_topics=['Topic A'],
-            error_training_topics=[],
-            uas_training_topics=[]
-        )
-        aviation2 = AviationAnnotationFactory(
-            annotation=annotation2,
-            threat_training_topics=[],
-            error_training_topics=['Topic B'],
-            uas_training_topics=[]
-        )
-        aviation3 = AviationAnnotationFactory(
-            annotation=annotation3,
-            threat_training_topics=[],
-            error_training_topics=[],
-            uas_training_topics=[]
-        )
+        post_save.disconnect(aviation_annotation_post_save, sender=AviationAnnotation)
+        try:
+            aviation1 = AviationAnnotationFactory(
+                annotation=annotation1,
+                threat_training_topics=['Topic A'],
+                error_training_topics=[],
+                uas_training_topics=[]
+            )
+            aviation2 = AviationAnnotationFactory(
+                annotation=annotation2,
+                threat_training_topics=[],
+                error_training_topics=['Topic B'],
+                uas_training_topics=[]
+            )
+            aviation3 = AviationAnnotationFactory(
+                annotation=annotation3,
+                threat_training_topics=[],
+                error_training_topics=[],
+                uas_training_topics=[]
+            )
+        finally:
+            post_save.connect(aviation_annotation_post_save, sender=AviationAnnotation)
 
         queryset = AviationAnnotation.objects.with_training_recommendations()
 
@@ -319,19 +326,26 @@ class AviationAnnotationQuerySetTest(TestCase):
         self.assertNotIn(aviation3, queryset)
 
     def test_chaining_queryset_methods(self):
+        from django.db.models.signals import post_save
+        from aviation.signals import aviation_annotation_post_save
+
         annotation1 = AnnotationFactory(task=self.task, project=self.project)
         annotation2 = AnnotationFactory(task=self.task, project=self.project)
 
-        aviation1 = AviationAnnotationFactory(
-            annotation=annotation1,
-            threat_type_l1='Environmental',
-            threat_training_topics=['Topic A']
-        )
-        aviation2 = AviationAnnotationFactory(
-            annotation=annotation2,
-            threat_type_l1='Operational',
-            threat_training_topics=['Topic B']
-        )
+        post_save.disconnect(aviation_annotation_post_save, sender=AviationAnnotation)
+        try:
+            aviation1 = AviationAnnotationFactory(
+                annotation=annotation1,
+                threat_type_l1='Environmental',
+                threat_training_topics=['Topic A']
+            )
+            aviation2 = AviationAnnotationFactory(
+                annotation=annotation2,
+                threat_type_l1='Operational',
+                threat_training_topics=['Topic B']
+            )
+        finally:
+            post_save.connect(aviation_annotation_post_save, sender=AviationAnnotation)
 
         queryset = AviationAnnotation.objects.with_threat_type('Environmental').with_training_recommendations()
 
