@@ -184,12 +184,13 @@ COPY --chown=1001:0 licenses licenses
 COPY --chown=1001:0 deploy deploy
 
 RUN cd $LS_DIR/deploy/docker-entrypoint.d && \
-    rm -f app/11-configure-custom-cabundle.sh app/20-wait-for-db.sh app/30-run-db-migrations.sh && \
+    rm -f app/11-configure-custom-cabundle.sh app/20-wait-for-db.sh app/30-run-db-migrations.sh app/40-load-aviation-options.sh && \
     rm -f app-init/11-configure-custom-cabundle.sh app-init/20-wait-for-db.sh && \
     rm -f nginx/10-configure-nginx.sh && \
     cp common/11-configure-custom-cabundle.sh app/11-configure-custom-cabundle.sh && \
     cp common/20-wait-for-db.sh app/20-wait-for-db.sh && \
     cp common/30-run-db-migrations.sh app/30-run-db-migrations.sh && \
+    cp common/40-load-aviation-options.sh app/40-load-aviation-options.sh && \
     cp common/11-configure-custom-cabundle.sh app-init/11-configure-custom-cabundle.sh && \
     cp common/20-wait-for-db.sh app-init/20-wait-for-db.sh && \
     cp common/10-configure-nginx.sh nginx/10-configure-nginx.sh && \
