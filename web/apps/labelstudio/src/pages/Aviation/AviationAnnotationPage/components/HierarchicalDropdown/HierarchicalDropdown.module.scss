@@ -1,0 +1,123 @@
+.hierarchicalDropdown {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--content-primary, #333);
+
+  .required {
+    color: var(--color-error, #d32f2f);
+    margin-left: 4px;
+  }
+}
+
+.hierarchicalTrigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border: 1px solid var(--border-neutral, #d0d0d0);
+  border-radius: 4px;
+  min-height: 40px;
+  cursor: pointer;
+  background: var(--surface-primary, #fff);
+  font-size: 14px;
+  width: 100%;
+  text-align: left;
+  transition: all 0.2s ease;
+
+  &:hover:not(:disabled) {
+    border-color: var(--border-bold, #999);
+  }
+
+  &:focus {
+    outline: none;
+    border-color: var(--color-primary, #1976d2);
+    box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.1);
+  }
+
+  &.disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+    background: var(--surface-disabled, #f5f5f5);
+  }
+
+  &.hasError {
+    border-color: var(--color-error, #d32f2f);
+
+    &:focus {
+      box-shadow: 0 0 0 2px rgba(211, 47, 47, 0.1);
+    }
+  }
+
+  &.hasValue {
+    .triggerContent {
+      color: var(--content-primary, #333);
+    }
+  }
+}
+
+.triggerContent {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+}
+
+.selectionPath {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--content-primary, #333);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.placeholder {
+  color: var(--content-subtler, #999);
+}
+
+.triggerActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 8px;
+}
+
+.clearButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: none;
+  background: transparent;
+  color: var(--content-subtler, #999);
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  padding: 0;
+  transition: color 0.2s ease;
+
+  &:hover {
+    color: var(--content-primary, #333);
+  }
+}
+
+.dropdownIcon {
+  color: var(--content-subtler, #999);
+  font-size: 12px;
+  transition: transform 0.2s ease;
+}
+
+.error {
+  font-size: 12px;
+  color: var(--color-error, #d32f2f);
+  margin-top: 4px;
+}

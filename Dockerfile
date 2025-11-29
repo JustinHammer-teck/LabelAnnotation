@@ -75,7 +75,8 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --no-cache-dir easyocr==1.7.2
 
-RUN mkdir -p ${EASYOCR_MODULE_PATH} && \
+RUN --mount=type=cache,target=/root/.EasyOCR,id=easyocr-cache,sharing=locked \
+    mkdir -p ${EASYOCR_MODULE_PATH} && \
     python3 -c "import easyocr; easyocr.Reader(['ch_sim', 'en'], gpu=False, download_enabled=True, model_storage_directory='${EASYOCR_MODULE_PATH}')" && \
     echo "EasyOCR models downloaded successfully" && \
     ls -lh ${EASYOCR_MODULE_PATH}

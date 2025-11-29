@@ -1,0 +1,247 @@
+.recognitionSection {
+  margin-bottom: 12px;
+  padding: 12px;
+  border-radius: 4px;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+
+  h3 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--content-primary, #333);
+  }
+
+  .helpIcon {
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--surface-primary, #fff);
+    border-radius: 50%;
+    font-size: 12px;
+  }
+}
+
+.recognitionTable {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--surface-primary, #fff);
+
+  th {
+    padding: 8px 12px;
+    text-align: center;
+    font-weight: 600;
+    font-size: 12px;
+    color: var(--content-primary, #333);
+    background: var(--surface-secondary, #f5f5f5);
+    border: 1px solid var(--border-neutral, #d0d0d0);
+  }
+
+  td {
+    padding: 8px;
+    border: 1px solid var(--border-neutral, #d0d0d0);
+    vertical-align: top;
+  }
+
+  .relevancyCell {
+    background: var(--surface-secondary, #f9f9f9);
+    text-align: center;
+    min-width: 80px;
+
+    .relevancyLabel {
+      font-size: 11px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      line-height: 1.3;
+    }
+  }
+}
+
+.hierarchicalContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  position: relative;
+}
+
+.dropdownWrapper {
+  position: relative;
+  width: 100%;
+}
+
+.hierarchyButton,
+.optionButton {
+  width: 100%;
+  padding: 6px 12px;
+  background: #e3f2fd;
+  border: 1px solid #90caf9;
+  border-radius: 3px;
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: background 0.2s;
+
+  &:hover {
+    background: #bbdefb;
+  }
+
+  .dropdownIcon {
+    font-size: 10px;
+    color: var(--content-subtler, #666);
+  }
+}
+
+.addButton {
+  width: 100%;
+  padding: 6px 12px;
+  background: #c8e6c9;
+  border: 1px solid #81c784;
+  border-radius: 3px;
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  transition: background 0.2s;
+
+  &:hover {
+    background: #a5d6a7;
+  }
+
+  .plusIcon {
+    font-size: 16px;
+    font-weight: 700;
+    color: #2e7d32;
+  }
+
+  .dropdownIcon {
+    font-size: 10px;
+    color: var(--content-subtler, #666);
+  }
+}
+
+.hierarchyDesc,
+.desc {
+  font-size: 10px;
+  color: var(--content-subtler, #666);
+  line-height: 1.3;
+  text-align: center;
+  margin-top: 4px;
+}
+
+.hierarchyLevel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  font-size: 11px;
+  color: var(--content-primary, #333);
+
+  .levelBadge {
+    padding: 2px 6px;
+    background: var(--surface-secondary, #e8e8e8);
+    border-radius: 3px;
+    font-weight: 600;
+    font-size: 10px;
+  }
+
+  .requiredStar {
+    color: #d32f2f;
+    font-size: 14px;
+    margin-left: auto;
+  }
+}
+
+.select {
+  width: 100%;
+  padding: 4px 6px;
+  border: 1px solid var(--border-neutral, #d0d0d0);
+  border-radius: 3px;
+  font-size: 11px;
+
+  &:focus {
+    outline: none;
+    border-color: var(--color-primary, #1976d2);
+  }
+}
+
+.dropdownMenu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 4px;
+  background: var(--surface-primary, #fff);
+  border: 1px solid var(--border-neutral, #d0d0d0);
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  max-height: 400px;
+  overflow-y: auto;
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+}
+
+.simpleDropdownMenu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 4px;
+  background: var(--surface-primary, #fff);
+  border: 1px solid var(--border-neutral, #d0d0d0);
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.levelSection {
+  flex: 1;
+  min-width: 150px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.levelHeader {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--content-subtler, #666);
+  padding: 4px 8px;
+  background: var(--surface-secondary, #f5f5f5);
+  border-radius: 3px;
+  margin-bottom: 4px;
+  text-align: center;
+}
+
+.dropdownItem {
+  padding: 6px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  border-radius: 3px;
+  transition: background 0.2s;
+  color: var(--content-primary, #333);
+
+  &:hover {
+    background: var(--surface-hover, #f0f0f0);
+  }
+
+  &.selected {
+    background: #e3f2fd;
+    color: var(--color-primary, #1976d2);
+    font-weight: 500;
+  }
+}

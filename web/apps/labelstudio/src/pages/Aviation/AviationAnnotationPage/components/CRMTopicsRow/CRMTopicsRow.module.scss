@@ -1,0 +1,48 @@
+.crmRow {
+  padding: 12px;
+  background: var(--surface-primary, #fff);
+  border: 1px solid var(--border-neutral, #d0d0d0);
+  border-radius: 4px;
+  overflow-x: auto;
+  margin-bottom: 0;
+  min-height: 130px;
+}
+
+.crmTable {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  min-width: 900px;
+}
+
+.topicHeader {
+  padding: 10px 8px;
+  background: #ffd699;
+  font-weight: 600;
+  font-size: 13px;
+  text-align: center;
+  color: var(--content-primary, #333);
+  border: 1px solid var(--border-neutral, #d0d0d0);
+  width: 100px;
+}
+
+.topicCell {
+  padding: 8px;
+  background: var(--surface-primary, #fff);
+  border: 1px solid var(--border-neutral, #d0d0d0);
+  vertical-align: top;
+  width: 100px;
+  height: 80px;
+
+  > div {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  button {
+    width: 100%;
+    min-height: 44px;
+    flex-shrink: 0;
+  }
+}

@@ -65,5 +65,85 @@
       "enable_browser_notification": "启动浏览器提醒功能",
       "no_new_notification": "你没有新的提醒"
     }
+  },
+  "aviation": {
+    "page_title": "航空安全",
+    "back_to_tasks": "返回任务列表",
+    "event_number": "事件 #",
+    "mock_mode": "模拟模式",
+    "unsaved_changes": "您有未保存的更改。确定要离开吗？",
+    "loading": "加载标注数据中...",
+    "error_loading": "数据加载错误",
+    "retry": "重试",
+    "basic_info": {
+      "date": "日期",
+      "aircraft_type": "机型",
+      "location": "起降地",
+      "event_labels": "事件标签",
+      "flight_phase": "飞行阶段",
+      "notes": "备注",
+      "select_aircraft": "选择机型",
+      "select_phase": "选择飞行阶段",
+      "placeholder_date": "日期",
+      "placeholder_location": "起降地",
+      "placeholder_notes": "备注"
+    },
+    "results": {
+      "category": "结果类别",
+      "training_details": "训练详情",
+      "crm_training_topics": "CRM训练主题",
+      "competency_summary": "胜任力汇总",
+      "likelihood": "可能性",
+      "severity": "严重程度",
+      "training_effect": "训练效果",
+      "training_plan": "训练方案设想",
+      "training_topics": "训练主题",
+      "goals": "所需达到的目标",
+      "single_select": "单选",
+      "dropdown_single_desc": "下拉单选&描述",
+      "level_1_menu": "一级菜单",
+      "dropdown_multi_desc": "下拉多选&描述",
+      "select": "选择",
+      "fill_in": "填写"
+    },
+    "recognition": {
+      "threat": {
+        "title": "威胁识别",
+        "type": "威胁类型",
+        "management": "威胁管理",
+        "outcome": "威胁影响",
+        "capability": "威胁对应能力"
+      },
+      "error": {
+        "title": "差错识别",
+        "type": "差错类型",
+        "management": "差错管理",
+        "outcome": "差错影响",
+        "capability": "差错对应能力"
+      },
+      "uas": {
+        "title": "UAS识别",
+        "type": "UAS类型",
+        "management": "UAS管理",
+        "capability": "UAS对应能力"
+      },
+      "relevancy": "相关性",
+      "relevancy_driver": "相关性(驱动)",
+      "dropdown_single": "下拉单选",
+      "level_2_menu": "二级菜单",
+      "level_3_menu": "三级菜单",
+      "select_option": "选择选项"
+    },
+    "training_panel": {
+      "title": "训练主题",
+      "threat_related": "威胁相关",
+      "error_related": "差错相关",
+      "uas_related": "UAS相关",
+      "auto_fill": "自动带入",
+      "add_annotation": "添加标注签"
+    },
+    "crm": {
+      "dropdown_multi": "下拉多选"
+    }
   }
 }

@@ -238,6 +238,7 @@ INSTALLED_APPS = [
     "guardian",
     #"silk",
     "notifications",
+    "aviation.apps.AviationConfig",
     # "debug_toolbar",
 ]
 
