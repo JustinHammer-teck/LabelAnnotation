@@ -43,6 +43,15 @@ Never create documentation files (`*.md` or README).
 - The release note must be concise but must cover fully the change of the release. 
 - NEVER be too verbose on the release note.
 
+
+## Task Delegation 
+
+```
+lbstudio
+├── label_studio : Implement by @agent-django-master
+├── web: Implement by @agent-react-master
+```
+
 ## Project Structure with CLAUDE.md
 
 > IMPORTANT: this is just scaffold of important files, other you would need to find it yourself
