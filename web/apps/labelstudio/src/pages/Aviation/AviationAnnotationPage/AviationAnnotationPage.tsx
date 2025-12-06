@@ -4,6 +4,7 @@ import { Provider } from 'jotai';
 import { useTranslation } from 'react-i18next';
 import { ExportOutlined } from '@ant-design/icons';
 import { BasicInfoTable } from './components/BasicInfoTable/BasicInfoTable';
+import { EventDescriptionPanel } from './components/EventDescriptionPanel/EventDescriptionPanel';
 import { ResultsTable } from './components/ResultsTable/ResultsTable';
 import { RecognitionSection } from './components/RecognitionSection/RecognitionSection';
 import { TrainingTopicsPanel } from './components/TrainingTopicsPanel/TrainingTopicsPanel';
@@ -164,8 +165,17 @@ export const AviationAnnotationPage: React.FC = () => {
 
       <div className={styles.pageContent}>
         <div className={styles.mainContent}>
-          <BasicInfoTable />
-          <ResultsTable />
+          <div className={styles.topLayoutGrid}>
+            <div className={styles.eventDescriptionCell}>
+              <EventDescriptionPanel />
+            </div>
+            <div className={styles.basicInfoCell}>
+              <BasicInfoTable />
+            </div>
+            <div className={styles.resultsTableCell}>
+              <ResultsTable />
+            </div>
+          </div>
 
           <div className={styles.recognitionRow}>
             <div className={styles.recognitionColumn}>

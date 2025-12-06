@@ -68,6 +68,11 @@
   },
   "aviation": {
     "page_title": "Aviation Safety",
+    "event_description": {
+      "event_number": "Event Number",
+      "title": "Event Description",
+      "no_description": "No description available"
+    },
     "back_to_tasks": "Back to Tasks",
     "event_number": "Event #",
     "mock_mode": "Mock Mode",
