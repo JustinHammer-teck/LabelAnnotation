@@ -58,7 +58,7 @@ class AviationAnnotationAdmin(admin.ModelAdmin):
         ('Training & Competency', {
             'fields': (
                 'competency_indicators', 'likelihood', 'severity',
-                'training_benefit', 'crm_training_topics',
+                'training_benefit', 'competency_selections',
                 'training_plan_ideas', 'goals_to_achieve'
             )
         }),

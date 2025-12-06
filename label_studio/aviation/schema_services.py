@@ -234,6 +234,7 @@ class SchemaLoaderService:
 
     def _load_competency(self, wb):
         """Load competency indicators"""
+        import re
         from .models import AviationDropdownOption
 
         ws = wb['胜任力']
@@ -248,7 +249,7 @@ class SchemaLoaderService:
             l2_value = str(row[1]).strip() if len(row) > 1 and row[1] else None
 
             if l1_value:
-                code, label = self._parse_code_label(l1_value)
+                code, label = self._parse_competency_code(l1_value)
                 parent_l1, created = AviationDropdownOption.objects.update_or_create(
                     category='competency',
                     level=1,
@@ -278,6 +279,17 @@ class SchemaLoaderService:
                 count += 1
 
         return count
+
+    def _parse_competency_code(self, value):
+        """Parse competency L1 format: 'English (CODE)\\nChinese' -> (CODE, full_label)"""
+        import re
+        match = re.search(r'[(\（]([A-Z]{2,4})[)\）]', value)
+        if match:
+            code = match.group(1)
+        else:
+            code = value[:10]
+        label = value.replace('\n', ' ')
+        return code, label
 
     def _load_training_evaluation(self, wb, categories):
         """Load likelihood, severity, training benefit scales"""
@@ -446,7 +458,7 @@ class JSONExportService:
             'likelihood': annotation.likelihood,
             'severity': annotation.severity,
             'training_benefit': annotation.training_benefit,
-            'crm_training_topics': annotation.crm_training_topics,
+            'competency_selections': annotation.competency_selections,
             'training_plan_ideas': annotation.training_plan_ideas,
             'goals_to_achieve': annotation.goals_to_achieve,
             'notes': annotation.notes,
@@ -506,7 +518,7 @@ class JSONExportService:
                     'likelihood': annotation.likelihood,
                     'severity': annotation.severity,
                     'training_benefit': annotation.training_benefit,
-                    'crm_training_topics': annotation.crm_training_topics,
+                    'competency_selections': annotation.competency_selections,
                     'training_plan_ideas': annotation.training_plan_ideas,
                     'goals_to_achieve': annotation.goals_to_achieve,
                 },

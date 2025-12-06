@@ -60,7 +60,7 @@ class AviationAnnotationFactory(factory.django.DjangoModelFactory):
     threat_training_topics = factory.LazyFunction(lambda: ['Weather Recognition'])
     error_training_topics = factory.LazyFunction(lambda: [])
     uas_training_topics = factory.LazyFunction(lambda: [])
-    crm_training_topics = factory.LazyFunction(lambda: ['Decision Making'])
+    competency_selections = factory.LazyFunction(lambda: ['Decision Making'])
 
     likelihood = 'Medium'
     severity = 'Low'

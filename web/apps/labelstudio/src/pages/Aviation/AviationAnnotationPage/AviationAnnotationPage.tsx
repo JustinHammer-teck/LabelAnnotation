@@ -7,7 +7,7 @@ import { BasicInfoTable } from './components/BasicInfoTable/BasicInfoTable';
 import { ResultsTable } from './components/ResultsTable/ResultsTable';
 import { RecognitionSection } from './components/RecognitionSection/RecognitionSection';
 import { TrainingTopicsPanel } from './components/TrainingTopicsPanel/TrainingTopicsPanel';
-import { CRMTopicsRow } from './components/CRMTopicsRow/CRMTopicsRow';
+import { CompetencyIndicatorsRow } from './components/CompetencyIndicatorsRow/CompetencyIndicatorsRow';
 import { SaveStatusIndicator } from './components/SaveStatusIndicator/SaveStatusIndicator';
 import { useAnnotationData } from './hooks/use-annotation-data.hook';
 import { useDropdownOptions } from './hooks/use-dropdown-options.hook';
@@ -188,7 +188,7 @@ export const AviationAnnotationPage: React.FC = () => {
             </div>
           </div>
 
-          <CRMTopicsRow />
+          <CompetencyIndicatorsRow />
         </div>
       </div>
     </div>

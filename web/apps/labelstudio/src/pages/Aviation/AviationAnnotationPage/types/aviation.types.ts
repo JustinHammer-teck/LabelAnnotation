@@ -58,7 +58,7 @@ export interface AviationAnnotationData {
   training_benefit: string;
 
   // Training
-  crm_training_topics: Record<string, string[]>;
+  competency_selections: Record<string, string[]>;
   threat_training_topics: string[];
   error_training_topics: string[];
   uas_training_topics: string[];

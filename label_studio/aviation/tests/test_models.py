@@ -200,7 +200,7 @@ class AviationAnnotationModelTest(TestCase):
 
         self.assertEqual(aviation_annotation.event_labels, [])
         self.assertEqual(aviation_annotation.competency_indicators, [])
-        self.assertEqual(aviation_annotation.crm_training_topics, [])
+        self.assertEqual(aviation_annotation.competency_selections, [])
         self.assertEqual(aviation_annotation.threat_training_topics, [])
         self.assertEqual(aviation_annotation.error_training_topics, [])
         self.assertEqual(aviation_annotation.uas_training_topics, [])
@@ -226,13 +226,13 @@ class AviationAnnotationModelTest(TestCase):
             threat_training_topics=['Topic 1', 'Topic 2'],
             error_training_topics=['Topic 3'],
             uas_training_topics=['Topic 4', 'Topic 5'],
-            crm_training_topics=['Topic 6']
+            competency_selections=['Topic 6']
         )
 
         self.assertEqual(len(aviation_annotation.threat_training_topics), 2)
         self.assertEqual(len(aviation_annotation.error_training_topics), 1)
         self.assertEqual(len(aviation_annotation.uas_training_topics), 2)
-        self.assertEqual(len(aviation_annotation.crm_training_topics), 1)
+        self.assertEqual(len(aviation_annotation.competency_selections), 1)
 
 
 class AviationDropdownOptionModelTest(TestCase):

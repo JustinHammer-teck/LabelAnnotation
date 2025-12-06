@@ -79,7 +79,7 @@ class AviationAnnotationSerializerTest(TestCase):
             threat_training_topics=['Topic A', 'Topic B'],
             error_training_topics=['Topic C', 'Topic A'],
             uas_training_topics=['Topic D'],
-            crm_training_topics=['Topic B', 'Topic E']
+            competency_selections=['Topic B', 'Topic E']
         )
         serializer = AviationAnnotationSerializer(aviation_annotation)
 
@@ -97,7 +97,7 @@ class AviationAnnotationSerializerTest(TestCase):
             threat_training_topics=['Zebra', 'Apple'],
             error_training_topics=['Banana'],
             uas_training_topics=[],
-            crm_training_topics=[]
+            competency_selections=[]
         )
         serializer = AviationAnnotationSerializer(aviation_annotation)
 

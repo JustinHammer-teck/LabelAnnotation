@@ -359,11 +359,11 @@ class AviationAnnotation(models.Model):
         help_text='Potential training benefit'
     )
 
-    crm_training_topics = JSONField(
+    competency_selections = JSONField(
         null=True,
         blank=True,
         default=dict,
-        help_text='CRM training topics grouped by category code'
+        help_text='Selected competency indicators grouped by competency category code'
     )
 
     threat_training_topics = JSONField(

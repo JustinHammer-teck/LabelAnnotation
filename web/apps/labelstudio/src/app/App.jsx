@@ -30,6 +30,10 @@ import "../utils/i18n";
 const baseURL = new URL(APP_SETTINGS.hostname || location.origin);
 export const UNBLOCK_HISTORY_MESSAGE = "UNBLOCK_HISTORY";
 
+if (process.env.NODE_ENV === "development") {
+  import("react-grab");
+}
+
 const browserHistory = createBrowserHistory({
   basename: baseURL.pathname || "/",
   // callback is an async way to confirm or decline going to another page in the context of routing. It accepts `true` or `false`
