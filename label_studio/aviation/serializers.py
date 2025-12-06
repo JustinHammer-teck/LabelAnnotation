@@ -136,13 +136,13 @@ class AviationAnnotationSerializer(FlexFieldsModelSerializer):
             topics.update(obj.error_training_topics)
         if obj.uas_training_topics and isinstance(obj.uas_training_topics, list):
             topics.update(obj.uas_training_topics)
-        if obj.crm_training_topics:
-            if isinstance(obj.crm_training_topics, dict):
-                for category_topics in obj.crm_training_topics.values():
+        if obj.competency_selections:
+            if isinstance(obj.competency_selections, dict):
+                for category_topics in obj.competency_selections.values():
                     if isinstance(category_topics, list):
                         topics.update(category_topics)
-            elif isinstance(obj.crm_training_topics, list):
-                topics.update(obj.crm_training_topics)
+            elif isinstance(obj.competency_selections, list):
+                topics.update(obj.competency_selections)
         return sorted(list(topics))
 
     def _get_type_hierarchy(self, obj, prefix):
@@ -190,6 +190,14 @@ class AviationAnnotationSerializer(FlexFieldsModelSerializer):
             if type_name in data and isinstance(data[type_name], dict):
                 internal[type_name] = data[type_name]
         return internal
+
+    def to_representation(self, instance):
+        """Normalize competency_selections to dict format on read"""
+        data = super().to_representation(instance)
+        cs = data.get('competency_selections')
+        if cs is None or not isinstance(cs, dict):
+            data['competency_selections'] = {}
+        return data
 
     def create(self, validated_data):
         """Create with auto-calculation trigger"""

@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { createPortal } from 'react-dom';
 import { MultiSelectDropdownProps } from '../../types/dropdown.types';
 import { DropdownOption } from '../../types/aviation.types';
+import { FormattingUtil } from '../../utils/formatting.util';
 import styles from './MultiSelectDropdown.module.scss';
 
 export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
@@ -155,8 +156,8 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
     return (
       <>
         {displayedOptions.map(option => (
-          <span key={option.id} className={styles.chip}>
-            {option.label}
+          <span key={option.id} className={styles.chip} title={option.label}>
+            {FormattingUtil.truncateText(option.label, 15)}
             {!disabled && (
               <span
                 role="button"

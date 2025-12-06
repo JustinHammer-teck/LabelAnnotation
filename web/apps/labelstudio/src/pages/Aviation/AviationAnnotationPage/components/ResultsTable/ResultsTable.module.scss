@@ -83,4 +83,33 @@
   .competencyCell {
     background: var(--surface-background, #fafafa);
   }
+
+  .competencyChips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: center;
+  }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    background: var(--surface-selected, #e3f2fd);
+    color: var(--color-primary, #1976d2);
+    border-radius: 12px;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+
+  .chipCount {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    background: var(--surface-tertiary, #e0e0e0);
+    color: var(--content-secondary, #666);
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+  }
 }

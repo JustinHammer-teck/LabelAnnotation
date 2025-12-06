@@ -130,7 +130,11 @@ export const useAnnotationData = (taskId: number | null): UseAnnotationDataResul
   useEffect(() => {
     if (annotationData) {
       setAnnotationId(annotationData.id || null);
-      setAnnotationData(annotationData);
+      const normalizedData = { ...annotationData };
+      if (Array.isArray(normalizedData.competency_selections)) {
+        normalizedData.competency_selections = {};
+      }
+      setAnnotationData(normalizedData);
     } else if (!isLoadingAnnotation && !isLoadingTask && taskId) {
       resetAnnotation();
       setAnnotationId(null);

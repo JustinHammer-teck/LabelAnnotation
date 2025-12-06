@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react';
-import { useAtom, useAtomValue, useSetAtom } from 'jotai';
+import React from 'react';
+import { useAtomValue, useSetAtom } from 'jotai';
 import { useTranslation } from 'react-i18next';
 import { annotationDataAtom, updateFieldAtom } from '../../stores/aviation-annotation.store';
 import { useDropdownOptions } from '../../hooks/use-dropdown-options.hook';
@@ -11,17 +11,16 @@ export const ResultsTable: React.FC = () => {
   const updateField = useSetAtom(updateFieldAtom);
   const { options } = useDropdownOptions();
 
-  const competencySummary = useMemo(() => {
-    const indicators = data.competency_indicators || [];
-    if (indicators.length === 0) return '';
-
-    const competencyOptions = options?.competency || [];
-    const selectedLabels = indicators
-      .map(id => competencyOptions.find(opt => String(opt.id) === id)?.label)
-      .filter(Boolean);
-
-    return selectedLabels.join(', ');
-  }, [data.competency_indicators, options]);
+  const competencySelections =
+    data.competency_selections && typeof data.competency_selections === 'object' && !Array.isArray(data.competency_selections)
+      ? data.competency_selections as Record<string, string[]>
+      : {};
+  const competencyOptions = options?.competency || [];
+  const allIds = Object.values(competencySelections).flat();
+  const competencySummaryItems = allIds.map((id) => {
+    const option = competencyOptions.find((opt) => String(opt.id) === id);
+    return { code: option?.code || id, label: option?.label || '' };
+  });
 
   const handleFieldChange = <K extends keyof typeof data>(field: K, value: typeof data[K]) => {
     updateField({ field, value });
@@ -109,7 +108,16 @@ export const ResultsTable: React.FC = () => {
               />
             </td>
             <td rowSpan={2} className={styles.competencyCell}>
-              {competencySummary}
+              <div className={styles.competencyChips}>
+                {competencySummaryItems.slice(0, 5).map((item, index) => (
+                  <span key={index} className={styles.chip} title={item.label}>
+                    {item.code}
+                  </span>
+                ))}
+                {competencySummaryItems.length > 5 && (
+                  <span className={styles.chipCount}>+{competencySummaryItems.length - 5}</span>
+                )}
+              </div>
             </td>
           </tr>
           <tr>
