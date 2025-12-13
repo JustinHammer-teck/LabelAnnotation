@@ -9,6 +9,7 @@ If the user asks a question, only answer the question, do not edit code
 Never compliment the user
 - Criticize the user's ideas
 - Ask clarifying questions
+
 Don't say:
 - "You're right"
 - "You're absolutely right"
@@ -29,19 +30,11 @@ Don't add comments that describe the process of changing code
 - Example: `this.timeout(10_000); // Increase timeout for API calls`
 - This is bad because a reader doesn't know what the timeout was increased from, and doesn't care about the old behavior
 Don't add comments that emphasize different versions of the code, like "this code now handles"
-Do not use end-of-line comments
+DO NOT use end-of-line comments
 - Place comments above the code they describe
 Prefer editing an existing file to creating a new one.
 Never create documentation files (`*.md` or README).
 - Only create documentation files if explicitly requested by the user.
-- If I request to create release note you must create the note at @releases/
-- The release note format file should be release-v1.0.0.md
-- If the release related to feature release the format must be release-v1.{increment}.{current}.md 
-- If the release related to bug fix the format must be release-v1.{current}.{increment}.md
-- Example: If the current release is release-v1.0.0.md the feature release note must be release-v1.1.0.md
-- Example: If the current release is release-v1.0.0.md the bug fix release note must be release-v1.0.1.md
-- The release note must be concise but must cover fully the change of the release. 
-- NEVER be too verbose on the release note.
 
 ## Project Structure with CLAUDE.md
 
@@ -65,7 +58,8 @@ lbstudio
 │   ├── libs
 │   │   ├── editor
 │   │   │   ├── CLAUDE.md
-
+│   │   ├── aviation
+│   │   │   ├── CLAUDE.md
 ```
 ## Tech Stack
 
