@@ -40,3 +40,9 @@ export interface ExcelUploadResult {
   first_event_id: number | null;
   errors: ExcelUploadRowError[];
 }
+
+export interface ExportData {
+  metadata: Record<string, unknown>;
+  events: Record<string, unknown>[];
+  result_performances: Record<string, unknown>[];
+}

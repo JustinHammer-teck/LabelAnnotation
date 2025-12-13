@@ -9,10 +9,13 @@ jest.mock('react-router-dom', () => ({
 const mockFetchEvents = jest.fn();
 const mockUpload = jest.fn();
 const mockReset = jest.fn();
+const mockDownloadExport = jest.fn();
+
+let mockEventsData: { id: number; event_number: string }[] = [];
 
 jest.mock('../../../hooks', () => ({
   useEvents: () => ({
-    events: [],
+    events: mockEventsData,
     loading: false,
     error: null,
     fetchEvents: mockFetchEvents,
@@ -26,6 +29,12 @@ jest.mock('../../../hooks', () => ({
     errorMessage: null,
     upload: mockUpload,
     reset: mockReset,
+  }),
+}));
+
+jest.mock('../../../api', () => ({
+  useAviationApi: () => ({
+    downloadExport: mockDownloadExport,
   }),
 }));
 
@@ -59,6 +68,7 @@ describe('TaskListView', () => {
     jest.clearAllMocks();
     jest.useFakeTimers();
     capturedOnUpload = null;
+    mockEventsData = [];
   });
 
   afterEach(() => {
@@ -169,6 +179,123 @@ describe('TaskListView', () => {
 
       expect(mockUpload).toHaveBeenCalledWith(99, expect.any(File));
       expect(mockPush).toHaveBeenCalledWith('/aviation/projects/99/events/100');
+    });
+  });
+
+  describe('Export Functionality', () => {
+    it('should render Export Excel button', () => {
+      mockEventsData = [{ id: 1, event_number: 'EVT-001' }];
+      render(<TaskListView {...defaultProps} />);
+
+      expect(screen.getByRole('button', { name: /export excel/i })).toBeInTheDocument();
+    });
+
+    it('should render Export JSON button', () => {
+      mockEventsData = [{ id: 1, event_number: 'EVT-001' }];
+      render(<TaskListView {...defaultProps} />);
+
+      expect(screen.getByRole('button', { name: /export json/i })).toBeInTheDocument();
+    });
+
+    it('should disable export buttons when no events exist', () => {
+      mockEventsData = [];
+      render(<TaskListView {...defaultProps} />);
+
+      const excelButton = screen.getByRole('button', { name: /export excel/i });
+      const jsonButton = screen.getByRole('button', { name: /export json/i });
+
+      expect(excelButton).toBeDisabled();
+      expect(jsonButton).toBeDisabled();
+    });
+
+    it('should enable export buttons when events exist', () => {
+      mockEventsData = [{ id: 1, event_number: 'EVT-001' }];
+      render(<TaskListView {...defaultProps} />);
+
+      const excelButton = screen.getByRole('button', { name: /export excel/i });
+      const jsonButton = screen.getByRole('button', { name: /export json/i });
+
+      expect(excelButton).not.toBeDisabled();
+      expect(jsonButton).not.toBeDisabled();
+    });
+
+    it('should call downloadExport with xlsx format when Export Excel clicked', async () => {
+      mockEventsData = [{ id: 1, event_number: 'EVT-001' }];
+      mockDownloadExport.mockResolvedValue(undefined);
+
+      const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
+      render(<TaskListView {...defaultProps} projectId={42} />);
+
+      const excelButton = screen.getByRole('button', { name: /export excel/i });
+      await user.click(excelButton);
+
+      expect(mockDownloadExport).toHaveBeenCalledWith(42, 'xlsx');
+    });
+
+    it('should call downloadExport with json format when Export JSON clicked', async () => {
+      mockEventsData = [{ id: 1, event_number: 'EVT-001' }];
+      mockDownloadExport.mockResolvedValue(undefined);
+
+      const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
+      render(<TaskListView {...defaultProps} projectId={42} />);
+
+      const jsonButton = screen.getByRole('button', { name: /export json/i });
+      await user.click(jsonButton);
+
+      expect(mockDownloadExport).toHaveBeenCalledWith(42, 'json');
+    });
+
+    it('should show loading state during export', async () => {
+      mockEventsData = [{ id: 1, event_number: 'EVT-001' }];
+      let resolveExport: () => void;
+      mockDownloadExport.mockImplementation(() => new Promise((resolve) => {
+        resolveExport = resolve;
+      }));
+
+      const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
+      render(<TaskListView {...defaultProps} />);
+
+      const excelButton = screen.getByRole('button', { name: /export excel/i });
+      await user.click(excelButton);
+
+      expect(screen.getByRole('button', { name: /exporting/i })).toBeInTheDocument();
+      expect(excelButton).toBeDisabled();
+
+      await act(async () => {
+        resolveExport!();
+      });
+
+      expect(screen.queryByRole('button', { name: /exporting/i })).not.toBeInTheDocument();
+    });
+
+    it('should display error message on export failure', async () => {
+      mockEventsData = [{ id: 1, event_number: 'EVT-001' }];
+      mockDownloadExport.mockRejectedValue(new Error('Network error'));
+
+      const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
+      render(<TaskListView {...defaultProps} />);
+
+      const excelButton = screen.getByRole('button', { name: /export excel/i });
+      await user.click(excelButton);
+
+      await waitFor(() => {
+        expect(screen.getByText(/network error/i)).toBeInTheDocument();
+      });
+    });
+
+    it('should display generic error message for non-Error failures', async () => {
+      mockEventsData = [{ id: 1, event_number: 'EVT-001' }];
+      mockDownloadExport.mockRejectedValue('Unknown failure');
+
+      const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
+      render(<TaskListView {...defaultProps} />);
+
+      const excelButton = screen.getByRole('button', { name: /export excel/i });
+      await user.click(excelButton);
+
+      await waitFor(() => {
+        expect(screen.getByText(/export failed/i)).toBeInTheDocument();
+      });
     });
   });
 });
