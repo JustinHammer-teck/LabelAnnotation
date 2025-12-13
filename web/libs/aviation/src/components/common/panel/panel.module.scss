@@ -1,0 +1,71 @@
+@use '../../../assets/styles/variables' as *;
+
+.panel {
+  background: #fff;
+  border: 1px solid $aviation-border-color;
+  border-radius: $aviation-border-radius;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: ($aviation-spacing-unit * 1.5) ($aviation-spacing-unit * 2);
+  border-bottom: 1px solid $aviation-border-color;
+}
+
+.headerContent {
+  display: flex;
+  align-items: center;
+  gap: $aviation-spacing-unit;
+}
+
+.title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: $aviation-text-color;
+}
+
+.collapseButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: $aviation-spacing-unit / 2;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: $aviation-text-muted;
+  border-radius: $aviation-border-radius;
+  transition: background-color 0.2s, color 0.2s, transform 0.2s;
+
+  &:hover {
+    background-color: $aviation-bg-hover;
+    color: $aviation-text-color;
+  }
+
+  &.collapsed {
+    transform: rotate(-90deg);
+  }
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: $aviation-spacing-unit;
+}
+
+.body {
+  padding: ($aviation-spacing-unit * 2);
+}
+
+.collapsed {
+  .body {
+    display: none;
+  }
+
+  .header {
+    border-bottom: none;
+  }
+}

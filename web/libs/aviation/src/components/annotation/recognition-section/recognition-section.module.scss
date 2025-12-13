@@ -1,0 +1,87 @@
+@use '../../../assets/styles/variables' as *;
+
+.section {
+  background: #fff;
+  border: 1px solid $aviation-border-color;
+  border-radius: $aviation-border-radius;
+  overflow: hidden;
+}
+
+.title {
+  margin: 0;
+  padding: ($aviation-spacing-unit * 1.5) ($aviation-spacing-unit * 2);
+  font-size: 14px;
+  font-weight: 600;
+  color: $aviation-text-color;
+  background: $aviation-bg-hover;
+  border-bottom: 1px solid $aviation-border-color;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: $aviation-spacing-unit * 2;
+  padding: $aviation-spacing-unit * 2;
+}
+
+.fieldRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: $aviation-spacing-unit * 2;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: $aviation-spacing-unit;
+}
+
+.fieldLabel {
+  font-size: 13px;
+  font-weight: 500;
+  color: $aviation-text-color;
+}
+
+.topics {
+  display: flex;
+  flex-direction: column;
+  gap: $aviation-spacing-unit;
+  padding: $aviation-spacing-unit * 1.5;
+  background: rgba($aviation-primary-color, 0.05);
+  border-radius: $aviation-border-radius;
+}
+
+.topicsLabel {
+  font-size: 12px;
+  font-weight: 500;
+  color: $aviation-text-muted;
+}
+
+.topicsList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $aviation-spacing-unit;
+}
+
+.topicBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  background: rgba($aviation-primary-color, 0.1);
+  color: $aviation-primary-color;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: $aviation-border-radius;
+}
+
+.disabledMessage {
+  color: $aviation-text-muted;
+  font-size: 14px;
+  padding: $aviation-spacing-unit 0;
+}
+
+.errorMessage {
+  color: $aviation-error-color;
+  font-size: 12px;
+  padding: ($aviation-spacing-unit / 2) 0;
+}

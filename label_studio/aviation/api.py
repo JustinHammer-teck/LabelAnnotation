@@ -1,437 +1,147 @@
-import logging
-from pathlib import Path
+from datetime import datetime
+from io import BytesIO
 
-from rest_framework.views import APIView
-from rest_framework import generics, status
-from rest_framework.response import Response
-from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.exceptions import NotFound, ValidationError
-from rest_framework.pagination import PageNumberPagination
-from django.http import FileResponse
-from django.shortcuts import get_object_or_404
-from django.utils.decorators import method_decorator
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Prefetch, Q
+from django.shortcuts import get_object_or_404
+from openpyxl import load_workbook
+from rest_framework import status, viewsets
+from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
+from rest_framework.parsers import MultiPartParser
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
-from core.permissions import ViewClassPermission, all_permissions
-from drf_yasg.utils import swagger_auto_schema
-from drf_yasg import openapi
 from projects.models import Project
+from tasks.models import Task
 
-from .models import AviationAnnotation, AviationDropdownOption, AviationIncident, AviationProject
+from .models import (
+    AviationEvent,
+    AviationProject,
+    LabelingItem,
+    LabelingItemPerformance,
+    ResultPerformance,
+    TypeHierarchy,
+)
 from .serializers import (
-    AviationAnnotationSerializer,
-    AviationDropdownOptionSerializer,
-    AviationIncidentSerializer,
+    AviationEventSerializer,
     AviationProjectSerializer,
-    ExcelUploadSerializer
+    CreateAviationProjectSerializer,
+    LabelingItemPerformanceSerializer,
+    LabelingItemSerializer,
+    LinkItemsSerializer,
+    ResultPerformanceSerializer,
+    TypeHierarchySerializer,
 )
 
-logger = logging.getLogger(__name__)
 
-ALLOWED_EXPORT_BASE = Path('/tmp').resolve()
-
-
-def _validate_export_path(file_path):
-    """Validate file path to prevent path traversal attacks.
-
-    Returns resolved Path if valid, None if invalid.
-    """
-    resolved_path = Path(file_path).resolve()
-    if not str(resolved_path).startswith(str(ALLOWED_EXPORT_BASE)):
-        logger.error(f"Path traversal attempt: {resolved_path}")
-        return None
-    return resolved_path
-
-
-class AviationDropdownPagination(PageNumberPagination):
-    page_size = 100
-    page_size_query_param = 'page_size'
-    max_page_size = 1000
-
-
-@method_decorator(
-    name='get',
-    decorator=swagger_auto_schema(
-        tags=['Aviation'],
-        operation_summary='List aviation projects',
-        operation_description='Get list of aviation projects for current organization',
-    )
-)
-@method_decorator(
-    name='post',
-    decorator=swagger_auto_schema(
-        tags=['Aviation'],
-        operation_summary='Create aviation project',
-        operation_description='Create new aviation project with base project wrapper',
-    )
-)
-class AviationProjectListAPI(generics.ListCreateAPIView):
-    """List and create aviation projects"""
+class AviationProjectViewSet(viewsets.ModelViewSet):
     serializer_class = AviationProjectSerializer
-    pagination_class = AviationDropdownPagination
-    permission_required = ViewClassPermission(
-        GET=all_permissions.projects_view,
-        POST=all_permissions.projects_create,
-    )
-
-    def get_queryset(self):
-        return AviationProject.objects.filter(
-            project__organization=self.request.user.active_organization
-        ).select_related('project').order_by('-created_at')
-
-
-@method_decorator(
-    name='get',
-    decorator=swagger_auto_schema(
-        tags=['Aviation'],
-        operation_summary='Get aviation project',
-    )
-)
-@method_decorator(
-    name='patch',
-    decorator=swagger_auto_schema(
-        tags=['Aviation'],
-        operation_summary='Update aviation project',
-    )
-)
-@method_decorator(
-    name='delete',
-    decorator=swagger_auto_schema(
-        tags=['Aviation'],
-        operation_summary='Delete aviation project',
-    )
-)
-class AviationProjectDetailAPI(generics.RetrieveUpdateDestroyAPIView):
-    """Get, update, or delete aviation project"""
-    serializer_class = AviationProjectSerializer
-    permission_required = ViewClassPermission(
-        GET=all_permissions.projects_view,
-        PATCH=all_permissions.projects_change,
-        DELETE=all_permissions.projects_delete,
-    )
+    permission_classes = (IsAuthenticated,)
 
     def get_queryset(self):
         return AviationProject.objects.filter(
             project__organization=self.request.user.active_organization
         ).select_related('project')
 
-    def perform_destroy(self, instance):
-        with transaction.atomic():
-            project = instance.project
-            instance.delete()
-            project.delete()
+    def get_serializer_class(self):
+        if self.action == 'create':
+            return CreateAviationProjectSerializer
+        return AviationProjectSerializer
 
-
-@method_decorator(
-    name='post',
-    decorator=swagger_auto_schema(
-        tags=['Aviation'],
-        operation_summary='Upload aviation incidents from Excel',
-        operation_description='Parse Excel file and create tasks from aviation incidents',
-    )
-)
-class AviationExcelUploadAPI(generics.CreateAPIView):
-    """Handle Excel file upload and task creation"""
-    parser_classes = (MultiPartParser, FormParser)
-    serializer_class = ExcelUploadSerializer
-    permission_required = ViewClassPermission(
-        POST=all_permissions.projects_change,
-    )
-
-    def get_queryset(self):
-        return Project.objects.filter(organization=self.request.user.active_organization)
-
-    def post(self, request, *args, **kwargs):
-        project = self.get_object()
+    def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        from .services import ExcelParserService
-        parser = ExcelParserService()
+        project_id = serializer.validated_data.get('project_id')
 
-        try:
-            result = parser.parse_incidents(serializer.validated_data['file'], project)
+        with transaction.atomic():
+            if project_id:
+                ls_project = Project.objects.filter(
+                    id=project_id,
+                    organization=request.user.active_organization
+                ).first()
+                if not ls_project:
+                    raise ValidationError({'project_id': 'Project not found or not accessible'})
+                if hasattr(ls_project, 'aviation_project'):
+                    raise ValidationError({'project_id': 'Project already has an aviation wrapper'})
+            else:
+                ls_project = Project.objects.create(
+                    title=serializer.validated_data['title'],
+                    description=serializer.validated_data.get('description', ''),
+                    organization=request.user.active_organization,
+                    created_by=request.user,
+                    label_config='<View></View>',
+                )
 
-            if result['created'] == 0 and result['total_rows'] > 0:
-                return Response(result, status=status.HTTP_400_BAD_REQUEST)
+            aviation_project = AviationProject.objects.create(
+                project=ls_project,
+                default_workflow=serializer.validated_data.get('default_workflow', ''),
+                require_uas_assessment=serializer.validated_data.get('require_uas_assessment', True),
+            )
 
-            return Response(result, status=status.HTTP_200_OK if result['errors'] else status.HTTP_201_CREATED)
-        except NotImplementedError as e:
-            return Response({'error': str(e)}, status=status.HTTP_501_NOT_IMPLEMENTED)
+        response_serializer = AviationProjectSerializer(aviation_project)
+        return Response(response_serializer.data, status=status.HTTP_201_CREATED)
 
-
-@method_decorator(
-    name='post',
-    decorator=swagger_auto_schema(
-        tags=['Aviation'],
-        operation_summary='Validate Excel format',
-        operation_description='Validate Excel file structure compliance',
-    )
-)
-class AviationExcelValidateAPI(APIView):
-    """Validate Excel format compliance"""
-    parser_classes = (MultiPartParser, FormParser)
-    permission_required = ViewClassPermission(
-        POST=all_permissions.projects_view,
-    )
-
-    def post(self, request, pk=None):
-        get_object_or_404(
-            Project.objects.filter(organization=request.user.active_organization),
-            id=pk
-        )
-
-        from .services import ExcelParserService
-        parser = ExcelParserService()
-
-        file = request.FILES.get('file')
-        if not file:
-            return Response({'error': 'File parameter is required'}, status=status.HTTP_400_BAD_REQUEST)
-
-        try:
-            validation_result = parser.validate_structure(file)
-            result = validation_result or {'valid': True}
-            if not result.get('valid', True):
-                return Response(result, status=status.HTTP_400_BAD_REQUEST)
-            return Response(result, status=status.HTTP_200_OK)
-        except NotImplementedError as e:
-            return Response({'error': str(e)}, status=status.HTTP_501_NOT_IMPLEMENTED)
-        except ValidationError as e:
-            return Response({'error': 'Invalid file format', 'details': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        except Exception as e:
-            logger.exception("Unexpected error during validation")
-            return Response({'error': 'Validation failed'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    @action(detail=False, methods=['get'])
+    def available_projects(self, request):
+        """Return LS projects that don't have an aviation wrapper yet"""
+        projects = Project.objects.filter(
+            organization=request.user.active_organization
+        ).exclude(
+            aviation_project__isnull=False
+        ).values('id', 'title')
+        return Response(list(projects))
 
 
-@method_decorator(
-    name='get',
-    decorator=swagger_auto_schema(
-        tags=['Aviation'],
-        operation_summary='List aviation annotations',
-    )
-)
-@method_decorator(
-    name='post',
-    decorator=swagger_auto_schema(
-        tags=['Aviation'],
-        operation_summary='Create aviation annotation',
-    )
-)
-class AviationAnnotationListAPI(generics.ListCreateAPIView):
-    """Aviation annotation CRUD operations"""
-    serializer_class = AviationAnnotationSerializer
-    pagination_class = AviationDropdownPagination
-    permission_required = ViewClassPermission(
-        GET=all_permissions.tasks_view,
-        POST=all_permissions.tasks_change,
-    )
+class AviationEventViewSet(viewsets.ModelViewSet):
+    serializer_class = AviationEventSerializer
+    permission_classes = (IsAuthenticated,)
 
     def get_queryset(self):
-        task_id = self.request.query_params.get('task_id')
+        queryset = AviationEvent.objects.filter(
+            task__project__organization=self.request.user.active_organization
+        ).select_related('task')
+
         project_id = self.request.query_params.get('project')
-        queryset = AviationAnnotation.objects.for_organization(
-            self.request.user.active_organization
-        )
-        if task_id:
-            queryset = queryset.filter(annotation__task_id=task_id)
         if project_id:
-            queryset = queryset.filter(annotation__task__project_id=project_id)
+            try:
+                project_id = int(project_id)
+                queryset = queryset.filter(task__project__aviation_project__id=project_id)
+            except ValueError:
+                raise ValidationError({'project': 'Must be an integer'})
+
         return queryset
 
-    def perform_create(self, serializer):
-        from tasks.models import Annotation, Task
 
-        with transaction.atomic():
-            task_id = self.request.data.get('task_id')
-            if not task_id:
-                raise ValidationError({'task_id': 'This field is required'})
-
-            task = get_object_or_404(
-                Task.objects.for_user(self.request.user),
-                id=task_id
+def _get_type_hierarchy_prefetch():
+    return Prefetch(
+        'children',
+        queryset=TypeHierarchy.objects.filter(is_active=True).order_by('display_order').prefetch_related(
+            Prefetch(
+                'children',
+                queryset=TypeHierarchy.objects.filter(is_active=True).order_by('display_order')
             )
-
-            annotation, created = Annotation.objects.get_or_create(
-                task=task,
-                completed_by=self.request.user,
-                defaults={'result': []}
-            )
-
-            if created:
-                logger.debug(f'Auto-created annotation for task={task_id} user={self.request.user.id}')
-
-            serializer.save(annotation=annotation)
-
-
-@method_decorator(
-    name='get',
-    decorator=swagger_auto_schema(
-        tags=['Aviation'],
-        operation_summary='Get aviation annotation',
-    )
-)
-@method_decorator(
-    name='patch',
-    decorator=swagger_auto_schema(
-        tags=['Aviation'],
-        operation_summary='Update aviation annotation',
-    )
-)
-@method_decorator(
-    name='delete',
-    decorator=swagger_auto_schema(
-        tags=['Aviation'],
-        operation_summary='Delete aviation annotation',
-    )
-)
-class AviationAnnotationDetailAPI(generics.RetrieveUpdateDestroyAPIView):
-    """Get, update, or delete aviation annotation"""
-    serializer_class = AviationAnnotationSerializer
-    permission_required = ViewClassPermission(
-        GET=all_permissions.tasks_view,
-        PATCH=all_permissions.tasks_change,
-        DELETE=all_permissions.tasks_delete,
-    )
-
-    def get_queryset(self):
-        return AviationAnnotation.objects.for_organization(
-            self.request.user.active_organization
         )
-
-    def perform_update(self, serializer):
-        with transaction.atomic():
-            serializer.save()
-
-
-DROPDOWN_CATEGORY_MAPPING = {
-    'flight_phase': 'flight_phases',
-    'threat_mgmt': 'threat_management',
-    'error_mgmt': 'error_management',
-    'uas_mgmt': 'uas_management',
-    'error': 'error_type',
-}
-
-
-@method_decorator(
-    name='get',
-    decorator=swagger_auto_schema(
-        tags=['Aviation'],
-        operation_summary='List dropdown options',
-        operation_description='Get dropdown options filtered by category, level, or parent. Use grouped=true to get all options grouped by category.',
-        manual_parameters=[
-            openapi.Parameter(
-                name='category',
-                type=openapi.TYPE_STRING,
-                in_=openapi.IN_QUERY,
-                description='Filter by category'
-            ),
-            openapi.Parameter(
-                name='level',
-                type=openapi.TYPE_INTEGER,
-                in_=openapi.IN_QUERY,
-                description='Filter by level (1, 2, or 3)'
-            ),
-            openapi.Parameter(
-                name='parent',
-                type=openapi.TYPE_INTEGER,
-                in_=openapi.IN_QUERY,
-                description='Filter by parent ID'
-            ),
-            openapi.Parameter(
-                name='grouped',
-                type=openapi.TYPE_BOOLEAN,
-                in_=openapi.IN_QUERY,
-                description='Return all options grouped by category (ignores other filters)'
-            ),
-        ],
-    )
-)
-class AviationDropdownListAPI(generics.ListAPIView):
-    """Provide dropdown options to frontend.
-
-    Supports two modes:
-    - Filtered mode (default): Filter by category, level, or parent
-    - Grouped mode (?grouped=true): Return all options grouped by category
-    """
-    serializer_class = AviationDropdownOptionSerializer
-    pagination_class = AviationDropdownPagination
-    permission_required = ViewClassPermission(
-        GET=all_permissions.projects_view,
     )
 
-    def get(self, request, *args, **kwargs):
-        grouped = request.query_params.get('grouped', '').lower() == 'true'
-        if grouped:
-            return self._get_grouped_response()
-        return super().get(request, *args, **kwargs)
 
-    def _get_grouped_response(self):
-        from collections import defaultdict
-
-        options = AviationDropdownOption.objects.filter(
-            is_active=True
-        ).order_by('category', 'display_order')
-
-        grouped = defaultdict(list)
-        serializer = AviationDropdownOptionSerializer(options, many=True)
-
-        for option_data in serializer.data:
-            category = option_data['category']
-            frontend_category = DROPDOWN_CATEGORY_MAPPING.get(category, category)
-            grouped[frontend_category].append(option_data)
-
-        return Response(dict(grouped), status=status.HTTP_200_OK)
+class TypeHierarchyViewSet(viewsets.ReadOnlyModelViewSet):
+    serializer_class = TypeHierarchySerializer
+    permission_classes = (IsAuthenticated,)
 
     def get_queryset(self):
+        queryset = TypeHierarchy.objects.filter(is_active=True).prefetch_related(
+            _get_type_hierarchy_prefetch()
+        )
         category = self.request.query_params.get('category')
-        level = self.request.query_params.get('level')
-        parent_id = self.request.query_params.get('parent')
-
-        queryset = AviationDropdownOption.objects.filter(is_active=True)
-
         if category:
             queryset = queryset.filter(category=category)
-        if level:
-            try:
-                level = int(level)
-                if level not in (1, 2, 3):
-                    raise ValueError
-                queryset = queryset.filter(level=level)
-            except (ValueError, TypeError):
-                raise ValidationError({'level': 'Must be integer 1, 2, or 3'})
-        if parent_id:
-            try:
-                parent_id = int(parent_id)
-                queryset = queryset.filter(parent_id=parent_id)
-            except (ValueError, TypeError):
-                raise ValidationError({'parent': 'Must be valid integer'})
+        return queryset.order_by('category', 'level', 'display_order')
 
-        return queryset.order_by('display_order')
-
-
-class AviationDropdownHierarchyAPI(APIView):
-    """Return full hierarchy tree for dropdowns"""
-    permission_required = ViewClassPermission(
-        GET=all_permissions.projects_view,
-    )
-
-    @swagger_auto_schema(
-        tags=['Aviation'],
-        operation_summary='Get dropdown hierarchy tree',
-        operation_description='Return full hierarchical tree structure for a category',
-        manual_parameters=[
-            openapi.Parameter(
-                name='category',
-                type=openapi.TYPE_STRING,
-                in_=openapi.IN_QUERY,
-                description='Category to get hierarchy for',
-                required=True
-            ),
-        ],
-    )
-    def get(self, request):
+    @action(detail=False, methods=['get'])
+    def hierarchy(self, request):
         category = request.query_params.get('category')
         if not category:
             return Response(
@@ -439,470 +149,389 @@ class AviationDropdownHierarchyAPI(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        options = AviationDropdownOption.objects.filter(
+        root_items = TypeHierarchy.objects.filter(
             category=category,
+            level=1,
+            parent__isnull=True,
             is_active=True
-        ).order_by('level', 'display_order')
+        ).prefetch_related(
+            _get_type_hierarchy_prefetch()
+        ).order_by('display_order')
 
-        hierarchy = self._build_tree(options)
-        return Response(hierarchy, status=status.HTTP_200_OK)
+        serializer = TypeHierarchySerializer(root_items, many=True)
+        return Response(serializer.data)
 
-    def _build_tree(self, options):
-        """Build hierarchical tree structure"""
-        tree = {}
-        nodes = {}
-
-        for option in options:
-            nodes[option.id] = {
-                'id': option.id,
-                'code': option.code,
-                'label': option.label,
-                'level': option.level,
-                'training_topics': option.training_topics,
-                'children': []
-            }
-
-        for option in options:
-            if option.parent_id:
-                if option.parent_id in nodes:
-                    nodes[option.parent_id]['children'].append(nodes[option.id])
-            else:
-                tree[option.id] = nodes[option.id]
-
-        return list(tree.values())
-
-
-class AviationDropdownSearchAPI(APIView):
-    """Fuzzy search across dropdown options"""
-    permission_required = ViewClassPermission(
-        GET=all_permissions.projects_view,
-    )
-
-    @swagger_auto_schema(
-        tags=['Aviation'],
-        operation_summary='Search dropdown options',
-        operation_description='Fuzzy search across dropdown labels and codes',
-        manual_parameters=[
-            openapi.Parameter(
-                name='q',
-                type=openapi.TYPE_STRING,
-                in_=openapi.IN_QUERY,
-                description='Search query',
-                required=True
-            ),
-            openapi.Parameter(
-                name='category',
-                type=openapi.TYPE_STRING,
-                in_=openapi.IN_QUERY,
-                description='Filter by category'
-            ),
-        ],
-    )
-    def get(self, request):
+    @action(detail=False, methods=['get'])
+    def search(self, request):
         query = request.query_params.get('q', '')
         category = request.query_params.get('category')
 
-        if not query:
-            return Response([], status=status.HTTP_200_OK)
-
-        if len(query) > 100:
-            return Response(
-                {'error': 'Query too long. Maximum 100 characters allowed'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        sanitized_query = query.replace('%', '').replace('_', '')
-
-        queryset = AviationDropdownOption.objects.filter(
-            Q(label__icontains=sanitized_query) | Q(code__icontains=sanitized_query),
-            is_active=True
-        )
+        queryset = TypeHierarchy.objects.filter(is_active=True)
 
         if category:
             queryset = queryset.filter(category=category)
 
-        queryset = queryset.order_by('level', 'display_order')[:50]
-        serializer = AviationDropdownOptionSerializer(queryset, many=True)
-
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-
-class AviationExportAPI(APIView):
-    """Generate JSON exports with annotations"""
-    permission_required = ViewClassPermission(
-        GET=all_permissions.projects_view,
-    )
-
-    def get_queryset(self):
-        return Project.objects.filter(organization=self.request.user.active_organization)
-
-    @swagger_auto_schema(
-        tags=['Aviation'],
-        operation_summary='Export aviation annotations to JSON',
-        manual_parameters=[
-            openapi.Parameter(
-                name='project_id',
-                type=openapi.TYPE_INTEGER,
-                in_=openapi.IN_QUERY,
-                description='Project ID to export',
-                required=True
-            ),
-        ],
-    )
-    def get(self, request):
-        project_id = request.query_params.get('project_id')
-        if not project_id:
-            return Response(
-                {'error': 'project_id parameter is required'},
-                status=status.HTTP_400_BAD_REQUEST
+        if query:
+            queryset = queryset.filter(
+                Q(code__icontains=query) |
+                Q(label__icontains=query) |
+                Q(label_zh__icontains=query)
             )
 
-        from .services import JsonExportService
-        exporter = JsonExportService()
-
-        project = self.get_queryset().filter(id=project_id).first()
-        if not project:
-            raise NotFound('Project not found')
-
-        try:
-            file_path = exporter.export_annotations(project)
-        except NotImplementedError:
-            return Response(
-                {'error': 'Export service not yet implemented'},
-                status=status.HTTP_501_NOT_IMPLEMENTED
-            )
-
-        if not file_path:
-            return Response(
-                {'error': 'Export service not yet implemented'},
-                status=status.HTTP_501_NOT_IMPLEMENTED
-            )
-
-        validated_path = _validate_export_path(file_path)
-        if validated_path is None:
-            return Response(
-                {'error': 'Invalid file path'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        try:
-            response = FileResponse(
-                open(validated_path, 'rb'),
-                content_type='application/json',
-                as_attachment=True,
-                filename=f'aviation_export_{project_id}.json'
-            )
-            return response
-        except FileNotFoundError:
-            logger.error(f"Export file not found: {validated_path}")
-            return Response(
-                {'error': 'Export file not found'},
-                status=status.HTTP_404_NOT_FOUND
-            )
+        queryset = queryset.prefetch_related(
+            _get_type_hierarchy_prefetch()
+        ).order_by('category', 'level', 'display_order')[:50]
+        serializer = TypeHierarchySerializer(queryset, many=True)
+        return Response(serializer.data)
 
 
-class AviationExportTemplateAPI(APIView):
-    """Generate empty JSON template"""
+class LabelingItemViewSet(viewsets.ModelViewSet):
+    serializer_class = LabelingItemSerializer
     permission_classes = (IsAuthenticated,)
 
-    @swagger_auto_schema(
-        tags=['Aviation'],
-        operation_summary='Download empty aviation JSON template',
-    )
-    def get(self, request):
-        from .services import JsonExportService
-        exporter = JsonExportService()
+    def get_queryset(self):
+        queryset = LabelingItem.objects.filter(
+            event__task__project__organization=self.request.user.active_organization
+        ).select_related(
+            'event',
+            'created_by',
+            'reviewed_by',
+            'linked_result',
+            'threat_type_l1',
+            'threat_type_l2',
+            'threat_type_l3',
+            'error_type_l1',
+            'error_type_l2',
+            'error_type_l3',
+            'uas_type_l1',
+            'uas_type_l2',
+            'uas_type_l3',
+        )
 
-        try:
-            file_path = exporter.generate_template()
-        except NotImplementedError:
-            return Response(
-                {'error': 'Template service not yet implemented'},
-                status=status.HTTP_501_NOT_IMPLEMENTED
-            )
+        event_id = self.request.query_params.get('event')
+        if event_id:
+            try:
+                event_id = int(event_id)
+                queryset = queryset.filter(event_id=event_id)
+            except ValueError:
+                raise ValidationError({'event': 'Must be an integer'})
 
-        if not file_path:
-            return Response(
-                {'error': 'Template service not yet implemented'},
-                status=status.HTTP_501_NOT_IMPLEMENTED
-            )
+        return queryset.order_by('event', 'sequence_number')
 
-        validated_path = _validate_export_path(file_path)
-        if validated_path is None:
-            return Response(
-                {'error': 'Invalid file path'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        try:
-            response = FileResponse(
-                open(validated_path, 'rb'),
-                content_type='application/json',
-                as_attachment=True,
-                filename='aviation_template.json'
-            )
-            return response
-        except FileNotFoundError:
-            logger.error(f"Template file not found: {validated_path}")
-            return Response(
-                {'error': 'Template file not found'},
-                status=status.HTTP_404_NOT_FOUND
-            )
+    def perform_create(self, serializer):
+        serializer.save(created_by=self.request.user)
 
 
-@method_decorator(
-    name='get',
-    decorator=swagger_auto_schema(
-        tags=['Aviation'],
-        operation_summary='List aviation incidents',
-        operation_description='Get aviation incidents filtered by task or project',
-        manual_parameters=[
-            openapi.Parameter(
-                name='task_id',
-                type=openapi.TYPE_INTEGER,
-                in_=openapi.IN_QUERY,
-                description='Filter by task ID (returns single incident)'
-            ),
-            openapi.Parameter(
-                name='project',
-                type=openapi.TYPE_INTEGER,
-                in_=openapi.IN_QUERY,
-                description='Filter by project ID'
-            ),
-        ],
-    )
-)
-class AviationIncidentListAPI(generics.ListAPIView):
-    """List aviation incidents for a project"""
-    serializer_class = AviationIncidentSerializer
-    pagination_class = AviationDropdownPagination
-    permission_required = ViewClassPermission(
-        GET=all_permissions.tasks_view,
-    )
+class ResultPerformanceViewSet(viewsets.ModelViewSet):
+    serializer_class = ResultPerformanceSerializer
+    permission_classes = (IsAuthenticated,)
 
     def get_queryset(self):
+        queryset = ResultPerformance.objects.filter(
+            aviation_project__project__organization=self.request.user.active_organization
+        ).select_related(
+            'aviation_project',
+            'created_by',
+            'reviewed_by',
+        ).prefetch_related('labeling_items')
+
         project_id = self.request.query_params.get('project')
-        task_id = self.request.query_params.get('task_id')
-        queryset = AviationIncident.objects.filter(
-            task__project__organization=self.request.user.active_organization
-        ).select_related('task', 'task__project')
+        if project_id:
+            try:
+                project_id = int(project_id)
+                queryset = queryset.filter(aviation_project_id=project_id)
+            except ValueError:
+                raise ValidationError({'project': 'Must be an integer'})
 
-        if task_id:
-            queryset = queryset.filter(task_id=task_id)
-        elif project_id:
-            queryset = queryset.filter(task__project_id=project_id)
+        return queryset
 
-        return queryset.order_by('-date', '-created_at')
+    def perform_create(self, serializer):
+        serializer.save(created_by=self.request.user)
 
+    @action(detail=True, methods=['post'], url_path='link-items')
+    def link_items(self, request, pk=None):
+        performance = self.get_object()
+        serializer = LinkItemsSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
 
-@method_decorator(
-    name='get',
-    decorator=swagger_auto_schema(
-        tags=['Aviation'],
-        operation_summary='Get aviation incident',
-    )
-)
-@method_decorator(
-    name='patch',
-    decorator=swagger_auto_schema(
-        tags=['Aviation'],
-        operation_summary='Update aviation incident',
-    )
-)
-@method_decorator(
-    name='delete',
-    decorator=swagger_auto_schema(
-        tags=['Aviation'],
-        operation_summary='Delete aviation incident',
-    )
-)
-class AviationIncidentDetailAPI(generics.RetrieveUpdateDestroyAPIView):
-    """Get, update, or delete aviation incident"""
-    serializer_class = AviationIncidentSerializer
-    permission_required = ViewClassPermission(
-        GET=all_permissions.tasks_view,
-        PATCH=all_permissions.tasks_change,
-        DELETE=all_permissions.tasks_delete,
-    )
+        user_org = request.user.active_organization
+        performance_org = performance.aviation_project.project.organization
+        if performance_org != user_org:
+            raise ValidationError({'detail': 'ResultPerformance does not belong to your organization'})
 
-    def get_queryset(self):
-        return AviationIncident.objects.filter(
-            task__project__organization=self.request.user.active_organization
-        ).select_related('task', 'task__project')
+        item_ids = serializer.validated_data['item_ids']
+        contribution_weight = serializer.validated_data.get('contribution_weight', 1.00)
+        notes = serializer.validated_data.get('notes', '')
 
+        items = LabelingItem.objects.filter(
+            id__in=item_ids,
+            event__task__project__organization=user_org
+        )
 
-class AviationTaskLockAPI(APIView):
-    """Manage task locks for concurrent editing"""
-    permission_required = ViewClassPermission(
-        GET=all_permissions.tasks_view,
-        POST=all_permissions.tasks_change,
-        DELETE=all_permissions.tasks_change,
-    )
+        created_links = []
+        for item in items:
+            link, created = LabelingItemPerformance.objects.get_or_create(
+                labeling_item=item,
+                result_performance=performance,
+                defaults={
+                    'contribution_weight': contribution_weight,
+                    'notes': notes,
+                }
+            )
+            if created:
+                created_links.append(link)
 
-    @swagger_auto_schema(
-        tags=['Aviation'],
-        operation_summary='Get task lock status',
-    )
-    def get(self, request, task_id):
-        from .services import TaskLockService
-        lock_service = TaskLockService()
-        result = lock_service.get_lock_status(task_id)
-        return Response(result, status=status.HTTP_200_OK)
+        return Response(
+            LabelingItemPerformanceSerializer(created_links, many=True).data,
+            status=status.HTTP_201_CREATED
+        )
 
-    @swagger_auto_schema(
-        tags=['Aviation'],
-        operation_summary='Acquire task lock',
-    )
-    def post(self, request, task_id):
-        from tasks.models import Task
+    @action(detail=True, methods=['delete'], url_path='unlink-items')
+    def unlink_items(self, request, pk=None):
+        performance = self.get_object()
 
-        task = Task.objects.filter(
-            id=task_id,
-            project__organization=request.user.active_organization
-        ).first()
-
-        if not task:
-            raise NotFound('Task not found')
-
-        from .services import TaskLockService
-        lock_service = TaskLockService()
-        result = lock_service.acquire_lock(task_id, request.user)
-
-        if result['success']:
-            return Response(result, status=status.HTTP_200_OK)
-        return Response(result, status=status.HTTP_409_CONFLICT)
-
-    @swagger_auto_schema(
-        tags=['Aviation'],
-        operation_summary='Release task lock',
-    )
-    def delete(self, request, task_id):
-        from .services import TaskLockService
-        lock_service = TaskLockService()
-        result = lock_service.release_lock(task_id, request.user)
-
-        if result['success']:
-            return Response(result, status=status.HTTP_200_OK)
-        return Response(result, status=status.HTTP_403_FORBIDDEN)
-
-
-class AviationDropdownAllAPI(APIView):
-    """Return all dropdown options grouped by category.
-
-    DEPRECATED: Use AviationDropdownListAPI with ?grouped=true instead.
-    This endpoint is kept for backward compatibility.
-    """
-    permission_required = ViewClassPermission(
-        GET=all_permissions.projects_view,
-    )
-
-    @swagger_auto_schema(
-        tags=['Aviation'],
-        operation_summary='Get all dropdown options (deprecated)',
-        operation_description='DEPRECATED: Use /aviation/dropdowns/?grouped=true instead. Return all active dropdown options grouped by category.',
-        deprecated=True,
-    )
-    def get(self, request):
-        from collections import defaultdict
-
-        options = AviationDropdownOption.objects.filter(
-            is_active=True
-        ).order_by('category', 'display_order')
-
-        grouped = defaultdict(list)
-        serializer = AviationDropdownOptionSerializer(options, many=True)
-
-        for option_data in serializer.data:
-            category = option_data['category']
-            frontend_category = DROPDOWN_CATEGORY_MAPPING.get(category, category)
-            grouped[frontend_category].append(option_data)
-
-        return Response(dict(grouped), status=status.HTTP_200_OK)
-
-
-class AviationTrainingMappingsAPI(APIView):
-    """Get training topic mappings for dropdown options"""
-    permission_required = ViewClassPermission(
-        GET=all_permissions.projects_view,
-    )
-
-    @swagger_auto_schema(
-        tags=['Aviation'],
-        operation_summary='Get training mappings',
-        operation_description='Get all training topic mappings grouped by category',
-    )
-    def get(self, request):
-        from .models import AviationDropdownOption
-
-        mappings = {}
-        categories = ['threat', 'error', 'uas']
-
-        for category in categories:
-            options = AviationDropdownOption.objects.filter(
-                category=category,
-                level=3,
-                is_active=True
-            ).exclude(training_topics=[]).values('label', 'training_topics')
-
-            mappings[category] = {
-                opt['label']: opt['training_topics']
-                for opt in options
-                if opt['training_topics']
-            }
-
-        return Response(mappings, status=status.HTTP_200_OK)
-
-
-class AviationTaskExportAPI(APIView):
-    """Export single task's incident and annotation data as JSON"""
-    permission_required = ViewClassPermission(
-        GET=all_permissions.tasks_view,
-    )
-
-    @swagger_auto_schema(
-        tags=['Aviation'],
-        operation_summary='Export single task as JSON',
-        operation_description='Export a single task with its incident and annotations as JSON file',
-    )
-    def get(self, request, task_id):
-        from tasks.models import Task
-        from .services import JsonExportService
-
-        task = Task.objects.filter(
-            id=task_id,
-            project__organization=request.user.active_organization
-        ).first()
-
-        if not task:
-            raise NotFound('Task not found')
-
-        exporter = JsonExportService()
-        file_path = exporter.export_task(task)
-
-        if not file_path:
+        user_org = request.user.active_organization
+        performance_org = performance.aviation_project.project.organization
+        if performance_org != user_org:
             return Response(
-                {'error': 'Export failed'},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                {'error': 'Not authorized'},
+                status=status.HTTP_403_FORBIDDEN
             )
 
-        validated_path = _validate_export_path(file_path)
-        if validated_path is None:
+        serializer = LinkItemsSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        item_ids = serializer.validated_data['item_ids']
+
+        deleted_count, _ = LabelingItemPerformance.objects.filter(
+            result_performance=performance,
+            labeling_item_id__in=item_ids
+        ).delete()
+
+        return Response(
+            {'deleted_count': deleted_count},
+            status=status.HTTP_200_OK
+        )
+
+
+class LabelingItemPerformanceViewSet(viewsets.ModelViewSet):
+    serializer_class = LabelingItemPerformanceSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get_queryset(self):
+        return LabelingItemPerformance.objects.filter(
+            labeling_item__event__task__project__organization=self.request.user.active_organization
+        ).select_related('labeling_item', 'result_performance')
+
+
+EXCEL_COLUMN_MAPPING = {
+    'event_number': ['event_number', 'event_id', '事件编号', '编号', '涉及航班'],
+    'event_description': ['event_description', 'description', '事件描述', '描述', '事件详情/处置结果／后续措施', '事件详情'],
+    'date': ['date', 'event_date', '日期', '事件日期', '事件发生时间'],
+    'time': ['time', 'event_time', '时间', '事件时间'],
+    'location': ['location', '地点', '位置', '报告单位'],
+    'departure_airport': ['departure_airport', '起飞机场（四字代码）', '起飞机场'],
+    'arrival_airport': ['arrival_airport', '降落机场（四字代码）', '降落机场'],
+    'flight_phase': ['flight_phase', 'phase', '飞行阶段', '阶段', '事件类型'],
+    'aircraft_type': ['aircraft_type', 'type', '机型', '飞机类型', '涉及飞机（机型/注册号）', '涉及飞机'],
+    'aircraft_registration': ['aircraft_registration', 'registration', '注册号', '飞机注册号'],
+    'weather_conditions': ['weather_conditions', 'weather', '天气', '天气条件', '存在威胁和发生原因', '威胁原因'],
+}
+
+REQUIRED_COLUMNS = ['event_number', 'date']
+
+
+def normalize_column_name(col_name):
+    if col_name is None:
+        return None
+    return str(col_name).strip().lower().replace(' ', '_').replace('-', '_')
+
+
+def find_column_mapping(headers):
+    mapping = {}
+    normalized_headers = {normalize_column_name(h): idx for idx, h in enumerate(headers) if h}
+
+    for field, aliases in EXCEL_COLUMN_MAPPING.items():
+        for alias in aliases:
+            normalized_alias = normalize_column_name(alias)
+            if normalized_alias in normalized_headers:
+                mapping[field] = normalized_headers[normalized_alias]
+                break
+
+    return mapping
+
+
+def parse_date(value):
+    if value is None:
+        return None
+    if isinstance(value, datetime):
+        return value.date()
+    if hasattr(value, 'date'):
+        return value.date()
+    try:
+        return datetime.strptime(str(value).strip(), '%Y-%m-%d').date()
+    except ValueError:
+        pass
+    try:
+        return datetime.strptime(str(value).strip(), '%Y/%m/%d').date()
+    except ValueError:
+        pass
+    try:
+        return datetime.strptime(str(value).strip(), '%d/%m/%Y').date()
+    except ValueError:
+        pass
+    return None
+
+
+def parse_time(value):
+    if value is None:
+        return None
+    if hasattr(value, 'time') and callable(getattr(value, 'time')):
+        return value.time()
+    if hasattr(value, 'hour'):
+        return value
+    try:
+        return datetime.strptime(str(value).strip(), '%H:%M:%S').time()
+    except ValueError:
+        pass
+    try:
+        return datetime.strptime(str(value).strip(), '%H:%M').time()
+    except ValueError:
+        pass
+    return None
+
+
+class AviationExcelUploadView(APIView):
+    permission_classes = (IsAuthenticated,)
+    parser_classes = (MultiPartParser,)
+
+    ALLOWED_EXTENSIONS = ('.xlsx', '.xls')
+
+    def post(self, request, pk):
+        aviation_project = get_object_or_404(AviationProject, pk=pk)
+        project = aviation_project.project
+
+        if project.organization != request.user.active_organization:
             return Response(
-                {'error': 'Invalid file path'},
+                {'error': 'You do not have access to this project'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        if 'file' not in request.FILES:
+            return Response(
+                {'error': 'No file provided'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        uploaded_file = request.FILES['file']
+        filename = uploaded_file.name.lower()
+
+        if not filename.endswith(self.ALLOWED_EXTENSIONS):
+            return Response(
+                {'error': f'Invalid file type. Allowed: {", ".join(self.ALLOWED_EXTENSIONS)}'},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
         try:
-            response = FileResponse(
-                open(validated_path, 'rb'),
-                content_type='application/json',
-                as_attachment=True,
-                filename=f'aviation_task_{task_id}.json'
-            )
-            return response
-        except FileNotFoundError:
-            logger.error(f"Export file not found: {validated_path}")
+            file_content = BytesIO(uploaded_file.read())
+            workbook = load_workbook(filename=file_content, read_only=True, data_only=True)
+            sheet = workbook.active
+        except Exception as e:
             return Response(
-                {'error': 'Export file not found'},
-                status=status.HTTP_404_NOT_FOUND
+                {'error': f'Failed to parse Excel file: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST
             )
+
+        rows = list(sheet.iter_rows(values_only=True))
+        if len(rows) < 2:
+            return Response(
+                {'error': 'Excel file must have a header row and at least one data row'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        headers = rows[0]
+        column_mapping = find_column_mapping(headers)
+
+        missing_required = [col for col in REQUIRED_COLUMNS if col not in column_mapping]
+        if missing_required:
+            return Response(
+                {'error': f'Missing required columns: {", ".join(missing_required)}'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        created_count = 0
+        errors = []
+        tasks_to_create = []
+        events_to_create = []
+
+        for row_num, row in enumerate(rows[1:], start=2):
+            try:
+                event_number = row[column_mapping['event_number']]
+                if event_number is None or str(event_number).strip() == '':
+                    errors.append({'row': row_num, 'message': 'event_number is required'})
+                    continue
+                event_number = str(event_number).strip()
+
+                date_value = row[column_mapping['date']]
+                parsed_date = parse_date(date_value)
+                if parsed_date is None:
+                    errors.append({'row': row_num, 'message': f'Invalid date format: {date_value}'})
+                    continue
+
+                event_data = {
+                    'event_number': event_number,
+                    'date': parsed_date,
+                }
+
+                if 'event_description' in column_mapping:
+                    val = row[column_mapping['event_description']]
+                    event_data['event_description'] = str(val).strip() if val else ''
+
+                if 'time' in column_mapping:
+                    event_data['time'] = parse_time(row[column_mapping['time']])
+
+                for field in ['location', 'departure_airport', 'arrival_airport',
+                              'flight_phase', 'aircraft_type',
+                              'aircraft_registration', 'weather_conditions']:
+                    if field in column_mapping:
+                        val = row[column_mapping[field]]
+                        event_data[field] = str(val).strip() if val else ''
+
+                tasks_to_create.append({
+                    'project': project,
+                    'data': {'event_number': event_number},
+                })
+                events_to_create.append(event_data)
+
+            except Exception as e:
+                errors.append({'row': row_num, 'message': str(e)})
+
+        if not tasks_to_create:
+            return Response({
+                'success': True,
+                'created_count': 0,
+                'first_event_id': None,
+                'errors': errors
+            })
+
+        with transaction.atomic():
+            created_tasks = Task.objects.bulk_create([
+                Task(**task_data) for task_data in tasks_to_create
+            ])
+
+            aviation_events = []
+            for task, event_data in zip(created_tasks, events_to_create):
+                aviation_events.append(AviationEvent(task=task, **event_data))
+
+            created_events = AviationEvent.objects.bulk_create(aviation_events)
+            created_count = len(created_tasks)
+            first_event_id = created_events[0].id if created_events else None
+
+        workbook.close()
+
+        return Response({
+            'success': True,
+            'created_count': created_count,
+            'first_event_id': first_event_id,
+            'errors': errors
+        })

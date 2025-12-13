@@ -1,92 +1,20 @@
-from django.urls import path
-from . import api
+from django.urls import include, path, re_path
+from rest_framework.routers import DefaultRouter
+
+from . import api, views
 
 app_name = 'aviation'
 
+router = DefaultRouter()
+router.register(r'projects', api.AviationProjectViewSet, basename='aviation-project')
+router.register(r'events', api.AviationEventViewSet, basename='aviation-event')
+router.register(r'types', api.TypeHierarchyViewSet, basename='aviation-type')
+router.register(r'items', api.LabelingItemViewSet, basename='aviation-item')
+router.register(r'performances', api.ResultPerformanceViewSet, basename='aviation-performance')
+router.register(r'item-performances', api.LabelingItemPerformanceViewSet, basename='aviation-item-performance')
+
 urlpatterns = [
-    path(
-        'aviation/projects',
-        api.AviationProjectListAPI.as_view(),
-        name='aviation-project-list'
-    ),
-    path(
-        'aviation/projects/<int:pk>',
-        api.AviationProjectDetailAPI.as_view(),
-        name='aviation-project-detail'
-    ),
-    path(
-        'projects/<int:pk>/aviation/upload/',
-        api.AviationExcelUploadAPI.as_view(),
-        name='aviation-excel-upload'
-    ),
-    path(
-        'projects/<int:pk>/aviation/validate/',
-        api.AviationExcelValidateAPI.as_view(),
-        name='aviation-excel-validate'
-    ),
-    path(
-        'aviation/incidents',
-        api.AviationIncidentListAPI.as_view(),
-        name='aviation-incident-list'
-    ),
-    path(
-        'aviation/incidents/<int:pk>',
-        api.AviationIncidentDetailAPI.as_view(),
-        name='aviation-incident-detail'
-    ),
-    path(
-        'aviation/annotations',
-        api.AviationAnnotationListAPI.as_view(),
-        name='aviation-annotation-list'
-    ),
-    path(
-        'aviation/annotations/<int:pk>',
-        api.AviationAnnotationDetailAPI.as_view(),
-        name='aviation-annotation-detail'
-    ),
-    path(
-        'aviation/dropdowns',
-        api.AviationDropdownListAPI.as_view(),
-        name='aviation-dropdown-list'
-    ),
-    path(
-        'aviation/dropdowns/all',
-        api.AviationDropdownAllAPI.as_view(),
-        name='aviation-dropdown-all'
-    ),
-    path(
-        'aviation/dropdowns/hierarchy',
-        api.AviationDropdownHierarchyAPI.as_view(),
-        name='aviation-dropdown-hierarchy'
-    ),
-    path(
-        'aviation/dropdowns/search',
-        api.AviationDropdownSearchAPI.as_view(),
-        name='aviation-dropdown-search'
-    ),
-    path(
-        'aviation/tasks/<int:task_id>/lock',
-        api.AviationTaskLockAPI.as_view(),
-        name='aviation-task-lock'
-    ),
-    path(
-        'aviation/export',
-        api.AviationExportAPI.as_view(),
-        name='aviation-export'
-    ),
-    path(
-        'aviation/export/template',
-        api.AviationExportTemplateAPI.as_view(),
-        name='aviation-export-template'
-    ),
-    path(
-        'aviation/training-mappings',
-        api.AviationTrainingMappingsAPI.as_view(),
-        name='aviation-training-mappings'
-    ),
-    path(
-        'aviation/tasks/<int:task_id>/export/',
-        api.AviationTaskExportAPI.as_view(),
-        name='aviation-task-export'
-    ),
+    path('api/aviation/', include(router.urls)),
+    path('api/aviation/projects/<int:pk>/import-excel/', api.AviationExcelUploadView.as_view(), name='aviation-excel-upload'),
+    re_path(r'^aviation(?:/(?P<path>.*))?$', views.aviation_page, name='aviation-page'),
 ]

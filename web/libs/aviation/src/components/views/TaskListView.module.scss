@@ -1,0 +1,83 @@
+@use '../../assets/styles/variables' as *;
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: $aviation-spacing-unit * 3;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+  color: $aviation-text-color;
+}
+
+.tableContainer {
+  background-color: #fff;
+  border-radius: $aviation-border-radius;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: $aviation-spacing-unit * 6;
+  text-align: center;
+}
+
+.emptyText {
+  margin: 0 0 $aviation-spacing-unit;
+  font-size: 18px;
+  font-weight: 600;
+  color: $aviation-text-color;
+}
+
+.emptySubtext {
+  margin: 0 0 $aviation-spacing-unit * 3;
+  font-size: 14px;
+  color: $aviation-text-muted;
+}
+
+.emptyActions {
+  display: flex;
+  gap: $aviation-spacing-unit;
+}
+
+.headerActions {
+  display: flex;
+  gap: $aviation-spacing-unit;
+}
+
+.errorState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: $aviation-spacing-unit * 6;
+  background-color: #fff;
+  border-radius: $aviation-border-radius;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  text-align: center;
+}
+
+.errorText {
+  margin: 0 0 $aviation-spacing-unit;
+  font-size: 18px;
+  font-weight: 600;
+  color: $aviation-text-color;
+}
+
+.errorDetail {
+  margin: 0 0 $aviation-spacing-unit * 3;
+  font-size: 14px;
+  color: $aviation-text-muted;
+}

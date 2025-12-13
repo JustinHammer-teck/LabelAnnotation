@@ -1,0 +1,85 @@
+@use '../../../assets/styles/variables' as *;
+
+.panel {
+  background: #f6ffed;
+  border: 1px solid #b7eb8f;
+  border-radius: $aviation-border-radius;
+  overflow: hidden;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: ($aviation-spacing-unit * 1.5) ($aviation-spacing-unit * 2);
+  background: #d9f7be;
+  border-bottom: 1px solid #b7eb8f;
+}
+
+.title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #389e0d;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: $aviation-spacing-unit * 2;
+  padding: $aviation-spacing-unit * 2;
+}
+
+.category {
+  display: flex;
+  flex-direction: column;
+  gap: $aviation-spacing-unit;
+}
+
+.categoryHeader {
+  display: flex;
+  align-items: center;
+  gap: $aviation-spacing-unit;
+}
+
+.categoryLabel {
+  font-size: 13px;
+  font-weight: 500;
+  color: $aviation-text-muted;
+}
+
+.topicsList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $aviation-spacing-unit;
+}
+
+.topicBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: $aviation-border-radius;
+}
+
+.threat {
+  background: rgba($aviation-warning-color, 0.1);
+  color: darken($aviation-warning-color, 15%);
+}
+
+.error {
+  background: rgba($aviation-error-color, 0.1);
+  color: $aviation-error-color;
+}
+
+.uas {
+  background: rgba(#722ed1, 0.1);
+  color: #722ed1;
+}
+
+.autoFilled {
+  font-size: 12px;
+  color: $aviation-text-muted;
+  font-style: italic;
+}

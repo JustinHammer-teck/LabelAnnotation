@@ -1,0 +1,11 @@
+{
+  "name": "@heartex/aviation",
+  "version": "0.0.1",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "peerDependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "jotai": "^2.0.0"
+  }
+}

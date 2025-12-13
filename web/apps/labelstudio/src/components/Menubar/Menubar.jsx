@@ -247,9 +247,9 @@ export const Menubar = ({
                   exact
                 />
                 <Menu.Item
-                  label="Aviation Safety"
+                  label="Aviation"
                   to="/aviation"
-                  icon={<IconDocument />}
+                  icon={<IconFolder />}
                   data-external
                   exact
                 />

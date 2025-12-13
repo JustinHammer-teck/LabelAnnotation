@@ -1,0 +1,52 @@
+@use '../../assets/styles/variables' as *;
+
+.sidebar {
+  width: 220px;
+  flex-shrink: 0;
+  background-color: #fff;
+  border-right: 1px solid $aviation-border-color;
+}
+
+.nav {
+  padding: $aviation-spacing-unit * 2;
+}
+
+.navList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.navItem {
+  display: flex;
+  align-items: center;
+  gap: $aviation-spacing-unit * 1.5;
+  padding: ($aviation-spacing-unit * 1.5) ($aviation-spacing-unit * 2);
+  border-radius: $aviation-border-radius;
+  color: $aviation-text-color;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background-color 0.2s, color 0.2s;
+
+  &:hover {
+    background-color: $aviation-bg-hover;
+  }
+
+  &.active {
+    background-color: $aviation-bg-selected;
+    color: $aviation-primary-color;
+  }
+}
+
+.icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+}
+
+.label {
+  flex: 1;
+}

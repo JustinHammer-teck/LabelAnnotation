@@ -1,0 +1,33 @@
+.navigation {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.counter {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary, #1f2937);
+  min-width: 60px;
+  justify-content: center;
+}
+
+.current {
+  color: var(--primary-color, #2563eb);
+  font-weight: 600;
+}
+
+.separator {
+  color: var(--text-secondary, #6b7280);
+}
+
+.total {
+  color: var(--text-secondary, #6b7280);
+}
+
+.buttonText {
+  margin: 0 4px;
+}

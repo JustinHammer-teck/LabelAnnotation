@@ -1,0 +1,101 @@
+@use '../../../assets/styles/variables' as *;
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: $aviation-spacing-unit / 2;
+  padding: ($aviation-spacing-unit) ($aviation-spacing-unit * 2);
+  border: 1px solid transparent;
+  border-radius: $aviation-border-radius;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.5;
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s, color 0.2s, box-shadow 0.2s;
+  white-space: nowrap;
+  user-select: none;
+
+  &:focus {
+    outline: none;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+}
+
+.primary {
+  background-color: $aviation-primary-color;
+  border-color: $aviation-primary-color;
+  color: #fff;
+
+  &:hover:not(:disabled) {
+    background-color: darken($aviation-primary-color, 10%);
+    border-color: darken($aviation-primary-color, 10%);
+  }
+
+  &:focus {
+    box-shadow: 0 0 0 2px rgba($aviation-primary-color, 0.3);
+  }
+
+  &:active:not(:disabled) {
+    background-color: darken($aviation-primary-color, 15%);
+    border-color: darken($aviation-primary-color, 15%);
+  }
+}
+
+.secondary {
+  background-color: #fff;
+  border-color: $aviation-border-color;
+  color: $aviation-text-color;
+
+  &:hover:not(:disabled) {
+    border-color: $aviation-primary-color;
+    color: $aviation-primary-color;
+  }
+
+  &:focus {
+    box-shadow: 0 0 0 2px rgba($aviation-primary-color, 0.2);
+  }
+
+  &:active:not(:disabled) {
+    background-color: $aviation-bg-hover;
+  }
+}
+
+.danger {
+  background-color: $aviation-error-color;
+  border-color: $aviation-error-color;
+  color: #fff;
+
+  &:hover:not(:disabled) {
+    background-color: darken($aviation-error-color, 10%);
+    border-color: darken($aviation-error-color, 10%);
+  }
+
+  &:focus {
+    box-shadow: 0 0 0 2px rgba($aviation-error-color, 0.3);
+  }
+
+  &:active:not(:disabled) {
+    background-color: darken($aviation-error-color, 15%);
+    border-color: darken($aviation-error-color, 15%);
+  }
+}
+
+.small {
+  padding: ($aviation-spacing-unit / 2) $aviation-spacing-unit;
+  font-size: 12px;
+}
+
+.medium {
+  padding: ($aviation-spacing-unit) ($aviation-spacing-unit * 2);
+  font-size: 14px;
+}
+
+.large {
+  padding: ($aviation-spacing-unit * 1.5) ($aviation-spacing-unit * 3);
+  font-size: 16px;
+}

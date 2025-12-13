@@ -1,507 +1,332 @@
+from django.conf import settings
 from django.db import models
-from django.db.models import JSONField
-from django.utils.translation import gettext_lazy as _
-from django.utils.functional import cached_property
-
-from .managers import AviationAnnotationManager, AviationDropdownManager
 
 
 class AviationProject(models.Model):
-    """Extension of base Project for aviation-specific features"""
-
     project = models.OneToOneField(
         'projects.Project',
         on_delete=models.CASCADE,
-        related_name='aviation_project',
-        help_text='Associated Label Studio project',
-        db_index=True
+        related_name='aviation_project'
     )
-
-    threat_mapping = JSONField(
-        default=dict,
-        help_text='Threat type to training topic mappings'
-    )
-
-    error_mapping = JSONField(
-        default=dict,
-        help_text='Error type to training topic mappings'
-    )
-
-    uas_mapping = JSONField(
-        default=dict,
-        help_text='UAS type to training topic mappings'
-    )
-
-    created_at = models.DateTimeField(_('created at'), auto_now_add=True)
-    updated_at = models.DateTimeField(_('updated at'), auto_now=True)
+    threat_mapping = models.JSONField(default=dict, blank=True)
+    error_mapping = models.JSONField(default=dict, blank=True)
+    uas_mapping = models.JSONField(default=dict, blank=True)
+    default_workflow = models.CharField(max_length=50, blank=True, default='')
+    require_uas_assessment = models.BooleanField(default=True)
+    auto_calculate_training = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'aviation_project'
-        ordering = ['-created_at']
-        indexes = [
-            models.Index(fields=['project']),
-        ]
 
     def __str__(self):
-        return f'Aviation Project for {self.project.title}'
+        return f'AviationProject({self.project_id})'
 
     def has_permission(self, user):
         return self.project.has_permission(user)
 
 
-class AviationIncident(models.Model):
-    """Aviation safety incident data from Excel upload"""
-
+class AviationEvent(models.Model):
     task = models.OneToOneField(
         'tasks.Task',
         on_delete=models.CASCADE,
-        related_name='aviation_incident',
-        help_text='Associated task for this incident',
-        db_index=True
+        related_name='aviation_event'
     )
-
-    event_number = models.CharField(
-        max_length=50,
-        db_index=True,
-        help_text='Unique event identifier'
-    )
-
-    event_description = models.TextField(
-        help_text='Full description of the aviation incident'
-    )
-
-    date = models.DateField(
-        help_text='Date when incident occurred',
-        db_index=True
-    )
-
-    time = models.TimeField(
-        null=True,
-        blank=True,
-        help_text='Time when incident occurred'
-    )
-
-    location = models.CharField(
-        max_length=200,
-        blank=True,
-        help_text='Location where incident occurred'
-    )
-
-    airport = models.CharField(
-        max_length=100,
-        blank=True,
-        db_index=True,
-        help_text='Airport code or name'
-    )
-
-    flight_phase = models.CharField(
-        max_length=100,
-        blank=True,
-        help_text='Phase of flight when incident occurred'
-    )
-
-    source_file = models.ForeignKey(
+    event_number = models.CharField(max_length=50, db_index=True)
+    event_description = models.TextField(blank=True, default='')
+    date = models.DateField(db_index=True)
+    time = models.TimeField(null=True, blank=True)
+    location = models.CharField(max_length=255, blank=True, default='')
+    airport = models.CharField(max_length=255, blank=True, default='')
+    departure_airport = models.CharField(max_length=255, blank=True, default='')
+    arrival_airport = models.CharField(max_length=255, blank=True, default='')
+    actual_landing_airport = models.CharField(max_length=255, blank=True, default='')
+    flight_phase = models.CharField(max_length=100, blank=True, default='')
+    aircraft_registration = models.CharField(max_length=50, blank=True, default='')
+    aircraft_type = models.CharField(max_length=100, blank=True, default='')
+    crew_composition = models.JSONField(default=dict, blank=True)
+    weather_conditions = models.CharField(max_length=255, blank=True, default='')
+    file_upload = models.ForeignKey(
         'data_import.FileUpload',
         on_delete=models.SET_NULL,
         null=True,
-        related_name='aviation_incidents',
-        help_text='Source Excel file for this incident'
+        blank=True,
+        related_name='aviation_events'
     )
-
-    created_at = models.DateTimeField(_('created at'), auto_now_add=True)
-    updated_at = models.DateTimeField(_('updated at'), auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        db_table = 'aviation_incident'
-        ordering = ['-date', '-created_at']
-        indexes = [
-            models.Index(fields=['task']),
-            models.Index(fields=['event_number']),
-            models.Index(fields=['date', 'airport']),
-        ]
+        db_table = 'aviation_event'
 
     def __str__(self):
-        return f'Incident {self.event_number} - {self.date}'
-
-    @cached_property
-    def organization(self):
-        """Get organization for permission checks"""
-        return self.task.project.organization
+        return f'AviationEvent({self.event_number})'
 
 
-class AviationAnnotation(models.Model):
-    """Aviation-specific annotation data"""
+class TypeHierarchy(models.Model):
+    CATEGORY_CHOICES = [
+        ('threat', 'Threat'),
+        ('error', 'Error'),
+        ('uas', 'UAS'),
+        ('flight_phase', 'Flight Phase'),
+        ('management', 'Management'),
+        ('impact', 'Impact'),
+        ('coping', 'Coping'),
+        ('severity', 'Severity'),
+        ('airport', 'Airport'),
+        ('event_type', 'Event Type'),
+        ('likelihood', 'Likelihood'),
+        ('training_effect', 'Training Effect'),
+        ('training_topics', 'Training Topics'),
+    ]
 
-    annotation = models.OneToOneField(
-        'tasks.Annotation',
-        on_delete=models.CASCADE,
-        related_name='aviation_annotation',
-        help_text='Associated annotation',
-        db_index=True
-    )
-
-    aircraft_type = models.CharField(
-        max_length=100,
-        null=True,
-        blank=True,
-        default='',
-        help_text='Type of aircraft involved'
-    )
-
-    event_labels = JSONField(
-        null=True,
-        blank=True,
-        default=list,
-        help_text='Array of selected event labels'
-    )
-
-    threat_type_l1 = models.CharField(
-        max_length=100,
-        null=True,
-        blank=True,
-        default='',
-        db_index=True,
-        help_text='Threat type level 1 category'
-    )
-
-    threat_type_l2 = models.CharField(
-        max_length=100,
-        null=True,
-        blank=True,
-        default='',
-        help_text='Threat type level 2 category'
-    )
-
-    threat_type_l3 = models.CharField(
-        max_length=200,
-        null=True,
-        blank=True,
-        default='',
-        help_text='Threat type level 3 category'
-    )
-
-    threat_management = models.CharField(
-        max_length=50,
-        null=True,
-        blank=True,
-        default='',
-        help_text='How threat was managed'
-    )
-
-    threat_outcome = models.CharField(
-        max_length=50,
-        null=True,
-        blank=True,
-        default='',
-        help_text='Outcome of threat'
-    )
-
-    threat_description = models.TextField(
-        null=True,
-        blank=True,
-        default='',
-        help_text='Detailed threat description'
-    )
-
-    error_relevancy = models.CharField(
-        max_length=50,
-        null=True,
-        blank=True,
-        default='',
-        help_text='Relevancy of error'
-    )
-
-    error_type_l1 = models.CharField(
-        max_length=100,
-        null=True,
-        blank=True,
-        default='',
-        db_index=True,
-        help_text='Error type level 1 category'
-    )
-
-    error_type_l2 = models.CharField(
-        max_length=100,
-        null=True,
-        blank=True,
-        default='',
-        help_text='Error type level 2 category'
-    )
-
-    error_type_l3 = models.CharField(
-        max_length=200,
-        null=True,
-        blank=True,
-        default='',
-        help_text='Error type level 3 category'
-    )
-
-    error_management = models.CharField(
-        max_length=50,
-        null=True,
-        blank=True,
-        default='',
-        help_text='How error was managed'
-    )
-
-    error_outcome = models.CharField(
-        max_length=50,
-        null=True,
-        blank=True,
-        default='',
-        help_text='Outcome of error'
-    )
-
-    error_description = models.TextField(
-        null=True,
-        blank=True,
-        default='',
-        help_text='Detailed error description'
-    )
-
-    uas_relevancy = models.CharField(
-        max_length=50,
-        null=True,
-        blank=True,
-        default='',
-        help_text='Relevancy of UAS'
-    )
-
-    uas_type_l1 = models.CharField(
-        max_length=100,
-        null=True,
-        blank=True,
-        default='',
-        db_index=True,
-        help_text='UAS type level 1 category'
-    )
-
-    uas_type_l2 = models.CharField(
-        max_length=100,
-        null=True,
-        blank=True,
-        default='',
-        help_text='UAS type level 2 category'
-    )
-
-    uas_type_l3 = models.CharField(
-        max_length=200,
-        null=True,
-        blank=True,
-        default='',
-        help_text='UAS type level 3 category'
-    )
-
-    uas_management = models.CharField(
-        max_length=50,
-        null=True,
-        blank=True,
-        default='',
-        help_text='How UAS was managed'
-    )
-
-    uas_description = models.TextField(
-        null=True,
-        blank=True,
-        default='',
-        help_text='Detailed UAS description'
-    )
-
-    competency_indicators = JSONField(
-        null=True,
-        blank=True,
-        default=list,
-        help_text='Array of selected competency indicators'
-    )
-
-    threat_capability = JSONField(
-        null=True,
-        blank=True,
-        default=list,
-        help_text='Capability indicators for threat recognition'
-    )
-
-    error_capability = JSONField(
-        null=True,
-        blank=True,
-        default=list,
-        help_text='Capability indicators for error recognition'
-    )
-
-    uas_capability = JSONField(
-        null=True,
-        blank=True,
-        default=list,
-        help_text='Capability indicators for UAS recognition'
-    )
-
-    likelihood = models.CharField(
-        max_length=50,
-        null=True,
-        blank=True,
-        default='',
-        help_text='Likelihood assessment'
-    )
-
-    severity = models.CharField(
-        max_length=50,
-        null=True,
-        blank=True,
-        default='',
-        help_text='Severity assessment'
-    )
-
-    training_benefit = models.CharField(
-        max_length=50,
-        null=True,
-        blank=True,
-        default='',
-        help_text='Potential training benefit'
-    )
-
-    crm_training_topics = JSONField(
-        null=True,
-        blank=True,
-        default=dict,
-        help_text='CRM training topics grouped by category code'
-    )
-
-    threat_training_topics = JSONField(
-        null=True,
-        blank=True,
-        default=list,
-        help_text='Auto-calculated training topics based on threat selection'
-    )
-
-    error_training_topics = JSONField(
-        null=True,
-        blank=True,
-        default=list,
-        help_text='Auto-calculated training topics based on error selection'
-    )
-
-    uas_training_topics = JSONField(
-        null=True,
-        blank=True,
-        default=list,
-        help_text='Auto-calculated training topics based on UAS selection'
-    )
-
-    training_plan_ideas = models.TextField(
-        null=True,
-        blank=True,
-        default='',
-        help_text='Ideas for training plan'
-    )
-
-    goals_to_achieve = models.TextField(
-        null=True,
-        blank=True,
-        default='',
-        help_text='Goals to achieve with training'
-    )
-
-    notes = models.TextField(
-        null=True,
-        blank=True,
-        default='',
-        help_text='Additional notes'
-    )
-
-    created_at = models.DateTimeField(_('created at'), auto_now_add=True)
-    updated_at = models.DateTimeField(_('updated at'), auto_now=True)
-
-    objects = AviationAnnotationManager()
-
-    class Meta:
-        db_table = 'aviation_annotation'
-        ordering = ['-created_at']
-        indexes = [
-            models.Index(fields=['annotation']),
-            models.Index(fields=['threat_type_l1', 'error_type_l1']),
-            models.Index(fields=['aircraft_type']),
-        ]
-
-    def __str__(self):
-        return f'Aviation Annotation {self.id} for Task {self.annotation.task_id}'
-
-    @cached_property
-    def organization(self):
-        """Get organization for permission checks"""
-        return self.annotation.task.project.organization
-
-    def has_permission(self, user):
-        """Check if user has permission to access this annotation"""
-        return self.annotation.task.project.organization == user.active_organization
-
-
-class AviationDropdownOption(models.Model):
-    """Stores all dropdown options from Excel sheets"""
-
-    category = models.CharField(
-        max_length=50,
-        db_index=True,
-        help_text='Category: aircraft, threat, error, etc.'
-    )
-
-    level = models.IntegerField(
-        default=1,
-        db_index=True,
-        help_text='Hierarchy level (1, 2, or 3)'
-    )
-
+    category = models.CharField(max_length=50, choices=CATEGORY_CHOICES)
+    level = models.PositiveSmallIntegerField()
     parent = models.ForeignKey(
         'self',
-        null=True,
-        blank=True,
         on_delete=models.CASCADE,
-        related_name='children',
-        help_text='Parent option for hierarchical structure'
-    )
-
-    code = models.CharField(
-        max_length=50,
-        db_index=True,
-        help_text='Option code or abbreviation'
-    )
-
-    label = models.CharField(
-        max_length=200,
-        help_text='Display label for option'
-    )
-
-    training_topics = JSONField(
         null=True,
         blank=True,
-        default=list,
-        help_text='Associated training topics for auto-calculation'
+        related_name='children'
     )
-
-    display_order = models.IntegerField(
-        default=0,
-        help_text='Display order within parent/level'
-    )
-
-    is_active = models.BooleanField(
-        default=True,
-        db_index=True,
-        help_text='Whether this option is currently active'
-    )
-
-    created_at = models.DateTimeField(_('created at'), auto_now_add=True)
-    updated_at = models.DateTimeField(_('updated at'), auto_now=True)
-
-    objects = AviationDropdownManager()
+    code = models.CharField(max_length=50)
+    label = models.CharField(max_length=255)
+    label_zh = models.CharField(max_length=255, blank=True, default='')
+    training_topics = models.JSONField(default=list, blank=True)
+    display_order = models.PositiveIntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        db_table = 'aviation_dropdown_option'
+        db_table = 'aviation_type_hierarchy'
+        unique_together = [('category', 'level', 'code')]
         ordering = ['category', 'level', 'display_order']
-        indexes = [
-            models.Index(fields=['category', 'level']),
-            models.Index(fields=['parent', 'display_order']),
-            models.Index(fields=['category', 'is_active']),
-        ]
-        unique_together = [['category', 'level', 'code']]
 
     def __str__(self):
-        return f'{self.category} - {self.label} (L{self.level})'
+        return f'{self.category}:{self.code}'
+
+
+class LabelingItem(models.Model):
+    STATUS_CHOICES = [
+        ('draft', 'Draft'),
+        ('submitted', 'Submitted'),
+        ('reviewed', 'Reviewed'),
+        ('approved', 'Approved'),
+    ]
+
+    event = models.ForeignKey(
+        AviationEvent,
+        on_delete=models.CASCADE,
+        related_name='labeling_items'
+    )
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='aviation_labeling_items'
+    )
+    sequence_number = models.PositiveIntegerField()
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
+
+    threat_type_l1 = models.ForeignKey(
+        TypeHierarchy,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='labeling_items_threat_l1'
+    )
+    threat_type_l2 = models.ForeignKey(
+        TypeHierarchy,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='labeling_items_threat_l2'
+    )
+    threat_type_l3 = models.ForeignKey(
+        TypeHierarchy,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='labeling_items_threat_l3'
+    )
+    threat_management = models.JSONField(default=dict, blank=True)
+    threat_impact = models.JSONField(default=dict, blank=True)
+    threat_coping_abilities = models.JSONField(default=dict, blank=True)
+    threat_description = models.TextField(blank=True, default='')
+
+    error_type_l1 = models.ForeignKey(
+        TypeHierarchy,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='labeling_items_error_l1'
+    )
+    error_type_l2 = models.ForeignKey(
+        TypeHierarchy,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='labeling_items_error_l2'
+    )
+    error_type_l3 = models.ForeignKey(
+        TypeHierarchy,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='labeling_items_error_l3'
+    )
+    error_relevance = models.CharField(
+        max_length=50,
+        blank=True,
+        default='',
+        help_text='Origin of error: 来源于威胁'
+    )
+    error_management = models.JSONField(default=dict, blank=True)
+    error_impact = models.JSONField(default=dict, blank=True)
+    error_coping_abilities = models.JSONField(default=dict, blank=True)
+    error_description = models.TextField(blank=True, default='')
+
+    uas_applicable = models.BooleanField(default=False)
+    uas_relevance = models.CharField(
+        max_length=50,
+        blank=True,
+        default='',
+        help_text='Origin of UAS: 来源于差错, 来源于威胁'
+    )
+    uas_type_l1 = models.ForeignKey(
+        TypeHierarchy,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='labeling_items_uas_l1'
+    )
+    uas_type_l2 = models.ForeignKey(
+        TypeHierarchy,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='labeling_items_uas_l2'
+    )
+    uas_type_l3 = models.ForeignKey(
+        TypeHierarchy,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='labeling_items_uas_l3'
+    )
+    uas_management = models.JSONField(default=dict, blank=True)
+    uas_impact = models.JSONField(default=dict, blank=True)
+    uas_coping_abilities = models.JSONField(default=dict, blank=True)
+    uas_description = models.TextField(blank=True, default='')
+
+    calculated_threat_topics = models.JSONField(default=list, blank=True)
+    calculated_error_topics = models.JSONField(default=list, blank=True)
+    calculated_uas_topics = models.JSONField(default=list, blank=True)
+
+    notes = models.TextField(blank=True, default='')
+    linked_result = models.ForeignKey(
+        'ResultPerformance',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='linked_labeling_items'
+    )
+    reviewed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='reviewed_labeling_items'
+    )
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'aviation_labeling_item'
+        unique_together = [('event', 'sequence_number')]
+        ordering = ['event', 'sequence_number']
+
+    def __str__(self):
+        return f'LabelingItem({self.event.event_number}:{self.sequence_number})'
+
+
+class ResultPerformance(models.Model):
+    STATUS_CHOICES = [
+        ('draft', 'Draft'),
+        ('submitted', 'Submitted'),
+        ('reviewed', 'Reviewed'),
+        ('approved', 'Approved'),
+    ]
+
+    aviation_project = models.ForeignKey(
+        AviationProject,
+        on_delete=models.CASCADE,
+        related_name='result_performances'
+    )
+    labeling_items = models.ManyToManyField(
+        LabelingItem,
+        through='LabelingItemPerformance',
+        related_name='result_performances'
+    )
+    event_type = models.CharField(max_length=100, blank=True, default='')
+    flight_phase = models.CharField(max_length=100, blank=True, default='')
+    likelihood = models.CharField(max_length=50, blank=True, default='')
+    severity = models.CharField(max_length=50, blank=True, default='')
+    training_effect = models.CharField(max_length=100, blank=True, default='')
+    training_plan = models.TextField(blank=True, default='')
+    training_topics = models.JSONField(default=list, blank=True)
+    training_goals = models.TextField(blank=True, default='')
+    objectives = models.TextField(blank=True, default='')
+    recommendations = models.TextField(blank=True, default='')
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='created_result_performances'
+    )
+    reviewed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='reviewed_result_performances'
+    )
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'aviation_result_performance'
+
+    def __str__(self):
+        return f'ResultPerformance({self.id})'
+
+
+class LabelingItemPerformance(models.Model):
+    labeling_item = models.ForeignKey(
+        LabelingItem,
+        on_delete=models.CASCADE,
+        related_name='performance_links'
+    )
+    result_performance = models.ForeignKey(
+        ResultPerformance,
+        on_delete=models.CASCADE,
+        related_name='labeling_item_links'
+    )
+    contribution_weight = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=1.00
+    )
+    notes = models.TextField(blank=True, default='')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'aviation_labeling_item_performance'
+        unique_together = [('labeling_item', 'result_performance')]
+
+    def __str__(self):
+        return f'LabelingItemPerformance({self.labeling_item_id}:{self.result_performance_id})'

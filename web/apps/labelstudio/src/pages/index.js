@@ -13,5 +13,6 @@ export const Pages = [
   OrganizationPage,
   AviationPage,
   ModelsPage,
+  AviationPage,
   ff.isFF(ff.FF_AUTH_TOKENS) && pages.AccountSettingsPage
 ].filter(Boolean);

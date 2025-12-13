@@ -2,8 +2,6 @@ from django.apps import AppConfig
 
 
 class AviationConfig(AppConfig):
+    default_auto_field = 'django.db.models.AutoField'
     name = 'aviation'
-    verbose_name = 'Aviation Safety Event Annotation'
-
-    def ready(self):
-        from . import signals
+    verbose_name = 'Aviation'

@@ -1,0 +1,171 @@
+@import '../../../assets/styles/variables';
+
+.container {
+  position: relative;
+  width: 100%;
+}
+
+.triggerWrapper {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid $aviation-border-color;
+  border-radius: $aviation-border-radius;
+  background: white;
+  cursor: pointer;
+  transition: border-color 0.2s;
+
+  &:hover:not(.disabled) {
+    border-color: $aviation-primary-color;
+  }
+
+  &.disabled {
+    background: $aviation-bg-disabled;
+    cursor: not-allowed;
+    color: $aviation-text-muted;
+  }
+
+  &.error {
+    border-color: $aviation-error-color;
+  }
+
+  &.open {
+    border-color: $aviation-primary-color;
+  }
+}
+
+.triggerText {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.triggerIcon {
+  margin-left: 8px;
+  transition: transform 0.2s;
+
+  &.open {
+    transform: rotate(180deg);
+  }
+}
+
+.placeholder {
+  color: $aviation-text-muted;
+}
+
+.dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 4px;
+  background: white;
+  border: 1px solid $aviation-border-color;
+  border-radius: $aviation-border-radius;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  display: flex;
+  min-width: 600px;
+}
+
+.column {
+  flex: 1;
+  border-right: 1px solid $aviation-border-color;
+  max-height: 300px;
+  overflow-y: auto;
+  min-width: 200px;
+
+  &:last-child {
+    border-right: none;
+  }
+}
+
+.columnHeader {
+  padding: 8px 12px;
+  font-weight: 600;
+  font-size: 12px;
+  color: $aviation-text-muted;
+  text-transform: uppercase;
+  border-bottom: 1px solid $aviation-border-color;
+  background: #fafafa;
+  position: sticky;
+  top: 0;
+}
+
+.option {
+  padding: 8px 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: background-color 0.15s;
+
+  &:hover {
+    background: $aviation-bg-hover;
+  }
+
+  &.selected {
+    background: $aviation-bg-selected;
+    color: $aviation-primary-color;
+  }
+}
+
+.optionLabel {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.optionCode {
+  font-size: 11px;
+  color: $aviation-text-muted;
+  margin-left: 8px;
+}
+
+.hasChildren {
+  &::after {
+    content: '›';
+    margin-left: 8px;
+    color: $aviation-text-muted;
+  }
+}
+
+.emptyColumn {
+  padding: 16px;
+  text-align: center;
+  color: $aviation-text-muted;
+  font-size: 13px;
+}
+
+.errorMessage {
+  margin-top: 4px;
+  font-size: 12px;
+  color: $aviation-error-color;
+}
+
+.clearButton {
+  padding: 2px 6px;
+  margin-left: 8px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: $aviation-text-muted;
+  font-size: 14px;
+  line-height: 1;
+  border-radius: 2px;
+
+  &:hover {
+    background: $aviation-bg-hover;
+    color: $aviation-text-color;
+  }
+}

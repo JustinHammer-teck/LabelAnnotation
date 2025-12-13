@@ -18,6 +18,8 @@
     "skipDefaultLibCheck": true,
     "baseUrl": ".",
     "paths": {
+      "@heartex/aviation": ["libs/aviation/src/index.ts"],
+      "@heartex/aviation/*": ["libs/aviation/src/*"],
       "@humansignal/app-common": ["libs/app-common/src/index.ts"],
       "@humansignal/app-common/*": ["libs/app-common/src/*"],
       "@humansignal/core": ["libs/core/src/index.ts"],

@@ -1,0 +1,129 @@
+@use '../../../assets/styles/variables' as *;
+
+.panel {
+  background: #fff;
+  border: 1px solid $aviation-border-color;
+  border-radius: $aviation-border-radius;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: ($aviation-spacing-unit * 1.5) ($aviation-spacing-unit * 2);
+  border-bottom: 1px solid $aviation-border-color;
+  background: $aviation-bg-hover;
+}
+
+.title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: $aviation-text-color;
+}
+
+.eventNumber {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  background: rgba($aviation-primary-color, 0.1);
+  color: $aviation-primary-color;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: $aviation-border-radius;
+  font-family: monospace;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: $aviation-spacing-unit * 2;
+  padding: $aviation-spacing-unit * 2;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: $aviation-spacing-unit;
+}
+
+.sectionTitle {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: $aviation-text-muted;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.fieldsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: $aviation-spacing-unit * 1.5;
+}
+
+.fieldsRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $aviation-spacing-unit * 2;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.fieldLabel {
+  font-size: 12px;
+  font-weight: 500;
+  color: $aviation-text-muted;
+}
+
+.fieldValue {
+  font-size: 14px;
+  color: $aviation-text-color;
+}
+
+.crewInfo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $aviation-spacing-unit * 1.5;
+}
+
+.crewItem {
+  display: flex;
+  align-items: center;
+  gap: $aviation-spacing-unit;
+  padding: 4px 10px;
+  background: $aviation-bg-hover;
+  border-radius: $aviation-border-radius;
+}
+
+.crewRole {
+  font-size: 12px;
+  font-weight: 500;
+  color: $aviation-text-muted;
+}
+
+.crewValue {
+  font-size: 13px;
+  font-weight: 500;
+  color: $aviation-text-color;
+}
+
+.weatherText {
+  margin: 0;
+  font-size: 14px;
+  color: $aviation-text-color;
+  line-height: 1.5;
+}
+
+.description {
+  margin: 0;
+  font-size: 14px;
+  color: $aviation-text-color;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}

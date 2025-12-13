@@ -1,0 +1,30 @@
+@import '../../../assets/styles/variables';
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+}
+
+.label {
+  font-size: 14px;
+  font-weight: 500;
+  color: $aviation-text-color;
+}
+
+.typeSelection {
+  width: 100%;
+}
+
+.relatedFields {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-left: 16px;
+  border-left: 2px solid $aviation-border-color;
+}

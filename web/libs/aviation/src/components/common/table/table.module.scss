@@ -1,0 +1,86 @@
+@use '../../../assets/styles/variables' as *;
+
+.tableWrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  border: 1px solid $aviation-border-color;
+  border-radius: $aviation-border-radius;
+}
+
+.thead {
+  background: #fafafa;
+}
+
+.th {
+  padding: ($aviation-spacing-unit * 1.5) ($aviation-spacing-unit * 2);
+  text-align: left;
+  font-weight: 600;
+  font-size: 14px;
+  color: $aviation-text-color;
+  border-bottom: 1px solid $aviation-border-color;
+  white-space: nowrap;
+}
+
+.tbody {
+  tr {
+    transition: background-color 0.2s;
+
+    &:hover {
+      background-color: $aviation-bg-hover;
+    }
+
+    &:not(:last-child) {
+      td {
+        border-bottom: 1px solid $aviation-border-color;
+      }
+    }
+  }
+}
+
+.td {
+  padding: ($aviation-spacing-unit * 1.5) ($aviation-spacing-unit * 2);
+  font-size: 14px;
+  color: $aviation-text-color;
+}
+
+.clickable {
+  .tbody tr {
+    cursor: pointer;
+  }
+}
+
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: ($aviation-spacing-unit * 4);
+  color: $aviation-text-muted;
+}
+
+.spinner {
+  width: 24px;
+  height: 24px;
+  border: 2px solid $aviation-border-color;
+  border-top-color: $aviation-primary-color;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.empty {
+  text-align: center;
+  padding: ($aviation-spacing-unit * 4);
+  color: $aviation-text-muted;
+  font-size: 14px;
+}

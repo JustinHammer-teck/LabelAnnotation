@@ -1,0 +1,31 @@
+@use '../../../assets/styles/variables' as *;
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: $aviation-border-radius;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.success {
+  background-color: rgba($aviation-success-color, 0.1);
+  color: $aviation-success-color;
+}
+
+.warning {
+  background-color: rgba($aviation-warning-color, 0.1);
+  color: darken($aviation-warning-color, 10%);
+}
+
+.error {
+  background-color: rgba($aviation-error-color, 0.1);
+  color: $aviation-error-color;
+}
+
+.info {
+  background-color: rgba($aviation-primary-color, 0.1);
+  color: $aviation-primary-color;
+}
