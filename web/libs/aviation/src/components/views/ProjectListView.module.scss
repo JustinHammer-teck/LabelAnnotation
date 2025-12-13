@@ -71,3 +71,28 @@
   font-size: 14px;
   color: $aviation-text-muted;
 }
+
+.deleteButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: $aviation-border-radius;
+  color: $aviation-text-muted;
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s;
+
+  &:hover {
+    background-color: rgba(220, 53, 69, 0.1);
+    color: #dc3545;
+  }
+
+  &:focus {
+    outline: 2px solid rgba(220, 53, 69, 0.3);
+    outline-offset: 2px;
+  }
+}
