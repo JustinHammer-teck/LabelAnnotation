@@ -1,4 +1,4 @@
-import { type FC, useMemo, type ReactNode } from 'react';
+import { type FC, useMemo, useCallback, type ReactNode, type MouseEvent } from 'react';
 import { Table, Button, type TableColumn } from '../common';
 import type { AviationProject } from '../../types';
 import styles from './ProjectListView.module.scss';
@@ -7,6 +7,7 @@ export interface ProjectListViewProps {
   projects: AviationProject[];
   onSelect: (id: number) => void;
   onCreate: () => void;
+  onDelete?: (id: number) => void;
   onRetry?: () => void;
   loading?: boolean;
   error?: string | null;
@@ -16,10 +17,19 @@ export const ProjectListView: FC<ProjectListViewProps> = ({
   projects,
   onSelect,
   onCreate,
+  onDelete,
   onRetry,
   loading = false,
   error = null,
 }) => {
+  const handleDeleteClick = useCallback(
+    (e: MouseEvent, id: number) => {
+      e.stopPropagation();
+      onDelete?.(id);
+    },
+    [onDelete]
+  );
+
   const columns: TableColumn<AviationProject>[] = useMemo(
     () => [
       {
@@ -50,8 +60,34 @@ export const ProjectListView: FC<ProjectListViewProps> = ({
           return date.toLocaleDateString();
         },
       },
+      ...(onDelete
+        ? [
+            {
+              key: 'actions',
+              title: 'Actions',
+              width: 100,
+              render: (_: unknown, record: AviationProject) => (
+                <button
+                  type="button"
+                  className={styles.deleteButton}
+                  onClick={(e) => handleDeleteClick(e, record.id)}
+                  aria-label="Delete project"
+                >
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
+                    <path
+                      d="M3 4h8M5.5 4V3a1 1 0 011-1h1a1 1 0 011 1v1M10 4v7a1 1 0 01-1 1H5a1 1 0 01-1-1V4"
+                      stroke="currentColor"
+                      strokeWidth="1.2"
+                      fill="none"
+                    />
+                  </svg>
+                </button>
+              ),
+            },
+          ]
+        : []),
     ],
-    []
+    [onDelete, handleDeleteClick]
   );
 
   const emptyContent: ReactNode = (

@@ -3,6 +3,11 @@ import { useAviationApi } from '../api';
 import type { ExcelUploadRowError } from '../types';
 import type { UploadStatus } from '../components/excel-upload';
 
+interface UploadSuccessResult {
+  firstEventId: number | null;
+  createdCount: number;
+}
+
 interface UseExcelUploadResult {
   uploadProgress: number;
   uploadStatus: UploadStatus;
@@ -10,7 +15,7 @@ interface UseExcelUploadResult {
   firstEventId: number | null;
   uploadErrors: ExcelUploadRowError[];
   errorMessage: string | null;
-  upload: (projectId: number, file: File) => Promise<boolean>;
+  upload: (projectId: number, file: File) => Promise<UploadSuccessResult | null>;
   reset: () => void;
 }
 
@@ -25,8 +30,8 @@ export const useExcelUpload = (): UseExcelUploadResult => {
   const uploadingRef = useRef(false);
 
   const upload = useCallback(
-    async (projectId: number, file: File): Promise<boolean> => {
-      if (uploadingRef.current) return false;
+    async (projectId: number, file: File): Promise<UploadSuccessResult | null> => {
+      if (uploadingRef.current) return null;
       uploadingRef.current = true;
 
       setUploadProgress(0);
@@ -46,19 +51,22 @@ export const useExcelUpload = (): UseExcelUploadResult => {
           setFirstEventId(result.first_event_id);
           setUploadStatus('success');
           uploadingRef.current = false;
-          return true;
+          return {
+            firstEventId: result.first_event_id,
+            createdCount: result.created_count,
+          };
         }
 
         setUploadErrors(result.errors);
         setUploadStatus('error');
         uploadingRef.current = false;
-        return false;
+        return null;
       } catch (e) {
         const message = e instanceof Error ? e.message : 'Upload failed';
         setErrorMessage(message);
         setUploadStatus('error');
         uploadingRef.current = false;
-        return false;
+        return null;
       }
     },
     [api]

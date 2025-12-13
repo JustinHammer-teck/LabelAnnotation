@@ -9,13 +9,11 @@ import styles from './TaskListView.module.scss';
 export interface TaskListViewProps {
   projectId: number;
   onSelect: (id: number) => void;
-  onUpload: () => void;
 }
 
 export const TaskListView: FC<TaskListViewProps> = ({
   projectId,
   onSelect,
-  onUpload,
 }) => {
   const history = useHistory();
   const { events, loading, error, fetchEvents } = useEvents(projectId);
@@ -49,14 +47,19 @@ export const TaskListView: FC<TaskListViewProps> = ({
 
   const handleUpload = useCallback(
     async (file: File) => {
-      const success = await upload(projectId, file);
-      if (success) {
+      const result = await upload(projectId, file);
+      if (result) {
         setTimeout(() => {
-          handleCloseModal();
+          setIsModalOpen(false);
+          if (result.firstEventId) {
+            history.push(`/aviation/projects/${projectId}/events/${result.firstEventId}`);
+          } else {
+            fetchEvents();
+          }
         }, 1500);
       }
     },
-    [upload, projectId, handleCloseModal]
+    [upload, projectId, history, fetchEvents]
   );
 
   useEffect(() => {
@@ -111,9 +114,6 @@ export const TaskListView: FC<TaskListViewProps> = ({
         <Button variant="primary" onClick={handleOpenModal}>
           Import Excel
         </Button>
-        <Button variant="secondary" onClick={onUpload}>
-          Upload Event
-        </Button>
       </div>
     </div>
   );
@@ -142,9 +142,6 @@ export const TaskListView: FC<TaskListViewProps> = ({
         <div className={styles.headerActions}>
           <Button variant="primary" onClick={handleOpenModal}>
             Import Excel
-          </Button>
-          <Button variant="secondary" onClick={onUpload}>
-            Upload Event
           </Button>
         </div>
       </div>

@@ -2,13 +2,16 @@ import { type FC, useCallback, useEffect, useState } from 'react';
 import { Switch, Route, Redirect, useHistory, useParams, useRouteMatch } from 'react-router-dom';
 import { AviationShell } from './layout';
 import { ProjectListView, TaskListView, AnnotationView, CreateProjectModal } from './views';
+import { ConfirmDialog } from './common';
 import { useProjects } from '../hooks';
 import type { AviationProject } from '../types';
 
 const ProjectListPage: FC = () => {
   const history = useHistory();
-  const { projects, loading, error, fetchProjects } = useProjects();
+  const { projects, loading, error, fetchProjects, deleteProject } = useProjects();
   const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [projectToDelete, setProjectToDelete] = useState<number | null>(null);
 
   useEffect(() => {
     fetchProjects();
@@ -33,6 +36,22 @@ const ProjectListPage: FC = () => {
     [history]
   );
 
+  const handleDeleteRequest = useCallback((id: number) => {
+    setProjectToDelete(id);
+    setDeleteConfirmOpen(true);
+  }, []);
+
+  const handleDeleteConfirm = useCallback(async () => {
+    if (projectToDelete !== null) {
+      await deleteProject(projectToDelete);
+      setProjectToDelete(null);
+    }
+  }, [projectToDelete, deleteProject]);
+
+  const projectToDeleteName = projectToDelete
+    ? projects.find((p) => p.id === projectToDelete)?.project.title
+    : '';
+
   return (
     <>
       <ProjectListView
@@ -41,12 +60,22 @@ const ProjectListPage: FC = () => {
         error={error}
         onSelect={handleSelect}
         onCreate={handleCreate}
+        onDelete={handleDeleteRequest}
         onRetry={fetchProjects}
       />
       <CreateProjectModal
         open={createModalOpen}
         onClose={() => setCreateModalOpen(false)}
         onSuccess={handleCreateSuccess}
+      />
+      <ConfirmDialog
+        open={deleteConfirmOpen}
+        onOpenChange={setDeleteConfirmOpen}
+        onConfirm={handleDeleteConfirm}
+        title="Delete Project"
+        description={`Are you sure you want to delete "${projectToDeleteName}"? This action cannot be undone.`}
+        confirmText="Delete"
+        variant="destructive"
       />
     </>
   );
@@ -64,10 +93,6 @@ const TaskListPage: FC = () => {
     [history, projectId]
   );
 
-  const handleUpload = useCallback(() => {
-    history.push(`/aviation/projects/${projectId}/upload`);
-  }, [history, projectId]);
-
   if (!projectId || Number.isNaN(numericProjectId)) {
     return <Redirect to="/aviation/projects" />;
   }
@@ -76,7 +101,6 @@ const TaskListPage: FC = () => {
     <TaskListView
       projectId={numericProjectId}
       onSelect={handleSelect}
-      onUpload={handleUpload}
     />
   );
 };
