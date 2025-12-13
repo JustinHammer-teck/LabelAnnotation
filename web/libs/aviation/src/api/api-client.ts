@@ -11,6 +11,7 @@ import type {
   CreateResultPerformanceData,
   LinkItemsData,
   ExcelUploadResult,
+  ExportData,
 } from '../types';
 
 export interface AviationApiClient {
@@ -45,4 +46,7 @@ export interface AviationApiClient {
     file: File,
     onProgress?: (progress: number) => void
   ): Promise<ExcelUploadResult>;
+
+  exportEvents(projectId: number, format: 'json' | 'xlsx'): Promise<Blob | ExportData>;
+  downloadExport(projectId: number, format: 'json' | 'xlsx', filename?: string): Promise<void>;
 }

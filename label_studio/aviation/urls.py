@@ -16,5 +16,6 @@ router.register(r'item-performances', api.LabelingItemPerformanceViewSet, basena
 urlpatterns = [
     path('api/aviation/', include(router.urls)),
     path('api/aviation/projects/<int:pk>/import-excel/', api.AviationExcelUploadView.as_view(), name='aviation-excel-upload'),
+    path('api/aviation/projects/<int:pk>/export/', api.AviationExportView.as_view(), name='aviation-export'),
     re_path(r'^aviation(?:/(?P<path>.*))?$', views.aviation_page, name='aviation-page'),
 ]

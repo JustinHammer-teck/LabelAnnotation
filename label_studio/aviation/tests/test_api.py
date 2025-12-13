@@ -7,10 +7,12 @@ from projects.tests.factories import ProjectFactory
 from tasks.tests.factories import TaskFactory, AnnotationFactory
 from users.tests.factories import UserFactory
 
-from aviation.models import AviationAnnotation, AviationDropdownOption
+from aviation.models import LabelingItem, TypeHierarchy
 from aviation.tests.factories import (
-    AviationAnnotationFactory,
-    AviationDropdownOptionFactory
+    AviationProjectFactory,
+    AviationEventFactory,
+    LabelingItemFactory,
+    TypeHierarchyFactory,
 )
 
 
@@ -541,3 +543,78 @@ class AviationExportTemplateAPITest(APITestCase):
         response = self.client.get('/api/aviation/export/template/')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+
+class AviationProjectExportAPITest(APITestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.org1 = OrganizationFactory()
+        cls.org2 = OrganizationFactory()
+        cls.user1 = cls.org1.created_by
+        cls.user2 = cls.org2.created_by
+
+        cls.project1 = ProjectFactory(organization=cls.org1)
+        cls.aviation_project1 = AviationProjectFactory(project=cls.project1)
+
+        cls.project2 = ProjectFactory(organization=cls.org2)
+        cls.aviation_project2 = AviationProjectFactory(project=cls.project2)
+
+        cls.task = TaskFactory(project=cls.project1)
+        cls.event = AviationEventFactory(task=cls.task)
+        cls.labeling_item = LabelingItemFactory(event=cls.event)
+
+        cls.empty_project = ProjectFactory(organization=cls.org1)
+        cls.empty_aviation_project = AviationProjectFactory(project=cls.empty_project)
+
+    def test_export_json_success(self):
+        self.client.force_authenticate(user=self.user1)
+        response = self.client.get(f'/api/aviation/projects/{self.aviation_project1.id}/export/')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response['Content-Type'], 'application/json')
+        data = response.json()
+        self.assertIn('metadata', data)
+        self.assertIn('events', data)
+        self.assertIn('result_performances', data)
+
+    def test_export_xlsx_success(self):
+        self.client.force_authenticate(user=self.user1)
+        response = self.client.get(f'/api/aviation/projects/{self.aviation_project1.id}/export/?export_format=xlsx')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            response['Content-Type'],
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        self.assertIn('attachment', response['Content-Disposition'])
+
+    def test_export_organization_isolation(self):
+        self.client.force_authenticate(user=self.user2)
+        response = self.client.get(f'/api/aviation/projects/{self.aviation_project1.id}/export/')
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_export_unauthenticated(self):
+        response = self.client.get(f'/api/aviation/projects/{self.aviation_project1.id}/export/')
+
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_export_invalid_project(self):
+        self.client.force_authenticate(user=self.user1)
+        response = self.client.get('/api/aviation/projects/99999/export/')
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_export_invalid_format(self):
+        self.client.force_authenticate(user=self.user1)
+        response = self.client.get(f'/api/aviation/projects/{self.aviation_project1.id}/export/?export_format=pdf')
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_export_empty_project(self):
+        self.client.force_authenticate(user=self.user1)
+        response = self.client.get(f'/api/aviation/projects/{self.empty_aviation_project.id}/export/')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.json()
+        self.assertEqual(data['events'], [])
