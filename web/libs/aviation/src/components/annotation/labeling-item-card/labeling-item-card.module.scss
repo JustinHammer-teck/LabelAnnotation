@@ -1,0 +1,92 @@
+@use '../../../assets/styles/variables' as *;
+
+.card {
+  background: #fff;
+  border: 1px solid $aviation-border-color;
+  border-radius: $aviation-border-radius;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: ($aviation-spacing-unit * 1.5) ($aviation-spacing-unit * 2);
+  border-bottom: 1px solid $aviation-border-color;
+  background: $aviation-bg-hover;
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: $aviation-spacing-unit * 1.5;
+}
+
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: $aviation-spacing-unit;
+}
+
+.index {
+  font-size: 16px;
+  font-weight: 600;
+  color: $aviation-text-color;
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: $aviation-border-radius;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: capitalize;
+
+  &[data-status='draft'] {
+    background: rgba($aviation-text-muted, 0.1);
+    color: $aviation-text-muted;
+  }
+
+  &[data-status='submitted'] {
+    background: rgba($aviation-primary-color, 0.1);
+    color: $aviation-primary-color;
+  }
+
+  &[data-status='reviewed'] {
+    background: rgba($aviation-warning-color, 0.1);
+    color: darken($aviation-warning-color, 10%);
+  }
+
+  &[data-status='approved'] {
+    background: rgba($aviation-success-color, 0.1);
+    color: $aviation-success-color;
+  }
+}
+
+.sections {
+  display: flex;
+  flex-direction: column;
+  gap: $aviation-spacing-unit * 2;
+  padding: $aviation-spacing-unit * 2;
+}
+
+.notes {
+  display: flex;
+  gap: $aviation-spacing-unit;
+  padding: $aviation-spacing-unit * 1.5 $aviation-spacing-unit * 2;
+  border-top: 1px solid $aviation-border-color;
+  background: $aviation-bg-hover;
+}
+
+.notesLabel {
+  font-size: 13px;
+  font-weight: 500;
+  color: $aviation-text-muted;
+  flex-shrink: 0;
+}
+
+.notesContent {
+  font-size: 13px;
+  color: $aviation-text-color;
+}

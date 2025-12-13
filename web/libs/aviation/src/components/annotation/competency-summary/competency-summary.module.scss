@@ -1,0 +1,84 @@
+@use '../../../assets/styles/variables' as *;
+
+.summary {
+  padding: $aviation-spacing-unit * 1.5;
+  border-radius: $aviation-border-radius;
+  border: 1px solid $aviation-border-color;
+}
+
+.threat {
+  background: rgba($aviation-warning-color, 0.03);
+  border-color: rgba($aviation-warning-color, 0.2);
+}
+
+.error {
+  background: rgba($aviation-error-color, 0.03);
+  border-color: rgba($aviation-error-color, 0.2);
+}
+
+.uas {
+  background: rgba($aviation-primary-color, 0.03);
+  border-color: rgba($aviation-primary-color, 0.2);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: $aviation-spacing-unit;
+  margin-bottom: $aviation-spacing-unit;
+}
+
+.title {
+  font-size: 12px;
+  font-weight: 600;
+  color: $aviation-text-muted;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  background: $aviation-bg-hover;
+  border-radius: 9px;
+  font-size: 11px;
+  font-weight: 600;
+  color: $aviation-text-muted;
+}
+
+.competencies {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $aviation-spacing-unit;
+}
+
+.competency {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: $aviation-border-radius;
+  font-size: 12px;
+}
+
+.type {
+  background: rgba($aviation-success-color, 0.1);
+  color: $aviation-success-color;
+}
+
+.coping {
+  background: rgba($aviation-primary-color, 0.1);
+  color: $aviation-primary-color;
+}
+
+.code {
+  font-weight: 600;
+}
+
+.label {
+  font-weight: 400;
+}

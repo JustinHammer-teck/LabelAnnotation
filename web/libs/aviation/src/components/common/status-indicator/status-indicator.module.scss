@@ -1,0 +1,59 @@
+@use '../../../assets/styles/variables' as *;
+
+.statusIndicator {
+  display: inline-flex;
+  align-items: center;
+  gap: $aviation-spacing-unit / 2;
+  font-size: 12px;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.saved {
+  .dot {
+    background-color: $aviation-success-color;
+  }
+
+  .message {
+    color: $aviation-success-color;
+  }
+}
+
+.saving {
+  .dot {
+    background-color: $aviation-warning-color;
+    animation: pulse 1s ease-in-out infinite;
+  }
+
+  .message {
+    color: darken($aviation-warning-color, 10%);
+  }
+}
+
+.error {
+  .dot {
+    background-color: $aviation-error-color;
+  }
+
+  .message {
+    color: $aviation-error-color;
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+.message {
+  white-space: nowrap;
+}

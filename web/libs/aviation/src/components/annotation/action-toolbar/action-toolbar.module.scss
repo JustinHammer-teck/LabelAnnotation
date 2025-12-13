@@ -1,0 +1,54 @@
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.saveStatus {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+
+  &.idle {
+    color: var(--text-secondary, #6b7280);
+  }
+
+  &.saving {
+    color: var(--primary-color, #2563eb);
+    background: var(--primary-bg, #eff6ff);
+  }
+
+  &.saved {
+    color: var(--success-color, #059669);
+    background: var(--success-bg, #ecfdf5);
+  }
+
+  &.error {
+    color: var(--error-color, #dc2626);
+    background: var(--error-bg, #fef2f2);
+  }
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}

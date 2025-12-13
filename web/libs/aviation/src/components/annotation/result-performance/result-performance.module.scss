@@ -1,0 +1,253 @@
+@use '../../../assets/styles/variables' as *;
+
+.panel {
+  background: #fff;
+  border: 1px solid $aviation-border-color;
+  border-radius: $aviation-border-radius;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.panelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: ($aviation-spacing-unit * 1.5) ($aviation-spacing-unit * 2);
+  border-bottom: 1px solid $aviation-border-color;
+  background: $aviation-bg-hover;
+}
+
+.panelTitle {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: $aviation-text-color;
+}
+
+.loading,
+.error,
+.empty {
+  padding: ($aviation-spacing-unit * 3) ($aviation-spacing-unit * 2);
+  text-align: center;
+  color: $aviation-text-muted;
+  font-size: 14px;
+}
+
+.error {
+  color: $aviation-error-color;
+}
+
+.itemsList {
+  display: flex;
+  flex-direction: column;
+  gap: $aviation-spacing-unit * 2;
+  padding: $aviation-spacing-unit * 2;
+}
+
+.item {
+  background: #fff;
+  border: 1px solid $aviation-border-color;
+  border-radius: $aviation-border-radius;
+  overflow: hidden;
+  transition: box-shadow 0.3s;
+
+  &:hover {
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  }
+}
+
+.itemHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: ($aviation-spacing-unit * 1.5) ($aviation-spacing-unit * 2);
+  background: $aviation-bg-hover;
+  border-bottom: 1px solid $aviation-border-color;
+  cursor: pointer;
+  user-select: none;
+
+  &:hover {
+    background: rgba($aviation-primary-color, 0.05);
+  }
+}
+
+.itemTitle {
+  display: flex;
+  align-items: center;
+  gap: $aviation-spacing-unit;
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: $aviation-text-color;
+}
+
+.itemActions {
+  display: flex;
+  align-items: center;
+  gap: $aviation-spacing-unit;
+}
+
+.deleteButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: $aviation-border-radius;
+  color: $aviation-text-muted;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background: rgba($aviation-error-color, 0.1);
+    border-color: $aviation-error-color;
+    color: $aviation-error-color;
+  }
+
+  &:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba($aviation-error-color, 0.2);
+  }
+}
+
+.expandIcon {
+  transition: transform 0.3s;
+
+  svg {
+    width: 16px;
+    height: 16px;
+    color: $aviation-text-muted;
+  }
+}
+
+.itemContent {
+  max-height: 2000px;
+  overflow: hidden;
+  transition: max-height 0.3s ease, opacity 0.3s ease;
+  opacity: 1;
+}
+
+.collapsed {
+  .expandIcon {
+    transform: rotate(-90deg);
+  }
+
+  .itemContent {
+    max-height: 0;
+    opacity: 0;
+  }
+}
+
+.fieldsRow {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: $aviation-spacing-unit * 2;
+  padding: $aviation-spacing-unit * 2;
+
+  @media (max-width: 1200px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: $aviation-spacing-unit / 2;
+}
+
+.fieldLabel {
+  font-size: 12px;
+  font-weight: 500;
+  color: $aviation-text-muted;
+}
+
+.fieldInput {
+  width: 100%;
+
+  input,
+  select {
+    width: 100%;
+    height: 32px;
+    padding: 4px 11px;
+    font-size: 14px;
+    line-height: 1.5;
+    color: $aviation-text-color;
+    background: #fff;
+    border: 1px solid $aviation-border-color;
+    border-radius: $aviation-border-radius;
+    transition: all 0.3s;
+
+    &:hover {
+      border-color: lighten($aviation-primary-color, 20%);
+    }
+
+    &:focus {
+      border-color: $aviation-primary-color;
+      outline: none;
+      box-shadow: 0 0 0 2px rgba($aviation-primary-color, 0.2);
+    }
+
+    &:disabled {
+      background: $aviation-bg-disabled;
+      color: $aviation-text-muted;
+      cursor: not-allowed;
+    }
+  }
+}
+
+.summariesSection {
+  padding: $aviation-spacing-unit * 2;
+  background: rgba($aviation-primary-color, 0.02);
+  border-top: 1px solid $aviation-border-color;
+}
+
+.summariesTitle {
+  margin: 0 0 ($aviation-spacing-unit * 1.5) 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: $aviation-text-muted;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.summariesGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: $aviation-spacing-unit * 2;
+
+  @media (max-width: 1200px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.summaryField {
+  display: flex;
+  flex-direction: column;
+  gap: $aviation-spacing-unit / 2;
+}
+
+.summaryLabel {
+  font-size: 12px;
+  font-weight: 500;
+  color: $aviation-text-muted;
+}
+
+.summaryValue {
+  padding: 6px 11px;
+  font-size: 14px;
+  color: $aviation-text-color;
+  background: rgba($aviation-bg-disabled, 0.5);
+  border: 1px solid $aviation-border-color;
+  border-radius: $aviation-border-radius;
+  font-weight: 500;
+}

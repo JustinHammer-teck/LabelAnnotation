@@ -245,6 +245,13 @@ export const Menubar = ({
                   data-external
                   exact
                 />
+                <Menu.Item
+                  label="Aviation"
+                  to="/aviation"
+                  icon={<IconFolder />}
+                  data-external
+                  exact
+                />
                 {
                   isManagerOrResearcher &&
                   <Menu.Item

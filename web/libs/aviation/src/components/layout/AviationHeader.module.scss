@@ -1,0 +1,67 @@
+@use '../../assets/styles/variables' as *;
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 56px;
+  padding: 0 ($aviation-spacing-unit * 3);
+  background-color: #fff;
+  border-bottom: 1px solid $aviation-border-color;
+}
+
+.breadcrumb {
+  display: flex;
+  align-items: center;
+}
+
+.breadcrumbList {
+  display: flex;
+  align-items: center;
+  gap: $aviation-spacing-unit;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.breadcrumbItem {
+  display: flex;
+  align-items: center;
+}
+
+.separator {
+  color: $aviation-text-muted;
+  font-size: 14px;
+}
+
+.breadcrumbLink {
+  color: $aviation-primary-color;
+  font-size: 14px;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.breadcrumbCurrent {
+  color: $aviation-text-color;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.right {
+  display: flex;
+  align-items: center;
+  gap: $aviation-spacing-unit * 2;
+}
+
+.status {
+  margin-right: $aviation-spacing-unit;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: $aviation-spacing-unit;
+}

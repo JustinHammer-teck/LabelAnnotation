@@ -1,0 +1,191 @@
+@use '../../assets/styles/variables' as *;
+
+.modal {
+  width: 480px;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: ($aviation-spacing-unit * 2);
+}
+
+.dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: ($aviation-spacing-unit * 4);
+  border: 2px dashed $aviation-border-color;
+  border-radius: $aviation-border-radius;
+  background: #fafafa;
+  cursor: pointer;
+  transition: border-color 0.2s, background-color 0.2s;
+
+  &:hover,
+  &:focus {
+    border-color: $aviation-primary-color;
+    background: #f0f7ff;
+    outline: none;
+  }
+
+  &.dragging {
+    border-color: $aviation-primary-color;
+    background: $aviation-bg-selected;
+  }
+
+  &.hasFile {
+    border-style: solid;
+    border-color: $aviation-success-color;
+    background: #f6ffed;
+  }
+}
+
+.hiddenInput {
+  display: none;
+}
+
+.uploadIcon {
+  width: 48px;
+  height: 48px;
+  color: $aviation-text-muted;
+  margin-bottom: $aviation-spacing-unit;
+}
+
+.dropText {
+  margin: 0;
+  font-size: 14px;
+  color: $aviation-text-color;
+  font-weight: 500;
+}
+
+.browseText {
+  margin: ($aviation-spacing-unit / 2) 0 0;
+  font-size: 13px;
+  color: $aviation-primary-color;
+}
+
+.fileName {
+  margin: 0;
+  font-size: 14px;
+  color: $aviation-text-color;
+  font-weight: 500;
+  word-break: break-all;
+  text-align: center;
+}
+
+.acceptedFormats {
+  margin: $aviation-spacing-unit 0 0;
+  font-size: 12px;
+  color: $aviation-text-muted;
+}
+
+.progressContainer {
+  display: flex;
+  align-items: center;
+  gap: $aviation-spacing-unit;
+}
+
+.progressBar {
+  flex: 1;
+  height: 8px;
+  background: #f0f0f0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background: $aviation-primary-color;
+  transition: width 0.2s ease-out;
+}
+
+.progressText {
+  font-size: 12px;
+  color: $aviation-text-muted;
+  min-width: 36px;
+  text-align: right;
+}
+
+.errorAlert {
+  display: flex;
+  align-items: flex-start;
+  gap: $aviation-spacing-unit;
+  padding: ($aviation-spacing-unit * 1.5);
+  background: #fff2f0;
+  border: 1px solid #ffccc7;
+  border-radius: $aviation-border-radius;
+  color: $aviation-error-color;
+  font-size: 13px;
+}
+
+.errorIcon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.rowErrors {
+  padding: ($aviation-spacing-unit * 1.5);
+  background: #fffbe6;
+  border: 1px solid #ffe58f;
+  border-radius: $aviation-border-radius;
+}
+
+.rowErrorsTitle {
+  margin: 0 0 $aviation-spacing-unit;
+  font-size: 13px;
+  font-weight: 500;
+  color: $aviation-warning-color;
+}
+
+.rowErrorsList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rowErrorItem {
+  display: flex;
+  gap: $aviation-spacing-unit;
+  font-size: 12px;
+  color: $aviation-text-color;
+  padding: ($aviation-spacing-unit / 2) 0;
+
+  &:not(:last-child) {
+    border-bottom: 1px solid #ffe58f;
+  }
+}
+
+.rowNumber {
+  font-weight: 500;
+  color: $aviation-text-muted;
+  white-space: nowrap;
+}
+
+.rowMessage {
+  color: $aviation-text-color;
+}
+
+.successMessage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: ($aviation-spacing-unit * 4);
+  text-align: center;
+}
+
+.successIcon {
+  width: 64px;
+  height: 64px;
+  color: $aviation-success-color;
+  margin-bottom: ($aviation-spacing-unit * 2);
+}
+
+.successText {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 500;
+  color: $aviation-text-color;
+}

@@ -1,0 +1,25 @@
+{
+  "name": "aviation",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/aviation/src",
+  "projectType": "library",
+  "tags": ["scope:aviation", "type:feature"],
+  "targets": {
+    "build": {
+      "executor": "@nx/webpack:webpack",
+      "options": {
+        "compiler": "babel",
+        "outputPath": "dist/libs/aviation",
+        "tsConfig": "libs/aviation/tsconfig.lib.json",
+        "main": "libs/aviation/src/index.ts"
+      }
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "options": {
+        "jestConfig": "libs/aviation/jest.config.ts",
+        "passWithNoTests": true
+      }
+    }
+  }
+}

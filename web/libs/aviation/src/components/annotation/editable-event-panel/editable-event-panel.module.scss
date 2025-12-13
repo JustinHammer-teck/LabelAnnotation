@@ -1,0 +1,125 @@
+@use '../../../assets/styles/variables' as *;
+
+.panel {
+  background: #fff;
+  border: 1px solid $aviation-border-color;
+  border-radius: $aviation-border-radius;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: ($aviation-spacing-unit * 1.5) ($aviation-spacing-unit * 2);
+  border-bottom: 1px solid $aviation-border-color;
+  background: $aviation-bg-hover;
+}
+
+.title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: $aviation-text-color;
+}
+
+.eventBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  background: rgba($aviation-primary-color, 0.1);
+  color: $aviation-primary-color;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: $aviation-border-radius;
+  font-family: monospace;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: $aviation-spacing-unit;
+  padding: $aviation-spacing-unit * 2;
+  margin-bottom: $aviation-spacing-unit;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.sectionTitle {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: $aviation-text-muted;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.descriptionArea {
+  width: 100%;
+}
+
+.fieldsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: $aviation-spacing-unit * 2;
+
+  @media (max-width: 1200px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: $aviation-spacing-unit / 2;
+}
+
+.fieldLabel {
+  font-size: 12px;
+  font-weight: 500;
+  color: $aviation-text-muted;
+}
+
+.fieldInput {
+  width: 100%;
+
+  input,
+  select {
+    width: 100%;
+    height: 32px;
+    padding: 4px 11px;
+    font-size: 14px;
+    line-height: 1.5;
+    color: $aviation-text-color;
+    background: #fff;
+    border: 1px solid $aviation-border-color;
+    border-radius: $aviation-border-radius;
+    transition: all 0.3s;
+
+    &:hover {
+      border-color: lighten($aviation-primary-color, 20%);
+    }
+
+    &:focus {
+      border-color: $aviation-primary-color;
+      outline: none;
+      box-shadow: 0 0 0 2px rgba($aviation-primary-color, 0.2);
+    }
+
+    &:disabled {
+      background: $aviation-bg-disabled;
+      color: $aviation-text-muted;
+      cursor: not-allowed;
+    }
+  }
+}
+
+.remarksSection {
+  margin-top: $aviation-spacing-unit * 2;
+}
