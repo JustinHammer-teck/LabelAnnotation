@@ -54,20 +54,23 @@ LOGGING = {
         "rules": {"level": "INFO"},
         "django": {
             "handlers": ["console"],
-            # 'propagate': True,
+            "propagate": False,
         },
         "django_auth_ldap": {"level": os.environ.get("LOG_LEVEL", "INFO")},
         "rq.worker": {
             "handlers": ["console"],
             "level": os.environ.get("LOG_LEVEL", "INFO"),
+            "propagate": False,
         },
         "ddtrace": {
             "handlers": ["console"],
             "level": "WARNING",
+            "propagate": False,
         },
         "ldclient.util": {
             "handlers": ["console"],
             "level": "ERROR",
+            "propagate": False,
         },
     },
 }
@@ -238,6 +241,7 @@ INSTALLED_APPS = [
     "guardian",
     #"silk",
     "notifications",
+    "aviation",
     # "debug_toolbar",
 ]
 
