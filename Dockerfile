@@ -73,7 +73,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     apt-get autoremove -y
 
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --no-cache-dir easyocr==1.7.2
+    pip install easyocr==1.7.2
 
 RUN --mount=type=cache,target=/root/.EasyOCR,id=easyocr-cache,sharing=locked \
     mkdir -p ${EASYOCR_MODULE_PATH} && \
@@ -97,8 +97,8 @@ ENV PYTHONUNBUFFERED=1 \
     POETRY_VIRTUALENVS_PREFER_ACTIVE_PYTHON=true \
     PATH="/opt/poetry/bin:$PATH"
 
-ADD https://install.python-poetry.org /tmp/install-poetry.py
-RUN python /tmp/install-poetry.py && rm /tmp/install-poetry.py
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install poetry==${POETRY_VERSION}
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
