@@ -3,6 +3,7 @@ import { useHistory } from 'react-router-dom';
 import { Table, Button, type TableColumn } from '../common';
 import { ExcelUploadModal } from '../excel-upload';
 import { useEvents, useExcelUpload } from '../../hooks';
+import { useAviationApi } from '../../api';
 import type { AviationEvent } from '../../types';
 import styles from './TaskListView.module.scss';
 
@@ -16,8 +17,11 @@ export const TaskListView: FC<TaskListViewProps> = ({
   onSelect,
 }) => {
   const history = useHistory();
+  const apiClient = useAviationApi();
   const { events, loading, error, fetchEvents } = useEvents(projectId);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [exportingFormat, setExportingFormat] = useState<'json' | 'xlsx' | null>(null);
+  const [exportError, setExportError] = useState<string | null>(null);
   const {
     uploadProgress,
     uploadStatus,
@@ -61,6 +65,18 @@ export const TaskListView: FC<TaskListViewProps> = ({
     },
     [upload, projectId, history, fetchEvents]
   );
+
+  const handleExport = useCallback(async (format: 'json' | 'xlsx') => {
+    setExportingFormat(format);
+    setExportError(null);
+    try {
+      await apiClient.downloadExport(projectId, format);
+    } catch (err) {
+      setExportError(err instanceof Error ? err.message : 'Export failed');
+    } finally {
+      setExportingFormat(null);
+    }
+  }, [apiClient, projectId]);
 
   useEffect(() => {
     fetchEvents();
@@ -140,11 +156,30 @@ export const TaskListView: FC<TaskListViewProps> = ({
       <div className={styles.header}>
         <h1 className={styles.title}>Events</h1>
         <div className={styles.headerActions}>
+          <Button
+            variant="secondary"
+            onClick={() => handleExport('xlsx')}
+            disabled={exportingFormat !== null || events.length === 0}
+          >
+            {exportingFormat === 'xlsx' ? 'Exporting...' : 'Export Excel'}
+          </Button>
+          <Button
+            variant="secondary"
+            onClick={() => handleExport('json')}
+            disabled={exportingFormat !== null || events.length === 0}
+          >
+            {exportingFormat === 'json' ? 'Exporting...' : 'Export JSON'}
+          </Button>
           <Button variant="primary" onClick={handleOpenModal}>
             Import Excel
           </Button>
         </div>
       </div>
+      {exportError && (
+        <div className={styles.exportError}>
+          {exportError}
+        </div>
+      )}
       <div className={styles.tableContainer}>
         {!loading && events.length === 0 ? (
           emptyContent

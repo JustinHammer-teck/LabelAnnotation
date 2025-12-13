@@ -81,3 +81,12 @@
   font-size: 14px;
   color: $aviation-text-muted;
 }
+
+.exportError {
+  padding: $aviation-spacing-unit * 1.5 $aviation-spacing-unit * 2;
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: $aviation-border-radius;
+  color: #dc2626;
+  font-size: 14px;
+}

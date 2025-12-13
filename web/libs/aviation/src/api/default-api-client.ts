@@ -12,6 +12,7 @@ import type {
   CreateResultPerformanceData,
   LinkItemsData,
   ExcelUploadResult,
+  ExportData,
 } from '../types';
 
 const BASE_URL = '/api/aviation';
@@ -468,5 +469,68 @@ export const createDefaultApiClient = (): AviationApiClient => ({
       xhr.withCredentials = true;
       xhr.send(formData);
     });
+  },
+
+  async exportEvents(projectId: number, format: 'json' | 'xlsx'): Promise<Blob | ExportData> {
+    const url = `${BASE_URL}/projects/${projectId}/export/?export_format=${format}`;
+    const method = 'GET';
+
+    logRequest(method, url);
+
+    const csrfToken = getCsrfToken();
+    const headers: HeadersInit = {
+      'X-CSRFToken': csrfToken,
+    };
+
+    let res: Response;
+    try {
+      res = await fetch(url, {
+        method,
+        headers,
+        credentials: 'same-origin',
+      });
+    } catch (fetchError) {
+      const error = new NetworkError(
+        fetchError instanceof Error
+          ? `Network error: ${fetchError.message}`
+          : 'Failed to connect to server'
+      );
+      logError(method, url, error);
+      throw error;
+    }
+
+    if (!res.ok) {
+      await handleErrorResponse(res, method, url);
+    }
+
+    if (format === 'xlsx') {
+      const blob = await res.blob();
+      logResponse(method, url, res.status, '[Blob data]');
+      return blob;
+    }
+
+    const data = await res.json();
+    logResponse(method, url, res.status, data);
+    return data as ExportData;
+  },
+
+  async downloadExport(projectId: number, format: 'json' | 'xlsx', filename?: string): Promise<void> {
+    const data = await this.exportEvents(projectId, format);
+    const defaultFilename = `aviation-export-${projectId}.${format}`;
+    const downloadFilename = filename ?? defaultFilename;
+
+    let blob: Blob;
+    if (data instanceof Blob) {
+      blob = data;
+    } else {
+      blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    }
+
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = downloadFilename;
+    anchor.click();
+    URL.revokeObjectURL(url);
   },
 });
