@@ -341,14 +341,14 @@ export const createDefaultApiClient = (): AviationApiClient => ({
     });
   },
 
-  async getPerformances(projectId: number): Promise<ResultPerformance[]> {
-    return request<ResultPerformance[]>(`${BASE_URL}/performances/?project=${projectId}`);
+  async getPerformances(eventId: number): Promise<ResultPerformance[]> {
+    return request<ResultPerformance[]>(`${BASE_URL}/performances/?event=${eventId}`);
   },
 
-  async createPerformance(projectId: number, data: CreateResultPerformanceData): Promise<ResultPerformance> {
+  async createPerformance(eventId: number, data: CreateResultPerformanceData): Promise<ResultPerformance> {
     return request<ResultPerformance>(`${BASE_URL}/performances/`, {
       method: 'POST',
-      body: JSON.stringify({ ...data, aviation_project: projectId }),
+      body: JSON.stringify({ ...data, event: eventId }),
     });
   },
 

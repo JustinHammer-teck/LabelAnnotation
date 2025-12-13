@@ -266,6 +266,12 @@ class ResultPerformance(models.Model):
         on_delete=models.CASCADE,
         related_name='result_performances'
     )
+    event = models.ForeignKey(
+        AviationEvent,
+        on_delete=models.CASCADE,
+        related_name='result_performances',
+        help_text='The event this performance assessment belongs to'
+    )
     labeling_items = models.ManyToManyField(
         LabelingItem,
         through='LabelingItemPerformance',

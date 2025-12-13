@@ -4,7 +4,7 @@ import { useAviationApi } from '../api';
 import { performancesAtom, performancesLoadingAtom, performancesErrorAtom } from '../stores';
 import type { ResultPerformance, CreateResultPerformanceData, LinkItemsData } from '../types';
 
-export const usePerformances = (projectId: number) => {
+export const usePerformances = (eventId: number) => {
   const api = useAviationApi();
   const [performances, setPerformances] = useAtom(performancesAtom);
   const [loading, setLoading] = useAtom(performancesLoadingAtom);
@@ -14,20 +14,20 @@ export const usePerformances = (projectId: number) => {
     setLoading(true);
     setError(null);
     try {
-      const data = await api.getPerformances(projectId);
+      const data = await api.getPerformances(eventId);
       setPerformances(data);
     } catch (e) {
       setError(String(e));
     } finally {
       setLoading(false);
     }
-  }, [api, projectId, setPerformances, setLoading, setError]);
+  }, [api, eventId, setPerformances, setLoading, setError]);
 
   const createPerformance = useCallback(async (data: CreateResultPerformanceData) => {
     setLoading(true);
     setError(null);
     try {
-      const newPerformance = await api.createPerformance(projectId, data);
+      const newPerformance = await api.createPerformance(eventId, data);
       setPerformances(prev => [...prev, newPerformance]);
       return newPerformance;
     } catch (e) {
@@ -36,7 +36,7 @@ export const usePerformances = (projectId: number) => {
     } finally {
       setLoading(false);
     }
-  }, [api, projectId, setPerformances, setLoading, setError]);
+  }, [api, eventId, setPerformances, setLoading, setError]);
 
   const updatePerformance = useCallback(async (id: number, data: Partial<ResultPerformance>) => {
     setLoading(true);

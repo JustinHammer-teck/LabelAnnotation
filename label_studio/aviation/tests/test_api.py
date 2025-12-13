@@ -12,6 +12,7 @@ from aviation.tests.factories import (
     AviationProjectFactory,
     AviationEventFactory,
     LabelingItemFactory,
+    ResultPerformanceFactory,
     TypeHierarchyFactory,
 )
 
@@ -618,3 +619,119 @@ class AviationProjectExportAPITest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         data = response.json()
         self.assertEqual(data['events'], [])
+
+
+class ResultPerformanceEventScopeAPITest(APITestCase):
+    """
+    TDD tests for event-level isolation of ResultPerformance.
+
+    These tests are written to FAIL initially because:
+    - ResultPerformance.event field doesn't exist yet
+    - API doesn't support event filtering yet
+    - Serializer doesn't validate/require event field yet
+    """
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.org = OrganizationFactory()
+        cls.user = cls.org.created_by
+
+        cls.project = ProjectFactory(organization=cls.org)
+        cls.aviation_project = AviationProjectFactory(project=cls.project)
+
+        cls.task_a = TaskFactory(project=cls.project)
+        cls.task_b = TaskFactory(project=cls.project)
+
+        cls.event_a = AviationEventFactory(task=cls.task_a)
+        cls.event_b = AviationEventFactory(task=cls.task_b)
+
+    def test_create_result_performance_requires_event(self):
+        """POST without event field should return 400 Bad Request."""
+        self.client.force_authenticate(user=self.user)
+
+        data = {
+            'aviation_project': self.aviation_project.id,
+            'status': 'draft',
+        }
+
+        response = self.client.post('/api/aviation/performances/', data=data, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        response_data = response.json()
+        self.assertTrue(
+            'event' in response_data or
+            ('validation_errors' in response_data and 'event' in response_data['validation_errors'])
+        )
+
+    def test_create_result_performance_with_event(self):
+        """POST with valid event ID should succeed and include event in response."""
+        self.client.force_authenticate(user=self.user)
+
+        data = {
+            'event': self.event_a.id,
+            'status': 'draft',
+        }
+
+        response = self.client.post('/api/aviation/performances/', data=data, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        response_data = response.json()
+        self.assertIn('event', response_data)
+        self.assertEqual(response_data['event'], self.event_a.id)
+
+    def test_filter_performances_by_event(self):
+        """GET with event filter should return only that event's performances."""
+        self.client.force_authenticate(user=self.user)
+
+        perf_a = ResultPerformanceFactory(
+            aviation_project=self.aviation_project,
+            event=self.event_a,
+            status='draft',
+        )
+        perf_b = ResultPerformanceFactory(
+            aviation_project=self.aviation_project,
+            event=self.event_b,
+            status='draft',
+        )
+
+        response = self.client.get(f'/api/aviation/performances/?event={self.event_a.id}')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.json()
+        results = data.get('results', data) if isinstance(data, dict) else data
+        result_ids = [item['id'] for item in results]
+        self.assertIn(perf_a.id, result_ids)
+        self.assertNotIn(perf_b.id, result_ids)
+
+    def test_performance_aviation_project_auto_populated(self):
+        """POST with only event should auto-populate aviation_project from event chain."""
+        self.client.force_authenticate(user=self.user)
+
+        data = {
+            'event': self.event_a.id,
+            'status': 'draft',
+        }
+
+        response = self.client.post('/api/aviation/performances/', data=data, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        response_data = response.json()
+        self.assertEqual(response_data['aviation_project'], self.aviation_project.id)
+
+    def test_performance_isolation_between_events(self):
+        """Performance for Event A should not appear when filtering by Event B."""
+        self.client.force_authenticate(user=self.user)
+
+        perf_a = ResultPerformanceFactory(
+            aviation_project=self.aviation_project,
+            event=self.event_a,
+            status='draft',
+        )
+
+        response = self.client.get(f'/api/aviation/performances/?event={self.event_b.id}')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.json()
+        results = data.get('results', data) if isinstance(data, dict) else data
+        result_ids = [item['id'] for item in results]
+        self.assertNotIn(perf_a.id, result_ids)

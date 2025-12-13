@@ -223,6 +223,7 @@ class ResultPerformanceSerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'aviation_project',
+            'event',
             'event_type',
             'flight_phase',
             'likelihood',
@@ -243,7 +244,7 @@ class ResultPerformanceSerializer(serializers.ModelSerializer):
             'created_at',
             'updated_at',
         ]
-        read_only_fields = ['id', 'created_by', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'created_by', 'aviation_project', 'created_at', 'updated_at']
 
     def get_linked_items(self, obj):
         return list(obj.linked_labeling_items.values_list('id', flat=True))

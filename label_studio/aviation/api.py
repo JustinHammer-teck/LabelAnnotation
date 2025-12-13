@@ -232,22 +232,40 @@ class ResultPerformanceViewSet(viewsets.ModelViewSet):
             aviation_project__project__organization=self.request.user.active_organization
         ).select_related(
             'aviation_project',
+            'event',
             'created_by',
             'reviewed_by',
         ).prefetch_related('labeling_items')
 
-        project_id = self.request.query_params.get('project')
-        if project_id:
+        event_id = self.request.query_params.get('event')
+        if event_id:
             try:
-                project_id = int(project_id)
-                queryset = queryset.filter(aviation_project_id=project_id)
+                event_id = int(event_id)
+                queryset = queryset.filter(event_id=event_id)
             except ValueError:
-                raise ValidationError({'project': 'Must be an integer'})
+                raise ValidationError({'event': 'Must be an integer'})
 
         return queryset
 
     def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user)
+        event_id = self.request.data.get('event')
+        if not event_id:
+            raise ValidationError({'event': 'Event ID is required'})
+
+        event = AviationEvent.objects.filter(
+            id=event_id,
+            task__project__organization=self.request.user.active_organization
+        ).select_related('task__project__aviation_project').first()
+
+        if not event:
+            raise ValidationError({'event': 'Event not found or not accessible'})
+
+        aviation_project = event.task.project.aviation_project
+        serializer.save(
+            created_by=self.request.user,
+            event=event,
+            aviation_project=aviation_project
+        )
 
     @action(detail=True, methods=['post'], url_path='link-items')
     def link_items(self, request, pk=None):

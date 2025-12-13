@@ -99,6 +99,7 @@ export interface CreateLabelingItemData {
 export interface ResultPerformance {
   id: number;
   aviation_project: number;
+  event: number;
   event_type: string;
   severity: string;
   flight_phase: string;
