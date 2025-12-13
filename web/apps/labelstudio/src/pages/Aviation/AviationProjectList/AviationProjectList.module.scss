@@ -1,0 +1,216 @@
+.container {
+  min-height: calc(100vh - var(--header-height));
+  background: var(--color-neutral-background-subtle);
+  padding: 0 24px;
+}
+
+.header {
+  padding: 24px 16px;
+  margin-bottom: 24px;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  background: var(--color-neutral-background);
+  border-bottom: 1px solid var(--color-neutral-border);
+  margin-left: -24px;
+  margin-right: -24px;
+  padding-left: 24px;
+}
+
+.title {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--color-neutral-content);
+}
+
+.loading {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - var(--header-height) - 100px);
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - var(--header-height) - 100px);
+  padding: 0 20px;
+}
+
+.list {
+  padding: 0 16px;
+  display: grid;
+  grid-gap: 20px;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  align-items: start;
+}
+
+.pagination {
+  background: var(--color-neutral-background);
+  border-top: 1px solid var(--color-neutral-border);
+  padding: 16px 40px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 40px;
+  text-align: center;
+  flex: 1;
+  min-height: calc(100vh - var(--header-height) - 100px);
+}
+
+.error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 40px;
+  text-align: center;
+  flex: 1;
+
+  p {
+    font-size: 16px;
+    color: var(--color-negative-content);
+    margin-bottom: 24px;
+  }
+}
+
+.projectCard {
+  background: var(--color-neutral-background);
+  border: 1px solid var(--color-neutral-border);
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+
+  &:hover {
+    border-color: var(--color-primary-border);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transform: translateY(-2px);
+  }
+}
+
+.cardHeader {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--color-neutral-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--color-neutral-surface);
+}
+
+.cardTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-neutral-content);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  margin-right: 12px;
+}
+
+.cardBody {
+  padding: 12px 16px;
+}
+
+.cardDescription {
+  font-size: 14px;
+  color: var(--color-neutral-content-subtle);
+  line-height: 1.5;
+  margin-bottom: 16px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.cardStats {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.statItem {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.statLabel {
+  font-size: 13px;
+  color: var(--color-neutral-content-subtler);
+}
+
+.statValue {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-neutral-content);
+}
+
+.cardFooter {
+  padding: 10px 16px;
+  border-top: 1px solid var(--color-neutral-border);
+  background: var(--color-neutral-surface);
+}
+
+.cardDate {
+  font-size: 12px;
+  color: var(--color-neutral-content-subtler);
+}
+
+.cardActions {
+  display: flex;
+  gap: 8px;
+}
+
+.headerButtons {
+  display: flex;
+  gap: 12px;
+}
+
+.emptyIcon {
+  font-size: 96px;
+  color: var(--color-primary-content);
+  opacity: 0.3;
+  margin-bottom: 16px;
+  display: block;
+}
+
+.emptyDescription {
+  margin-top: 24px;
+  text-align: center;
+}
+
+.emptyTitle {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--color-neutral-content);
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+.emptyText {
+  font-size: 14px;
+  color: var(--color-neutral-content-subtle);
+  line-height: 1.6;
+  max-width: 480px;
+  margin: 0 auto 32px;
+  text-align: center;
+}
+
+.emptyAction {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}

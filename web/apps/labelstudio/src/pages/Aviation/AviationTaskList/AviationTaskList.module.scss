@@ -1,0 +1,550 @@
+.aviation-tasks {
+  min-height: calc(100vh - var(--header-height));
+  background: var(--color-neutral-background-subtle);
+
+  &__header {
+    padding: 24px 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--color-neutral-background);
+    border-bottom: 1px solid var(--color-neutral-border);
+  }
+
+  &__title {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--color-neutral-content);
+    margin-left: 16px;
+  }
+
+  &__loading {
+    padding: 40px;
+  }
+
+  &__content {
+    padding: 40px;
+  }
+
+  &__error {
+    padding: 40px;
+  }
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.taskCount {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  background: var(--color-neutral-surface);
+  border: 1px solid var(--color-neutral-border);
+  border-radius: 12px;
+  margin-left: 12px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-neutral-content-subtle);
+}
+
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 40px;
+  background: var(--color-neutral-background);
+  border-bottom: 1px solid var(--color-neutral-border);
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.searchBox {
+  position: relative;
+  flex: 1;
+  max-width: 400px;
+  min-width: 200px;
+}
+
+.searchIconSvg {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  color: var(--color-neutral-content-subtle);
+  pointer-events: none;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 10px 36px 10px 36px;
+  border: 1px solid var(--color-neutral-border);
+  border-radius: 6px;
+  font-size: 14px;
+  background: var(--color-neutral-background);
+  color: var(--color-neutral-content);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+  &:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+
+  &::placeholder {
+    color: var(--color-neutral-content-subtler);
+  }
+}
+
+.clearSearch {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  border: none;
+  background: var(--color-neutral-surface);
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--color-neutral-content-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.15s ease;
+
+  &:hover {
+    background: var(--color-neutral-border);
+  }
+}
+
+.filters {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.filterSelect {
+  padding: 10px 32px 10px 12px;
+  border: 1px solid var(--color-neutral-border);
+  border-radius: 6px;
+  font-size: 14px;
+  background: var(--color-neutral-background);
+  color: var(--color-neutral-content);
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7280' d='M3 4.5L6 7.5L9 4.5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  min-width: 140px;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+
+  &:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+
+  &.filterActive {
+    border-color: var(--color-primary);
+    background-color: var(--color-primary-background);
+  }
+}
+
+.clearFilters {
+  padding: 10px 16px;
+  border: none;
+  background: transparent;
+  color: var(--color-primary);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 0.15s ease;
+
+  &:hover {
+    color: var(--color-primary-dark);
+    text-decoration: underline;
+  }
+}
+
+.batchActions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 40px;
+  background: var(--color-primary-background);
+  border-bottom: 1px solid var(--color-primary-border);
+}
+
+.selectedCount {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-primary-content);
+}
+
+.completeBanner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 40px;
+  background: var(--color-positive-background);
+  border-bottom: 1px solid var(--color-positive-border);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-positive-content);
+}
+
+.completeIconSvg {
+  width: 20px;
+  height: 20px;
+  color: var(--color-positive-content);
+}
+
+.tableWrapper {
+  background: var(--color-neutral-background);
+  border: 1px solid var(--color-neutral-border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+
+  thead {
+    background: var(--color-neutral-surface);
+    border-bottom: 2px solid var(--color-neutral-border);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+
+    th {
+      padding: 14px 16px;
+      text-align: left;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--color-neutral-content-subtle);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+    }
+  }
+
+  tbody {
+    tr {
+      border-bottom: 1px solid var(--color-neutral-border);
+
+      &:last-child {
+        border-bottom: none;
+      }
+    }
+
+    td {
+      padding: 14px 16px;
+      font-size: 14px;
+      color: var(--color-neutral-content);
+      vertical-align: middle;
+    }
+  }
+}
+
+.tableRow {
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+
+  &:hover {
+    background: var(--color-neutral-surface);
+  }
+
+  &:focus {
+    outline: none;
+    background: var(--color-neutral-surface);
+    box-shadow: inset 0 0 0 2px var(--color-primary);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: -2px;
+  }
+}
+
+.selectedRow {
+  background: var(--color-primary-background) !important;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.statusIcon {
+  font-size: 10px;
+}
+
+.statusLabel {
+  font-size: 12px;
+}
+
+.statusProgress {
+  font-size: 11px;
+  opacity: 0.8;
+}
+
+.statusNotStarted {
+  color: var(--color-neutral-content-subtle);
+
+  &.statusBadge {
+    background: var(--color-neutral-surface);
+  }
+}
+
+.statusInProgress {
+  color: var(--color-warning-content);
+
+  &.statusBadge {
+    background: var(--color-warning-background);
+  }
+}
+
+.statusComplete {
+  color: var(--color-positive-content);
+
+  &.statusBadge {
+    background: var(--color-positive-background);
+  }
+}
+
+.statusNeedsReview {
+  color: var(--color-negative-content);
+
+  &.statusBadge {
+    background: var(--color-negative-background);
+  }
+}
+
+.eventNumber {
+  font-weight: 600;
+  color: var(--color-neutral-content);
+}
+
+.airline {
+  font-weight: 500;
+  color: var(--color-neutral-content);
+}
+
+.date {
+  color: var(--color-neutral-content-subtle);
+  white-space: nowrap;
+}
+
+.location {
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.flightPhase {
+  color: var(--color-neutral-content-subtle);
+}
+
+.description {
+  max-width: 250px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-neutral-content-subtler);
+  font-size: 13px;
+}
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 40px;
+  text-align: center;
+  background: var(--color-neutral-background);
+  border: 1px solid var(--color-neutral-border);
+  border-radius: 8px;
+}
+
+.emptyIconWrapper {
+  width: 64px;
+  height: 64px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-neutral-surface);
+  border-radius: 50%;
+}
+
+.emptyIconSvg {
+  width: 32px;
+  height: 32px;
+  color: var(--color-neutral-content-subtle);
+}
+
+.emptyTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--color-neutral-content);
+  margin: 0 0 8px 0;
+}
+
+.emptyDescription {
+  font-size: 14px;
+  color: var(--color-neutral-content-subtle);
+  margin: 0 0 24px 0;
+  max-width: 400px;
+  line-height: 1.5;
+}
+
+.emptyActions {
+  display: flex;
+  gap: 12px;
+}
+
+.errorState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 40px;
+  text-align: center;
+  background: var(--color-neutral-background);
+  border: 1px solid var(--color-negative-border);
+  border-radius: 8px;
+}
+
+.errorIcon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.errorTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--color-negative-content);
+  margin: 0 0 8px 0;
+}
+
+.errorDescription {
+  font-size: 14px;
+  color: var(--color-neutral-content-subtle);
+  margin: 0 0 24px 0;
+}
+
+.skeletonRow {
+  td {
+    padding: 14px 16px;
+  }
+}
+
+.skeletonCell {
+  height: 16px;
+  background: linear-gradient(
+    90deg,
+    var(--color-neutral-surface) 0%,
+    var(--color-neutral-border) 50%,
+    var(--color-neutral-surface) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 4px;
+}
+
+.skeletonCheckbox {
+  width: 16px;
+  height: 16px;
+  background: var(--color-neutral-surface);
+  border-radius: 3px;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@media (max-width: 1200px) {
+  .toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .searchBox {
+    max-width: 100%;
+  }
+
+  .filters {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 768px) {
+  .aviation-tasks {
+    &__header {
+      padding: 16px 20px;
+      flex-direction: column;
+      gap: 12px;
+      align-items: flex-start;
+    }
+
+    &__content,
+    &__loading,
+    &__error {
+      padding: 20px;
+    }
+  }
+
+  .toolbar {
+    padding: 16px 20px;
+  }
+
+  .batchActions,
+  .completeBanner {
+    padding: 12px 20px;
+  }
+
+  .table {
+    font-size: 13px;
+
+    thead th,
+    tbody td {
+      padding: 12px 10px;
+    }
+  }
+
+  .description {
+    max-width: 150px;
+  }
+}

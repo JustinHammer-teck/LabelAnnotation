@@ -14,6 +14,7 @@ import {
   IconPin,
   IconDoor,
   IconSettings,
+  IconDocument,
 } from '@humansignal/icons';
 import { Userpic, ThemeToggle } from '@humansignal/ui';
 import { useConfig } from '../../providers/ConfigProvider';

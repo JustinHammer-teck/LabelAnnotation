@@ -11,6 +11,7 @@ export const Pages = [
   isFF(FF_HOMEPAGE) && HomePage,
   ProjectsPage,
   OrganizationPage,
+  AviationPage,
   ModelsPage,
   AviationPage,
   ff.isFF(ff.FF_AUTH_TOKENS) && pages.AccountSettingsPage

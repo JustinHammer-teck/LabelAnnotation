@@ -1,0 +1,70 @@
+.autoCalculatedField {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 16px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-neutral, #e0e0e0);
+
+  &.variant-default {
+    background: var(--surface-secondary, #f5f5f5);
+  }
+
+  &.variant-green {
+    background: #f1f8f1;
+  }
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--content-primary, #333);
+  padding-top: 8px;
+  display: flex;
+  align-items: flex-start;
+
+  &::after {
+    content: "自动填入";
+    margin-left: 8px;
+    font-size: 12px;
+    color: var(--color-success, #4caf50);
+    background: rgba(76, 175, 80, 0.1);
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+}
+
+.valueContainer {
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  background: var(--surface-primary, #fff);
+  border: 1px solid var(--border-neutral, #d0d0d0);
+  border-radius: 4px;
+}
+
+.valueList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.valueItem {
+  display: inline-block;
+  padding: 4px 12px;
+  background: var(--surface-selected, #e3f2fd);
+  color: var(--color-primary, #1976d2);
+  border-radius: 16px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.emptyText {
+  color: var(--content-subtler, #999);
+  font-size: 14px;
+  font-style: italic;
+}

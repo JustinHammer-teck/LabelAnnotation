@@ -36,6 +36,15 @@ Prefer editing an existing file to creating a new one.
 Never create documentation files (`*.md` or README).
 - Only create documentation files if explicitly requested by the user.
 
+
+## Task Delegation 
+
+```
+lbstudio
+├── label_studio : Implement by @agent-django-master
+├── web: Implement by @agent-react-master
+```
+
 ## Project Structure with CLAUDE.md
 
 > IMPORTANT: this is just scaffold of important files, other you would need to find it yourself

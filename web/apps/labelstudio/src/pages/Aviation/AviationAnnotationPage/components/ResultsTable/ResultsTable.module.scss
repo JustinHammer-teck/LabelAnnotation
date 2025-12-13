@@ -1,0 +1,86 @@
+.resultsSection {
+  margin-bottom: 16px;
+}
+
+.resultsTable {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--surface-primary, #fff);
+
+  th {
+    padding: 8px 12px;
+    text-align: center;
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--content-primary, #333);
+    background: var(--surface-secondary, #f5f5f5);
+    border: 1px solid var(--border-neutral, #d0d0d0);
+  }
+
+  .categoryHeader {
+    background: var(--surface-secondary, #e8e8e8);
+    font-weight: 700;
+  }
+
+  .sectionHeader {
+    background: #ffd699;
+    font-weight: 600;
+  }
+
+  td {
+    padding: 6px 8px;
+    border: 1px solid var(--border-neutral, #d0d0d0);
+    vertical-align: middle;
+    text-align: center;
+  }
+
+  .rowLabel {
+    background: var(--surface-secondary, #f5f5f5);
+    font-weight: 600;
+    font-size: 12px;
+  }
+
+  .select {
+    width: 100%;
+    padding: 4px 6px;
+    border: 1px solid var(--border-neutral, #d0d0d0);
+    border-radius: 3px;
+    font-size: 12px;
+
+    &:focus {
+      outline: none;
+      border-color: var(--color-primary, #1976d2);
+    }
+  }
+
+  .textarea {
+    width: 100%;
+    min-height: 60px;
+    padding: 6px 8px;
+    border: 1px solid var(--border-neutral, #d0d0d0);
+    border-radius: 3px;
+    font-size: 12px;
+    resize: vertical;
+
+    &:focus {
+      outline: none;
+      border-color: var(--color-primary, #1976d2);
+    }
+  }
+
+  .descCell {
+    font-size: 11px;
+    color: var(--content-subtler, #666);
+    line-height: 1.4;
+  }
+
+  .questionMark {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--content-subtler, #999);
+  }
+
+  .competencyCell {
+    background: var(--surface-background, #fafafa);
+  }
+}

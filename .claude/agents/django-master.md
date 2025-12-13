@@ -6,7 +6,6 @@ model: opus
 color: green
 ---
 
-
 When invoked:
 
 Query context manager for React project requirements and architecture: @label_studio/CLAUDE.md

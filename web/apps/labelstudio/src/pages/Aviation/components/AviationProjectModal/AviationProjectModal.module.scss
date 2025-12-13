@@ -1,0 +1,85 @@
+.modalContent {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  color: var(--color-neutral-content-subtle);
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-neutral-content);
+}
+
+.required {
+  color: var(--color-negative-content);
+}
+
+.input {
+  padding: 10px 12px;
+  border: 1px solid var(--color-neutral-border);
+  border-radius: 6px;
+  font-size: 14px;
+  background: var(--color-neutral-background);
+  color: var(--color-neutral-content);
+  transition: border-color 0.2s ease;
+
+  &:focus {
+    outline: none;
+    border-color: var(--color-primary-border);
+  }
+
+  &::placeholder {
+    color: var(--color-neutral-content-subtle);
+  }
+}
+
+.textarea {
+  padding: 10px 12px;
+  border: 1px solid var(--color-neutral-border);
+  border-radius: 6px;
+  font-size: 14px;
+  background: var(--color-neutral-background);
+  color: var(--color-neutral-content);
+  resize: vertical;
+  min-height: 80px;
+  font-family: inherit;
+  transition: border-color 0.2s ease;
+
+  &:focus {
+    outline: none;
+    border-color: var(--color-primary-border);
+  }
+
+  &::placeholder {
+    color: var(--color-neutral-content-subtle);
+  }
+}
+
+.error {
+  padding: 12px;
+  background: var(--color-negative-background);
+  border: 1px solid var(--color-negative-border);
+  border-radius: 6px;
+  color: var(--color-negative-content);
+  font-size: 14px;
+}
+
+.actions {
+  margin-top: 8px;
+  border-top: 1px solid var(--color-neutral-border);
+  padding-top: 16px;
+}

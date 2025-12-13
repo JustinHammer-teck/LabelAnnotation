@@ -1,0 +1,88 @@
+.basicInfoTable {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 16px;
+  background: var(--surface-primary, #fff);
+
+  th {
+    padding: 8px 12px;
+    text-align: center;
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--content-primary, #333);
+    background: var(--surface-secondary, #f5f5f5);
+    border: 1px solid var(--border-neutral, #d0d0d0);
+  }
+
+  td {
+    padding: 4px;
+    border: 1px solid var(--border-neutral, #d0d0d0);
+    vertical-align: middle;
+  }
+
+  .input,
+  .select,
+  .multiSelect,
+  .inputReadonly {
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid var(--border-neutral, #d0d0d0);
+    border-radius: 3px;
+    font-size: 13px;
+    background: var(--surface-primary, #fff);
+
+    &:focus {
+      outline: none;
+      border-color: var(--color-primary, #1976d2);
+      box-shadow: 0 0 0 1px rgba(25, 118, 210, 0.2);
+    }
+  }
+
+  .inputReadonly {
+    background: var(--surface-disabled, #f5f5f5);
+    color: var(--content-subtler, #666);
+    cursor: not-allowed;
+
+    &:focus {
+      border-color: var(--border-neutral, #d0d0d0);
+      box-shadow: none;
+    }
+  }
+
+  .multiSelect {
+    min-height: 60px;
+  }
+
+  .selectButton {
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid var(--border-neutral, #d0d0d0);
+    border-radius: 3px;
+    font-size: 13px;
+    background: var(--surface-primary, #fff);
+    text-align: left;
+    cursor: pointer;
+    color: var(--content-primary, #333);
+    transition: all 0.2s ease;
+    min-height: 32px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    &:hover {
+      border-color: var(--color-primary, #1976d2);
+      background: var(--surface-hover, #f5f5f5);
+    }
+
+    &:focus {
+      outline: none;
+      border-color: var(--color-primary, #1976d2);
+      box-shadow: 0 0 0 1px rgba(25, 118, 210, 0.2);
+    }
+
+    &:empty::before,
+    &:not(:empty) {
+      color: var(--content-primary, #333);
+    }
+  }
+}
