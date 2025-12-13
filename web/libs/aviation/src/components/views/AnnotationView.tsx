@@ -163,7 +163,7 @@ export const AnnotationView: FC<AnnotationViewProps> = ({ eventId, projectId }) 
   const { options: uasOptions } = useDropdownOptions('uas');
   const { options: eventTypeOptions } = useDropdownOptions('event_type');
   const { options: flightPhaseOptions } = useDropdownOptions('flight_phase');
-  const { performances, fetchPerformances } = usePerformances(projectId);
+  const { performances, fetchPerformances } = usePerformances(eventId);
   const { submitForReview, isLoading: reviewLoading } = useReviewWorkflow();
 
   const [currentEventIndex, setCurrentEventIndex] = useState(0);
@@ -333,7 +333,7 @@ export const AnnotationView: FC<AnnotationViewProps> = ({ eventId, projectId }) 
             eventIndex={currentEventIndex + 1}
             onUpdate={handleEventUpdate}
           />
-          <ResultPerformancePanel projectId={projectId} />
+          <ResultPerformancePanel eventId={eventId} />
         </div>
 
         {/* Right Column: Labeling Module */}

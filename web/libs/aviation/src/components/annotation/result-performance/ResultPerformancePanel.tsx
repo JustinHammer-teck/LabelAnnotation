@@ -5,11 +5,11 @@ import { ResultPerformanceItem } from './ResultPerformanceItem';
 import styles from './result-performance.module.scss';
 
 export interface ResultPerformancePanelProps {
-  projectId: number;
+  eventId: number;
 }
 
 export const ResultPerformancePanel: FC<ResultPerformancePanelProps> = ({
-  projectId,
+  eventId,
 }) => {
   const {
     performances,
@@ -19,7 +19,7 @@ export const ResultPerformancePanel: FC<ResultPerformancePanelProps> = ({
     createPerformance,
     updatePerformance,
     deletePerformance,
-  } = usePerformances(projectId);
+  } = usePerformances(eventId);
 
   useEffect(() => {
     fetchPerformances();

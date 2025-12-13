@@ -1,16 +1,19 @@
 import factory
 from datetime import date, time
+from decimal import Decimal
+
 from core.utils.common import load_func
 from django.conf import settings
-from faker import Faker
 
 from aviation.models import (
     AviationProject,
-    AviationIncident,
-    AviationAnnotation,
-    AviationDropdownOption
+    AviationEvent,
+    TypeHierarchy,
+    LabelingItem,
+    ResultPerformance,
+    LabelingItemPerformance,
 )
-from tasks.tests.factories import TaskFactory, AnnotationFactory
+from tasks.tests.factories import TaskFactory
 
 
 class AviationProjectFactory(factory.django.DjangoModelFactory):
@@ -31,9 +34,9 @@ class AviationProjectFactory(factory.django.DjangoModelFactory):
         model = AviationProject
 
 
-class AviationIncidentFactory(factory.django.DjangoModelFactory):
+class AviationEventFactory(factory.django.DjangoModelFactory):
     task = factory.SubFactory(TaskFactory)
-    event_number = factory.Sequence(lambda n: f'INC-{n:05d}')
+    event_number = factory.Sequence(lambda n: f'EVT-{n:05d}')
     event_description = factory.Faker('paragraph')
     date = factory.LazyFunction(lambda: date(2024, 1, 1))
     time = factory.LazyFunction(lambda: time(14, 30, 0))
@@ -42,35 +45,10 @@ class AviationIncidentFactory(factory.django.DjangoModelFactory):
     flight_phase = 'Cruise'
 
     class Meta:
-        model = AviationIncident
+        model = AviationEvent
 
 
-class AviationAnnotationFactory(factory.django.DjangoModelFactory):
-    annotation = factory.SubFactory(AnnotationFactory)
-    aircraft_type = 'B737'
-    event_labels = factory.LazyFunction(lambda: ['Safety Event', 'Near Miss'])
-
-    threat_type_l1 = 'Environmental'
-    threat_type_l2 = 'Weather'
-    threat_type_l3 = 'Turbulence'
-    threat_management = 'Managed'
-    threat_outcome = 'No Effect'
-    threat_description = factory.Faker('sentence')
-
-    threat_training_topics = factory.LazyFunction(lambda: ['Weather Recognition'])
-    error_training_topics = factory.LazyFunction(lambda: [])
-    uas_training_topics = factory.LazyFunction(lambda: [])
-    crm_training_topics = factory.LazyFunction(lambda: ['Decision Making'])
-
-    likelihood = 'Medium'
-    severity = 'Low'
-    training_benefit = 'High'
-
-    class Meta:
-        model = AviationAnnotation
-
-
-class AviationDropdownOptionFactory(factory.django.DjangoModelFactory):
+class TypeHierarchyFactory(factory.django.DjangoModelFactory):
     category = 'threat'
     level = 1
     code = factory.Sequence(lambda n: f'CODE{n}')
@@ -80,4 +58,31 @@ class AviationDropdownOptionFactory(factory.django.DjangoModelFactory):
     is_active = True
 
     class Meta:
-        model = AviationDropdownOption
+        model = TypeHierarchy
+
+
+class LabelingItemFactory(factory.django.DjangoModelFactory):
+    event = factory.SubFactory(AviationEventFactory)
+    sequence_number = factory.Sequence(lambda n: n + 1)
+    status = 'draft'
+
+    class Meta:
+        model = LabelingItem
+
+
+class ResultPerformanceFactory(factory.django.DjangoModelFactory):
+    aviation_project = factory.SubFactory(AviationProjectFactory)
+    event = factory.SubFactory(AviationEventFactory)
+    status = 'draft'
+
+    class Meta:
+        model = ResultPerformance
+
+
+class LabelingItemPerformanceFactory(factory.django.DjangoModelFactory):
+    labeling_item = factory.SubFactory(LabelingItemFactory)
+    result_performance = factory.SubFactory(ResultPerformanceFactory)
+    contribution_weight = Decimal('1.00')
+
+    class Meta:
+        model = LabelingItemPerformance

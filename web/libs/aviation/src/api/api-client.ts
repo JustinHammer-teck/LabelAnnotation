@@ -11,6 +11,7 @@ import type {
   CreateResultPerformanceData,
   LinkItemsData,
   ExcelUploadResult,
+  ExportData,
 } from '../types';
 
 export interface AviationApiClient {
@@ -30,8 +31,8 @@ export interface AviationApiClient {
   updateItem(id: number, data: Partial<LabelingItem>): Promise<LabelingItem>;
   deleteItem(id: number): Promise<void>;
 
-  getPerformances(projectId: number): Promise<ResultPerformance[]>;
-  createPerformance(projectId: number, data: CreateResultPerformanceData): Promise<ResultPerformance>;
+  getPerformances(eventId: number): Promise<ResultPerformance[]>;
+  createPerformance(eventId: number, data: CreateResultPerformanceData): Promise<ResultPerformance>;
   updatePerformance(id: number, data: Partial<ResultPerformance>): Promise<ResultPerformance>;
   deletePerformance(id: number): Promise<void>;
   linkItems(performanceId: number, data: LinkItemsData): Promise<void>;
@@ -45,4 +46,7 @@ export interface AviationApiClient {
     file: File,
     onProgress?: (progress: number) => void
   ): Promise<ExcelUploadResult>;
+
+  exportEvents(projectId: number, format: 'json' | 'xlsx'): Promise<Blob | ExportData>;
+  downloadExport(projectId: number, format: 'json' | 'xlsx', filename?: string): Promise<void>;
 }
