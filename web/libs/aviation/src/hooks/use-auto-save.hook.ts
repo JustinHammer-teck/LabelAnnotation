@@ -7,6 +7,8 @@ import type { LabelingItem } from '../types';
 export interface UseAutoSaveOptions {
   debounceMs?: number;
   flushOnUnmount?: boolean;
+  onSuccess?: () => void;
+  onError?: (error: string) => void;
 }
 
 export const useAutoSave = (itemId: number | null, options?: UseAutoSaveOptions) => {
@@ -25,10 +27,13 @@ export const useAutoSave = (itemId: number | null, options?: UseAutoSaveOptions)
     try {
       await api.updateItem(itemId, data);
       setSaveStatus({ state: 'saved', lastSaved: new Date(), error: null });
+      options?.onSuccess?.();
     } catch (e) {
-      setSaveStatus({ state: 'error', lastSaved: null, error: String(e) });
+      const errorMsg = String(e);
+      setSaveStatus({ state: 'error', lastSaved: null, error: errorMsg });
+      options?.onError?.(errorMsg);
     }
-  }, [api, itemId, setSaveStatus]);
+  }, [api, itemId, setSaveStatus, options]);
 
   const saveImmediately = useCallback((data: Partial<LabelingItem>) => {
     if (itemId === null) return;
@@ -56,8 +61,11 @@ export const useAutoSave = (itemId: number | null, options?: UseAutoSaveOptions)
     if (pendingDataRef.current) {
       await executeSave(pendingDataRef.current);
       pendingDataRef.current = null;
+    } else {
+      // No pending changes - still trigger success callback for user feedback
+      options?.onSuccess?.();
     }
-  }, [executeSave]);
+  }, [executeSave, options]);
 
   useEffect(() => {
     const flushOnUnmount = options?.flushOnUnmount !== false;

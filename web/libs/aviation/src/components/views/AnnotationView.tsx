@@ -1,5 +1,6 @@
 import { type FC, useEffect, useCallback, useMemo, useState } from 'react';
-import { useEvent, useLabelingItems, useAutoSave, useDropdownOptions, usePerformances, useTrainingTopics, useEvents, useReviewWorkflow } from '../../hooks';
+import { useEvent, useLabelingItems, useAutoSave, useDropdownOptions, usePerformances, useTrainingTopics, useEvents, useReviewWorkflow, useAviationToast } from '../../hooks';
+import { useAviationTranslation } from '../../i18n';
 import { Panel, Button, StatusIndicator, Select, TextArea } from '../common';
 import { EditableEventPanel, RecognitionSection, TrainingTopicsPanel, ResultPerformancePanel } from '../annotation';
 import type { AviationEvent, LabelingItem } from '../../types';
@@ -147,6 +148,8 @@ const LabelingItemRow: FC<LabelingItemRowProps> = ({
 };
 
 export const AnnotationView: FC<AnnotationViewProps> = ({ eventId, projectId }) => {
+  const toast = useAviationToast();
+  const { t } = useAviationTranslation();
   const { events, fetchEvents } = useEvents(projectId);
   const { currentEvent, loading: eventLoading, error: eventError, fetchEvent, updateEvent } = useEvent();
   const {
@@ -157,7 +160,10 @@ export const AnnotationView: FC<AnnotationViewProps> = ({ eventId, projectId }) 
     updateItem,
     deleteItem,
   } = useLabelingItems(eventId);
-  const { saveStatus } = useAutoSave(eventId);
+  const { saveStatus, saveNow } = useAutoSave(eventId, {
+    onSuccess: () => toast?.success(t('toast.save_success')),
+    onError: () => toast?.error(t('toast.save_error')),
+  });
   const { options: threatOptions } = useDropdownOptions('threat');
   const { options: errorOptions } = useDropdownOptions('error');
   const { options: uasOptions } = useDropdownOptions('uas');
@@ -237,15 +243,20 @@ export const AnnotationView: FC<AnnotationViewProps> = ({ eventId, projectId }) 
     }
   }, [events, currentEventIndex, projectId]);
 
-  const handleSave = useCallback(() => {
-    // Auto-save is already handling saves
-  }, []);
+  const handleSave = useCallback(async () => {
+    await saveNow();
+    // Toast handled by useAutoSave callbacks
+  }, [saveNow]);
 
   const handleSubmit = useCallback(async () => {
-    if (currentEvent) {
+    if (!currentEvent) return;
+    try {
       await submitForReview(currentEvent.id);
+      toast?.success(t('toast.submit_success'));
+    } catch {
+      toast?.error(t('toast.submit_error'));
     }
-  }, [currentEvent, submitForReview]);
+  }, [currentEvent, submitForReview, toast, t]);
 
   const loading = eventLoading || itemsLoading;
 

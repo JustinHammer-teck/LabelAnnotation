@@ -162,6 +162,11 @@ export const Menubar = ({
               className={`${menubarClass.elem('trigger')} main-menu-trigger`}
             >
               <Hamburger opened={sidebarOpened} />
+              <img
+                src="/static/images/airline_logo.jpg"
+                alt="China Eastern Airlines"
+                className={menubarClass.elem('logo')}
+              />
             </div>
           </Dropdown.Trigger>
 
