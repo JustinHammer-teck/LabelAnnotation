@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useAviationApi } from '../api';
+import { useAviationTranslation } from '../i18n';
 import type { DropdownOption } from '../types';
 
 export interface CopingAbilityOption {
@@ -29,10 +30,13 @@ export interface UseCopingAbilitiesResult {
  *
  * API Endpoint: GET /api/aviation/types/hierarchy/?category=coping
  *
+ * Note: Now language-aware - uses label_zh for Chinese, label for English
+ *
  * @returns {UseCopingAbilitiesResult} Groups, flat options, loading state, and error
  */
 export const useCopingAbilities = (): UseCopingAbilitiesResult => {
   const api = useAviationApi();
+  const { currentLanguage } = useAviationTranslation();
   const [rawOptions, setRawOptions] = useState<DropdownOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -55,17 +59,19 @@ export const useCopingAbilities = (): UseCopingAbilitiesResult => {
   }, [api]);
 
   const groups = useMemo((): CopingAbilityGroup[] => {
+    const isChinese = currentLanguage === 'cn';
+
     return rawOptions
       .filter((opt) => opt.level === 1)
       .map((group) => ({
         code: group.code,
-        label: group.label_zh || group.label,
+        label: isChinese ? (group.label_zh || group.label) : group.label,
         options: (group.children || []).map((child) => ({
           value: child.code,
-          label: child.label_zh || child.label,
+          label: isChinese ? (child.label_zh || child.label) : child.label,
         })),
       }));
-  }, [rawOptions]);
+  }, [rawOptions, currentLanguage]);
 
   const flatOptions = useMemo((): CopingAbilityOption[] => {
     return groups.flatMap((group) => group.options);

@@ -12,6 +12,7 @@ import {
   ERROR_IMPACT_CONFIG,
 } from '../../../hooks/use-impact-options.hook';
 import { useCopingAbilities } from '../../../hooks/use-coping-abilities.hook';
+import { useAviationTranslation } from '../../../i18n';
 import styles from './recognition-section.module.scss';
 
 export interface RecognitionSectionProps {
@@ -25,13 +26,6 @@ export interface RecognitionSectionProps {
   uasDisabledMessage?: string;
 }
 
-const MANAGEMENT_OPTIONS = [
-  { value: 'managed', label: '管理的' },
-  { value: 'unmanaged', label: '未管理' },
-  { value: 'ineffective', label: '无效管理' },
-  { value: 'unobserved', label: '未观察到' },
-];
-
 export const RecognitionSection: FC<RecognitionSectionProps> = ({
   category,
   title,
@@ -42,6 +36,7 @@ export const RecognitionSection: FC<RecognitionSectionProps> = ({
   uasDisabled = false,
   uasDisabledMessage,
 }) => {
+  const { t } = useAviationTranslation();
   const isFieldDisabled = disabled || (category === 'uas' && uasDisabled);
   const {
     groups: copingGroups,
@@ -49,6 +44,13 @@ export const RecognitionSection: FC<RecognitionSectionProps> = ({
     loading: copingLoading,
     error: copingError,
   } = useCopingAbilities();
+
+  const managementOptions = useMemo(() => [
+    { value: 'managed', label: t('management_state.managed') },
+    { value: 'unmanaged', label: t('management_state.unmanaged') },
+    { value: 'ineffective', label: t('management_state.ineffective') },
+    { value: 'unobserved', label: t('management_state.unobserved') },
+  ], [t]);
 
   const getField = <T,>(suffix: string): T => {
     return item[`${category}_${suffix}` as keyof LabelingItem] as T;
@@ -201,7 +203,7 @@ export const RecognitionSection: FC<RecognitionSectionProps> = ({
 
         <RecognitionTypeSelector
           category={category}
-          label="类型选择"
+          label={t(`recognition.${category}.type`)}
           typeSelection={typeSelection}
           onTypeChange={handleTypeChange}
           options={options}
@@ -210,36 +212,36 @@ export const RecognitionSection: FC<RecognitionSectionProps> = ({
 
         <div className={styles.fieldRow}>
           <div className={styles.field}>
-            <label htmlFor={`${category}-management`} className={styles.fieldLabel}>管理</label>
+            <label htmlFor={`${category}-management`} className={styles.fieldLabel}>{t('recognition.management')}</label>
             <Select
               id={`${category}-management`}
               value={managementValue}
               onChange={handleManagementChange}
-              options={MANAGEMENT_OPTIONS}
-              placeholder="选择管理状态..."
+              options={managementOptions}
+              placeholder={t('recognition.select_management')}
               disabled={isFieldDisabled}
-              aria-label="管理状态选择"
+              aria-label={t('recognition.management')}
             />
           </div>
 
           <div className={styles.field}>
-            <label htmlFor={`${category}-impact`} className={styles.fieldLabel}>影响</label>
+            <label htmlFor={`${category}-impact`} className={styles.fieldLabel}>{t('recognition.impact')}</label>
             <Select
               id={`${category}-impact`}
               value={impactValue}
               onChange={handleImpactChange}
               options={impactOptions}
-              placeholder="选择影响..."
+              placeholder={t('recognition.select_impact')}
               disabled={isFieldDisabled || isImpactDisabled}
-              aria-label="影响选择"
+              aria-label={t('recognition.impact')}
             />
           </div>
         </div>
 
         <div className={styles.field}>
-          <label htmlFor={`${category}-coping`} className={styles.fieldLabel}>应对能力</label>
+          <label htmlFor={`${category}-coping`} className={styles.fieldLabel}>{t('recognition.coping_ability')}</label>
           {copingError && (
-            <div className={styles.errorMessage}>Failed to load: {copingError}</div>
+            <div className={styles.errorMessage}>{t('error.load_failed', { message: copingError })}</div>
           )}
           <MultiSelect
             id={`${category}-coping`}
@@ -247,19 +249,19 @@ export const RecognitionSection: FC<RecognitionSectionProps> = ({
             onChange={handleCopingChange}
             options={copingOptions}
             groups={copingGroups}
-            placeholder="选择应对能力..."
+            placeholder={t('recognition.select_coping')}
             disabled={isFieldDisabled || copingLoading}
-            aria-label="应对能力选择"
+            aria-label={t('recognition.coping_ability')}
           />
         </div>
 
         <div className={styles.field}>
-          <label htmlFor={`${category}-description`} className={styles.fieldLabel}>描述</label>
+          <label htmlFor={`${category}-description`} className={styles.fieldLabel}>{t('recognition.description')}</label>
           <TextArea
             id={`${category}-description`}
             value={description}
             onChange={handleDescriptionChange}
-            placeholder="输入描述..."
+            placeholder={t(`recognition.enter_${category}_description`)}
             rows={3}
             disabled={isFieldDisabled}
             autoResize
@@ -268,7 +270,7 @@ export const RecognitionSection: FC<RecognitionSectionProps> = ({
 
         {calculatedTopics.length > 0 && (
           <div className={styles.topics}>
-            <span className={styles.topicsLabel}>相关训练主题:</span>
+            <span className={styles.topicsLabel}>{t('training_topics.title')}:</span>
             <div className={styles.topicsList}>
               {calculatedTopics.map((topic) => (
                 <span key={topic} className={styles.topicBadge}>

@@ -1,6 +1,24 @@
 import { renderHook } from '@testing-library/react';
 import { useImpactOptions } from '../use-impact-options.hook';
 
+// Mock i18n translation
+jest.mock('../../i18n', () => ({
+  useAviationTranslation: () => ({
+    t: (key: string) => {
+      const translations: Record<string, string> = {
+        'impact.none': '无关紧要',
+        'impact.leads_to_error': '导致差错',
+        'impact.leads_to_uas_t': '导致UAS T',
+        'impact.leads_to_uas_e': '导致UAS E',
+      };
+      return translations[key] || key;
+    },
+    currentLanguage: 'cn',
+    changeLanguage: jest.fn(),
+    i18n: {} as any,
+  }),
+}));
+
 describe('useImpactOptions', () => {
   describe('Threat Category', () => {
     /**

@@ -1,4 +1,5 @@
 import { type FC, useMemo } from 'react';
+import { useAviationTranslation } from '../../../i18n';
 import { Badge } from '../../common/badge';
 import styles from './training-topics-panel.module.scss';
 
@@ -10,7 +11,7 @@ export interface TrainingTopicsPanelProps {
 
 interface TopicCategory {
   key: 'threat' | 'error' | 'uas';
-  label: string;
+  labelKey: string;
   topics: string[];
 }
 
@@ -19,11 +20,13 @@ export const TrainingTopicsPanel: FC<TrainingTopicsPanelProps> = ({
   errorTopics,
   uasTopics,
 }) => {
+  const { t } = useAviationTranslation();
+
   const categories = useMemo((): TopicCategory[] => {
     return [
-      { key: 'threat', label: '威胁相关', topics: threatTopics },
-      { key: 'error', label: '差错相关', topics: errorTopics },
-      { key: 'uas', label: 'UAS相关', topics: uasTopics },
+      { key: 'threat', labelKey: 'training_topics.threat_related', topics: threatTopics },
+      { key: 'error', labelKey: 'training_topics.error_related', topics: errorTopics },
+      { key: 'uas', labelKey: 'training_topics.uas_related', topics: uasTopics },
     ];
   }, [threatTopics, errorTopics, uasTopics]);
 
@@ -35,9 +38,9 @@ export const TrainingTopicsPanel: FC<TrainingTopicsPanelProps> = ({
   return (
     <div className={styles.panel}>
       <div className={styles.header}>
-        <h4 className={styles.title}>Training Topics</h4>
+        <h4 className={styles.title}>{t('training_topics.title')}</h4>
         {allTopics.length > 0 && (
-          <Badge type="info">{allTopics.length} 个主题</Badge>
+          <Badge type="info">{t('training_topics.count', { count: allTopics.length })}</Badge>
         )}
       </div>
 
@@ -45,11 +48,11 @@ export const TrainingTopicsPanel: FC<TrainingTopicsPanelProps> = ({
         {categories.map((category) => (
           <div key={category.key} className={styles.category}>
             <div className={styles.categoryHeader}>
-              <span className={styles.categoryLabel}>{category.label}</span>
+              <span className={styles.categoryLabel}>{t(category.labelKey)}</span>
             </div>
             <div className={styles.topicsList} role="list">
               {category.topics.length === 0 ? (
-                <span className={styles.autoFilled}>Auto-filled</span>
+                <span className={styles.autoFilled}>{t('training_topics.auto_filled')}</span>
               ) : (
                 category.topics.map((topic) => (
                   <span

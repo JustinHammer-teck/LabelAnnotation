@@ -1,6 +1,7 @@
 import { type FC, useCallback, useMemo, useState } from 'react';
 import { Select, MultiSelect, TextArea } from '../../common';
 import { useDropdownOptions } from '../../../hooks';
+import { useAviationTranslation } from '../../../i18n';
 import type { ResultPerformance } from '../../../types';
 import styles from './result-performance.module.scss';
 
@@ -19,6 +20,7 @@ export const ResultPerformanceItem: FC<ResultPerformanceItemProps> = ({
   onDelete,
   defaultExpanded = false,
 }) => {
+    const { t, currentLanguage } = useAviationTranslation();
     const [expanded, setExpanded] = useState(defaultExpanded);
 
     const { options: eventTypeOptions } = useDropdownOptions('event_type');
@@ -29,33 +31,51 @@ export const ResultPerformanceItem: FC<ResultPerformanceItemProps> = ({
     const { options: trainingTopicsOptions } = useDropdownOptions('training_topics');
 
     const eventTypeSelectOptions = useMemo(
-      () => eventTypeOptions.map((opt) => ({ value: opt.code, label: opt.label_zh || opt.label })),
-      [eventTypeOptions],
+      () => eventTypeOptions.map((opt) => ({
+        value: opt.code,
+        label: currentLanguage === 'cn' ? (opt.label_zh || opt.label) : opt.label
+      })),
+      [eventTypeOptions, currentLanguage],
     );
 
     const flightPhaseSelectOptions = useMemo(
-      () => flightPhaseOptions.map((opt) => ({ value: opt.code, label: opt.label_zh || opt.label })),
-      [flightPhaseOptions],
+      () => flightPhaseOptions.map((opt) => ({
+        value: opt.code,
+        label: currentLanguage === 'cn' ? (opt.label_zh || opt.label) : opt.label
+      })),
+      [flightPhaseOptions, currentLanguage],
     );
 
     const likelihoodSelectOptions = useMemo(
-      () => likelihoodOptions.map((opt) => ({ value: opt.code, label: opt.label_zh || opt.label })),
-      [likelihoodOptions],
+      () => likelihoodOptions.map((opt) => ({
+        value: opt.code,
+        label: currentLanguage === 'cn' ? (opt.label_zh || opt.label) : opt.label
+      })),
+      [likelihoodOptions, currentLanguage],
     );
 
     const severitySelectOptions = useMemo(
-      () => severityOptions.map((opt) => ({ value: opt.code, label: opt.label_zh || opt.label })),
-      [severityOptions],
+      () => severityOptions.map((opt) => ({
+        value: opt.code,
+        label: currentLanguage === 'cn' ? (opt.label_zh || opt.label) : opt.label
+      })),
+      [severityOptions, currentLanguage],
     );
 
     const trainingEffectSelectOptions = useMemo(
-      () => trainingEffectOptions.map((opt) => ({ value: opt.code, label: opt.label_zh || opt.label })),
-      [trainingEffectOptions],
+      () => trainingEffectOptions.map((opt) => ({
+        value: opt.code,
+        label: currentLanguage === 'cn' ? (opt.label_zh || opt.label) : opt.label
+      })),
+      [trainingEffectOptions, currentLanguage],
     );
 
     const trainingTopicsSelectOptions = useMemo(
-      () => trainingTopicsOptions.map((opt) => ({ value: opt.code, label: opt.label_zh || opt.label })),
-      [trainingTopicsOptions],
+      () => trainingTopicsOptions.map((opt) => ({
+        value: opt.code,
+        label: currentLanguage === 'cn' ? (opt.label_zh || opt.label) : opt.label
+      })),
+      [trainingTopicsOptions, currentLanguage],
     );
 
     const handleToggle = useCallback(() => {
@@ -79,9 +99,9 @@ export const ResultPerformanceItem: FC<ResultPerformanceItemProps> = ({
 
     const eventTypeLabel = useMemo(() => {
       const opt = eventTypeSelectOptions.find((o) => o.value === item.event_type);
-      const typeLabel = opt?.label || item.event_type || '新建评估';
-      return `结果 ${index + 1}: ${typeLabel}`;
-    }, [eventTypeSelectOptions, item.event_type, index]);
+      const typeLabel = opt?.label || item.event_type || t('defaults.new_assessment');
+      return `${t('result_performance.result_item', { index: index + 1 })}: ${typeLabel}`;
+    }, [eventTypeSelectOptions, item.event_type, index, t]);
 
     return (
       <div className={`${styles.item} ${expanded ? '' : styles.collapsed}`}>
@@ -99,7 +119,7 @@ export const ResultPerformanceItem: FC<ResultPerformanceItemProps> = ({
               type="button"
               onClick={handleDelete}
               className={styles.deleteButton}
-              aria-label="删除"
+              aria-label={t('common.delete')}
             >
               <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
                 <path d="M3 4h8M5.5 4V3a1 1 0 011-1h1a1 1 0 011 1v1M10 4v7a1 1 0 01-1 1H5a1 1 0 01-1-1V4" stroke="currentColor" strokeWidth="1.2" fill="none" />
@@ -111,26 +131,26 @@ export const ResultPerformanceItem: FC<ResultPerformanceItemProps> = ({
         <div className={styles.itemContent}>
           <div className={styles.fieldsRow}>
             <div className={styles.field}>
-              <label className={styles.fieldLabel}>事件类型</label>
+              <label className={styles.fieldLabel}>{t('result_performance.event_type')}</label>
               <div className={styles.fieldInput}>
                 <Select
                   value={item.event_type || null}
                   onChange={(value) => handleFieldChange('event_type', value)}
                   options={eventTypeSelectOptions}
-                  placeholder="请选择"
-                  aria-label="事件类型"
+                  placeholder={t('placeholders.select')}
+                  aria-label={t('result_performance.event_type')}
                 />
               </div>
             </div>
             <div className={styles.field}>
-              <label className={styles.fieldLabel}>飞行阶段</label>
+              <label className={styles.fieldLabel}>{t('result_performance.flight_phase')}</label>
               <div className={styles.fieldInput}>
                 <Select
                   value={item.flight_phase || null}
                   onChange={(value) => handleFieldChange('flight_phase', value)}
                   options={flightPhaseSelectOptions}
-                  placeholder="请选择"
-                  aria-label="飞行阶段"
+                  placeholder={t('placeholders.select')}
+                  aria-label={t('result_performance.flight_phase')}
                 />
               </div>
             </div>
@@ -138,38 +158,38 @@ export const ResultPerformanceItem: FC<ResultPerformanceItemProps> = ({
 
           <div className={styles.fieldsRow}>
             <div className={styles.field}>
-              <label className={styles.fieldLabel}>可能性</label>
+              <label className={styles.fieldLabel}>{t('result_performance.likelihood')}</label>
               <div className={styles.fieldInput}>
                 <Select
                   value={item.likelihood || null}
                   onChange={(value) => handleFieldChange('likelihood', value)}
                   options={likelihoodSelectOptions}
-                  placeholder="请选择"
-                  aria-label="可能性"
+                  placeholder={t('placeholders.select')}
+                  aria-label={t('result_performance.likelihood')}
                 />
               </div>
             </div>
             <div className={styles.field}>
-              <label className={styles.fieldLabel}>严重程度</label>
+              <label className={styles.fieldLabel}>{t('result_performance.severity')}</label>
               <div className={styles.fieldInput}>
                 <Select
                   value={item.severity || null}
                   onChange={(value) => handleFieldChange('severity', value)}
                   options={severitySelectOptions}
-                  placeholder="请选择"
-                  aria-label="严重程度"
+                  placeholder={t('placeholders.select')}
+                  aria-label={t('result_performance.severity')}
                 />
               </div>
             </div>
             <div className={styles.field}>
-              <label className={styles.fieldLabel}>训练效果</label>
+              <label className={styles.fieldLabel}>{t('result_performance.training_effect')}</label>
               <div className={styles.fieldInput}>
                 <Select
                   value={item.training_effect || null}
                   onChange={(value) => handleFieldChange('training_effect', value)}
                   options={trainingEffectSelectOptions}
-                  placeholder="请选择"
-                  aria-label="训练效果"
+                  placeholder={t('placeholders.select')}
+                  aria-label={t('result_performance.training_effect')}
                 />
               </div>
             </div>
@@ -177,14 +197,14 @@ export const ResultPerformanceItem: FC<ResultPerformanceItemProps> = ({
 
           <div className={styles.fieldsRow} style={{ gridTemplateColumns: '1fr' }}>
             <div className={styles.field}>
-              <label className={styles.fieldLabel}>训练方案设想</label>
+              <label className={styles.fieldLabel}>{t('result_performance.training_plan')}</label>
               <div className={styles.fieldInput}>
                 <TextArea
                   value={item.training_plan || ''}
                   onChange={(value) => handleFieldChange('training_plan', value)}
                   rows={2}
-                  placeholder="请输入训练方案设想"
-                  aria-label="训练方案设想"
+                  placeholder={t('placeholders.enter_training_plan')}
+                  aria-label={t('result_performance.training_plan')}
                 />
               </div>
             </div>
@@ -192,14 +212,14 @@ export const ResultPerformanceItem: FC<ResultPerformanceItemProps> = ({
 
           <div className={styles.fieldsRow} style={{ gridTemplateColumns: '1fr' }}>
             <div className={styles.field}>
-              <label className={styles.fieldLabel}>训练主题</label>
+              <label className={styles.fieldLabel}>{t('result_performance.training_topics')}</label>
               <div className={styles.fieldInput}>
                 <MultiSelect
                   value={item.training_topics || []}
                   onChange={(value) => handleFieldChange('training_topics', value)}
                   options={trainingTopicsSelectOptions}
-                  placeholder="请选择训练主题"
-                  aria-label="训练主题"
+                  placeholder={t('result_performance.select_training_topics')}
+                  aria-label={t('result_performance.training_topics')}
                 />
               </div>
             </div>
@@ -207,32 +227,32 @@ export const ResultPerformanceItem: FC<ResultPerformanceItemProps> = ({
 
           <div className={styles.fieldsRow} style={{ gridTemplateColumns: '1fr' }}>
             <div className={styles.field}>
-              <label className={styles.fieldLabel}>所需达到的目标</label>
+              <label className={styles.fieldLabel}>{t('result_performance.objectives')}</label>
               <div className={styles.fieldInput}>
                 <TextArea
                   value={item.objectives || ''}
                   onChange={(value) => handleFieldChange('objectives', value)}
                   rows={2}
-                  placeholder="请输入所需达到的目标"
-                  aria-label="所需达到的目标"
+                  placeholder={t('placeholders.enter_goal')}
+                  aria-label={t('result_performance.objectives')}
                 />
               </div>
             </div>
           </div>
 
           <div className={styles.summariesSection}>
-            <h5 className={styles.summariesTitle}>自动汇总</h5>
+            <h5 className={styles.summariesTitle}>{t('result_performance.auto_summary')}</h5>
             <div className={styles.summariesGrid}>
               <div className={styles.summaryField}>
-                <span className={styles.summaryLabel}>威胁汇总</span>
+                <span className={styles.summaryLabel}>{t('result_performance.threat_summary')}</span>
                 <span className={styles.summaryValue}>{item.threat_summary || '-'}</span>
               </div>
               <div className={styles.summaryField}>
-                <span className={styles.summaryLabel}>差错汇总</span>
+                <span className={styles.summaryLabel}>{t('result_performance.error_summary')}</span>
                 <span className={styles.summaryValue}>{item.error_summary || '-'}</span>
               </div>
               <div className={styles.summaryField}>
-                <span className={styles.summaryLabel}>能力汇总</span>
+                <span className={styles.summaryLabel}>{t('result_performance.competency_summary')}</span>
                 <span className={styles.summaryValue}>{item.competency_summary || '-'}</span>
               </div>
             </div>

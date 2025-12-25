@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useAviationTranslation } from '../i18n';
 import type { LabelingItem } from '../types';
 
 export interface UseUasApplicableResult {
@@ -23,6 +24,8 @@ const getImpactValue = (impact: unknown): string | undefined => {
 };
 
 export const useUasApplicable = (item: LabelingItem): UseUasApplicableResult => {
+  const { t } = useAviationTranslation();
+
   return useMemo(() => {
     const threatValue = getImpactValue(item.threat_impact);
     const errorValue = getImpactValue(item.error_impact);
@@ -31,7 +34,7 @@ export const useUasApplicable = (item: LabelingItem): UseUasApplicableResult => 
 
     return {
       isUasApplicable: isApplicable,
-      uasDisabledMessage: isApplicable ? null : 'UAS需要威胁影响为"导致UAS T"或差错影响为"导致UAS E"',
+      uasDisabledMessage: isApplicable ? null : t('relevance.uas_requirement'),
     };
-  }, [item.threat_impact, item.error_impact]);
+  }, [item.threat_impact, item.error_impact, t]);
 };

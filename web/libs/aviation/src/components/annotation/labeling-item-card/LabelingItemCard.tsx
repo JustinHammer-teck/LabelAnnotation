@@ -2,6 +2,7 @@ import { type FC, useCallback } from 'react';
 import type { DropdownOption } from '../../../types/dropdown.types';
 import type { LabelingItem } from '../../../types/annotation.types';
 import { useUasApplicable } from '../../../hooks/use-uas-applicable.hook';
+import { useAviationTranslation } from '../../../i18n';
 import { Button } from '../../common/button';
 import { RecognitionSection } from '../recognition-section';
 import styles from './labeling-item-card.module.scss';
@@ -31,6 +32,7 @@ export const LabelingItemCard: FC<LabelingItemCardProps> = ({
   onDelete,
   disabled = false,
 }) => {
+  const { t } = useAviationTranslation();
   const { isUasApplicable, uasDisabledMessage } = useUasApplicable(item);
   const threatImpact = getImpactValue(item.threat_impact);
   const errorImpact = getImpactValue(item.error_impact);
@@ -54,12 +56,12 @@ export const LabelingItemCard: FC<LabelingItemCardProps> = ({
       if ('threat_impact' in updates) {
         const newThreatImpact = getImpactValue(updates.threat_impact as Record<string, unknown>);
         if (newThreatImpact === 'leads_to_error') {
-          enhancedUpdates.error_relevance = '来源于威胁';
+          enhancedUpdates.error_relevance = t('relevance.from_threat');
         } else if (newThreatImpact === 'leads_to_uas_t') {
-          enhancedUpdates.uas_relevance = '来源于威胁';
+          enhancedUpdates.uas_relevance = t('relevance.from_threat');
           enhancedUpdates.uas_applicable = true;
         } else {
-          if (item.error_relevance === '来源于威胁') {
+          if (item.error_relevance === t('relevance.from_threat')) {
             enhancedUpdates.error_relevance = '';
           }
           if (!errorImpact || errorImpact !== 'leads_to_uas_e') {
@@ -71,7 +73,7 @@ export const LabelingItemCard: FC<LabelingItemCardProps> = ({
       if ('error_impact' in updates) {
         const newErrorImpact = getImpactValue(updates.error_impact as Record<string, unknown>);
         if (newErrorImpact === 'leads_to_uas_e') {
-          enhancedUpdates.uas_relevance = '来源于差错';
+          enhancedUpdates.uas_relevance = t('relevance.from_error');
           enhancedUpdates.uas_applicable = true;
         } else {
           if (!threatImpact || threatImpact !== 'leads_to_uas_t') {
@@ -82,7 +84,7 @@ export const LabelingItemCard: FC<LabelingItemCardProps> = ({
 
       onUpdate(item.id, enhancedUpdates);
     },
-    [item.id, item.error_relevance, threatImpact, errorImpact, onUpdate],
+    [item.id, item.error_relevance, threatImpact, errorImpact, onUpdate, t],
   );
 
   const handleDelete = useCallback(() => {
@@ -106,7 +108,7 @@ export const LabelingItemCard: FC<LabelingItemCardProps> = ({
             disabled={disabled}
             aria-label={`Delete labeling item ${index + 1}`}
           >
-            删除
+            {t('common.delete')}
           </Button>
         </div>
       </div>
@@ -114,7 +116,7 @@ export const LabelingItemCard: FC<LabelingItemCardProps> = ({
       <div className={styles.sections}>
         <RecognitionSection
           category="threat"
-          title="威胁识别"
+          title={t('recognition.threat.title')}
           item={item}
           options={options.threat}
           onUpdate={handleUpdate}
@@ -123,7 +125,7 @@ export const LabelingItemCard: FC<LabelingItemCardProps> = ({
 
         <RecognitionSection
           category="error"
-          title="差错识别"
+          title={t('recognition.error.title')}
           item={item}
           options={options.error}
           onUpdate={handleUpdate}
@@ -132,7 +134,7 @@ export const LabelingItemCard: FC<LabelingItemCardProps> = ({
 
         <RecognitionSection
           category="uas"
-          title="UAS识别"
+          title={t('recognition.uas.title')}
           item={item}
           options={options.uas}
           onUpdate={handleUpdate}
@@ -144,7 +146,7 @@ export const LabelingItemCard: FC<LabelingItemCardProps> = ({
 
       {item.notes && (
         <div className={styles.notes}>
-          <span className={styles.notesLabel}>备注:</span>
+          <span className={styles.notesLabel}>{t('basic_info.remarks')}:</span>
           <span className={styles.notesContent}>{item.notes}</span>
         </div>
       )}

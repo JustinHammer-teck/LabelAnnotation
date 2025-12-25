@@ -1,6 +1,7 @@
 import { type FC, useEffect, useCallback } from 'react';
 import { Button } from '../../common';
 import { usePerformances } from '../../../hooks';
+import { useAviationTranslation } from '../../../i18n';
 import { ResultPerformanceItem } from './ResultPerformanceItem';
 import styles from './result-performance.module.scss';
 
@@ -11,6 +12,7 @@ export interface ResultPerformancePanelProps {
 export const ResultPerformancePanel: FC<ResultPerformancePanelProps> = ({
   eventId,
 }) => {
+  const { t } = useAviationTranslation();
   const {
     performances,
     loading,
@@ -46,18 +48,18 @@ export const ResultPerformancePanel: FC<ResultPerformancePanelProps> = ({
   return (
     <div className={styles.panel}>
       <div className={styles.panelHeader}>
-        <h3 className={styles.panelTitle}>结果绩效评估</h3>
+        <h3 className={styles.panelTitle}>{t('result_performance.panel_title')}</h3>
         <Button variant="primary" size="small" onClick={handleAdd}>
-          + 添加
+          {t('result_performance.add_result')}
         </Button>
       </div>
 
       {loading && performances.length === 0 ? (
-        <div className={styles.loading}>加载中...</div>
+        <div className={styles.loading}>{t('common.loading')}</div>
       ) : error ? (
         <div className={styles.error}>{error}</div>
       ) : performances.length === 0 ? (
-        <div className={styles.empty}>暂无结果绩效评估，点击"添加"创建</div>
+        <div className={styles.empty}>{t('empty.no_results')}</div>
       ) : (
         <div className={styles.itemsList}>
           {performances.map((perf, index) => (

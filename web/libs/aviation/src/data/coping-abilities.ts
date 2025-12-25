@@ -1,29 +1,39 @@
+/**
+ * Static coping ability configuration
+ * Note: Labels use i18n keys. Actual data is fetched from API via useCopingAbilities hook.
+ * This file serves as reference/fallback configuration.
+ */
+
 export interface CopingAbilityOption {
   code: string;
-  label: string;
+  labelKey: string;
 }
 
 export interface CopingAbilityGroup {
   code: string;
-  label: string;
+  labelKey: string;
   options: CopingAbilityOption[];
 }
 
+/**
+ * Static coping abilities with i18n keys
+ * Maps to i18n keys: coping.knowledge, coping.procedure, etc.
+ */
 export const COPING_ABILITIES: CopingAbilityGroup[] = [
   {
     code: 'KNO',
-    label: '知识',
+    labelKey: 'coping.knowledge',
     options: [
-      { code: 'KNO.1', label: '知识应用 1' },
-      { code: 'KNO.2', label: '知识应用 2' },
+      { code: 'KNO.1', labelKey: 'coping.knowledge_app_1' },
+      { code: 'KNO.2', labelKey: 'coping.knowledge_app_2' },
     ],
   },
   {
     code: 'PRO',
-    label: '程序',
+    labelKey: 'coping.procedure',
     options: [
-      { code: 'PRO.1', label: '程序应用 1' },
-      { code: 'PRO.2', label: '程序应用 2' },
+      { code: 'PRO.1', labelKey: 'coping.procedure_app_1' },
+      { code: 'PRO.2', labelKey: 'coping.procedure_app_2' },
     ],
   },
 ];

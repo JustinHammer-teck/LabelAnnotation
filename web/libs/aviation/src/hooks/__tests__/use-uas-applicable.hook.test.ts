@@ -2,6 +2,21 @@ import { renderHook } from '@testing-library/react';
 import { useUasApplicable } from '../use-uas-applicable.hook';
 import type { LabelingItem } from '../../types/annotation.types';
 
+// Mock i18n translation
+jest.mock('../../i18n', () => ({
+  useAviationTranslation: () => ({
+    t: (key: string) => {
+      const translations: Record<string, string> = {
+        'relevance.uas_requirement': 'UAS需要威胁影响为"导致UAS T"或差错影响为"导致UAS E"',
+      };
+      return translations[key] || key;
+    },
+    currentLanguage: 'cn',
+    changeLanguage: jest.fn(),
+    i18n: {} as any,
+  }),
+}));
+
 const createMockItem = (overrides: Partial<LabelingItem> = {}): LabelingItem => ({
   id: 1,
   event: 1,

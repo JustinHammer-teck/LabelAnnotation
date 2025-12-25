@@ -5,6 +5,10 @@ import { ProjectListView, TaskListView, AnnotationView, CreateProjectModal } fro
 import { ConfirmDialog } from './common';
 import { useProjects } from '../hooks';
 import type { AviationProject } from '../types';
+import { initAviationI18n } from '../i18n';
+
+// Initialize aviation i18n resources
+initAviationI18n();
 
 const ProjectListPage: FC = () => {
   const history = useHistory();

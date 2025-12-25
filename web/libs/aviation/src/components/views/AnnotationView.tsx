@@ -32,23 +32,24 @@ const LabelingItemRow: FC<LabelingItemRowProps> = ({
   onUpdate,
   onDelete,
 }) => {
+  const { t } = useAviationTranslation();
   const [expanded, setExpanded] = useState(true);
   const trainingTopics = useTrainingTopics(item);
 
   const linkedPerformance = performanceOptions.find(p => p.value === item.linked_result_id);
   const headerText = linkedPerformance
-    ? `标注 ${index + 1} - 已关联: ${linkedPerformance.label}`
-    : `标注 ${index + 1} - 未关联`;
+    ? `${t('labeling.annotation_item', { index: index + 1 })} - ${t('labeling.linked_to', { type: linkedPerformance.label })}`
+    : `${t('labeling.annotation_item', { index: index + 1 })} - ${t('labeling.not_linked')}`;
 
   const typeParts: string[] = [];
   if (item.threat_type_l3) {
-    typeParts.push(`威胁: ${item.threat_type_l3_detail?.label || item.threat_type_l3}`);
+    typeParts.push(t('recognition.threat.type_label', { label: item.threat_type_l3_detail?.label || item.threat_type_l3 }));
   }
   if (item.error_type_l3) {
-    typeParts.push(`差错: ${item.error_type_l3_detail?.label || item.error_type_l3}`);
+    typeParts.push(t('recognition.error.type_label', { label: item.error_type_l3_detail?.label || item.error_type_l3 }));
   }
   if (item.uas_applicable && item.uas_type_l3) {
-    typeParts.push(`UAS: ${item.uas_type_l3_detail?.label || item.uas_type_l3}`);
+    typeParts.push(t('recognition.uas.type_label', { label: item.uas_type_l3_detail?.label || item.uas_type_l3 }));
   }
   const typeSummary = typeParts.join(' | ');
 
@@ -80,7 +81,7 @@ const LabelingItemRow: FC<LabelingItemRowProps> = ({
               onDelete();
             }}
           >
-            Delete
+            {t('common.delete')}
           </Button>
           <span className={`${styles.expandIcon} ${expanded ? styles.expanded : ''}`}>▼</span>
         </div>
@@ -89,12 +90,12 @@ const LabelingItemRow: FC<LabelingItemRowProps> = ({
       {expanded && (
         <div className={styles.labelingItemContent}>
           <div className={styles.linkageField}>
-            <label className={styles.fieldLabel}>关联事件类型</label>
+            <label className={styles.fieldLabel}>{t('labeling.link_event_type')}</label>
             <Select
               value={item.linked_result_id}
               onChange={(value) => onUpdate({ linked_result_id: value ? Number(value) : null })}
               options={performanceOptions}
-              placeholder="请选择关联的结果绩效"
+              placeholder={t('placeholders.select_result')}
               allowClear
             />
           </div>
@@ -103,21 +104,21 @@ const LabelingItemRow: FC<LabelingItemRowProps> = ({
             <div className={styles.modulesColumn}>
               <RecognitionSection
                 category="threat"
-                title="威胁识别"
+                title={t('recognition.threat.title')}
                 item={item}
                 options={threatOptions}
                 onUpdate={onUpdate}
               />
               <RecognitionSection
                 category="error"
-                title="差错识别"
+                title={t('recognition.error.title')}
                 item={item}
                 options={errorOptions}
                 onUpdate={onUpdate}
               />
               <RecognitionSection
                 category="uas"
-                title="UAS识别"
+                title={t('recognition.uas.title')}
                 item={item}
                 options={uasOptions}
                 onUpdate={onUpdate}
@@ -133,11 +134,11 @@ const LabelingItemRow: FC<LabelingItemRowProps> = ({
           </div>
 
           <div className={styles.notesField}>
-            <label className={styles.fieldLabel}>结束状态描述</label>
+            <label className={styles.fieldLabel}>{t('labeling.notes_label')}</label>
             <TextArea
               value={item.notes || ''}
               onChange={(value) => onUpdate({ notes: value })}
-              placeholder="可补充该事件结束状态的文字说明"
+              placeholder={t('labeling.notes_placeholder')}
               rows={2}
             />
           </div>
@@ -149,7 +150,7 @@ const LabelingItemRow: FC<LabelingItemRowProps> = ({
 
 export const AnnotationView: FC<AnnotationViewProps> = ({ eventId, projectId }) => {
   const toast = useAviationToast();
-  const { t } = useAviationTranslation();
+  const { t, currentLanguage } = useAviationTranslation();
   const { events, fetchEvents } = useEvents(projectId);
   const { currentEvent, loading: eventLoading, error: eventError, fetchEvent, updateEvent } = useEvent();
   const {
@@ -191,17 +192,23 @@ export const AnnotationView: FC<AnnotationViewProps> = ({ eventId, projectId }) 
   const performanceOptions = useMemo(() => {
     const getEventTypeLabel = (code: string) => {
       const opt = eventTypeOptions.find((o) => o.code === code);
-      return opt?.label_zh || opt?.label || code || '未命名类型';
+      const label = currentLanguage === 'cn' ? (opt?.label_zh || opt?.label) : opt?.label;
+      return label || code || t('defaults.unnamed_type');
     };
     const getFlightPhaseLabel = (code: string) => {
       const opt = flightPhaseOptions.find((o) => o.code === code);
-      return opt?.label_zh || opt?.label || code || '未选阶段';
+      const label = currentLanguage === 'cn' ? (opt?.label_zh || opt?.label) : opt?.label;
+      return label || code || t('defaults.no_phase');
     };
     return performances.map((p, index) => ({
       value: p.id,
-      label: `结果 ${index + 1}: ${getEventTypeLabel(p.event_type)} - ${getFlightPhaseLabel(p.flight_phase)}`,
+      label: t('defaults.result_label', {
+        index: index + 1,
+        eventType: getEventTypeLabel(p.event_type),
+        flightPhase: getFlightPhaseLabel(p.flight_phase),
+      }),
     }));
-  }, [performances, eventTypeOptions, flightPhaseOptions]);
+  }, [performances, eventTypeOptions, flightPhaseOptions, t, currentLanguage]);
 
   const handleAddItem = useCallback(async () => {
     await addItem();
@@ -264,7 +271,7 @@ export const AnnotationView: FC<AnnotationViewProps> = ({ eventId, projectId }) 
     return (
       <div className={styles.loading}>
         <div className={styles.spinner} />
-        <span>Loading event...</span>
+        <span>{t('common.loading')}</span>
       </div>
     );
   }
@@ -272,9 +279,9 @@ export const AnnotationView: FC<AnnotationViewProps> = ({ eventId, projectId }) 
   if (eventError) {
     return (
       <div className={styles.error}>
-        <p>Failed to load event: {eventError}</p>
+        <p>{t('error.load_failed', { message: eventError })}</p>
         <Button variant="primary" onClick={() => fetchEvent(eventId)}>
-          Retry
+          {t('error.retry')}
         </Button>
       </div>
     );
@@ -283,8 +290,8 @@ export const AnnotationView: FC<AnnotationViewProps> = ({ eventId, projectId }) 
   if (!currentEvent) {
     return (
       <div className={styles.emptyState}>
-        <h2>No Event Selected</h2>
-        <p>Please select an event from the task list.</p>
+        <h2>{t('empty.no_event')}</h2>
+        <p>{t('empty.no_event_hint')}</p>
       </div>
     );
   }
@@ -302,10 +309,10 @@ export const AnnotationView: FC<AnnotationViewProps> = ({ eventId, projectId }) 
                 onClick={() => handleNavigate('prev')}
                 disabled={currentEventIndex === 0}
               >
-                ← Prev
+                {`← ${t('common.prev')}`}
               </Button>
               <span className={styles.navCounter}>
-                {currentEventIndex + 1} / {events.length}
+                {t('navigation.event_counter', { current: currentEventIndex + 1, total: events.length })}
               </span>
               <Button
                 variant="secondary"
@@ -313,7 +320,7 @@ export const AnnotationView: FC<AnnotationViewProps> = ({ eventId, projectId }) 
                 onClick={() => handleNavigate('next')}
                 disabled={currentEventIndex === events.length - 1}
               >
-                Next →
+                {`${t('common.next')} →`}
               </Button>
             </div>
           )}
@@ -323,14 +330,14 @@ export const AnnotationView: FC<AnnotationViewProps> = ({ eventId, projectId }) 
             status={saveStatus.state === 'idle' ? 'saved' : saveStatus.state}
           />
           <Button variant="secondary" onClick={handleSave}>
-            Save
+            {t('toolbar.save_annotation')}
           </Button>
           <Button
             variant="primary"
             onClick={handleSubmit}
             disabled={reviewLoading}
           >
-            Submit
+            {t('toolbar.submit_for_review')}
           </Button>
         </div>
       </div>
@@ -350,17 +357,17 @@ export const AnnotationView: FC<AnnotationViewProps> = ({ eventId, projectId }) 
         {/* Right Column: Labeling Module */}
         <div className={styles.rightColumn}>
           <Panel
-            title="Labeling Module"
+            title={t('labeling.title')}
             className={styles.labelingPanel}
             actions={
               <Button variant="primary" size="small" onClick={handleAddItem}>
-                Add
+                {t('labeling.add')}
               </Button>
             }
           >
             {items.length === 0 ? (
               <div className={styles.emptyLabeling}>
-                <p>No annotations, click Add to create</p>
+                <p>{t('empty.no_annotations')}</p>
               </div>
             ) : (
               items.map((item, index) => (

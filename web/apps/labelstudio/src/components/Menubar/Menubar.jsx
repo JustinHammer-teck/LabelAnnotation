@@ -237,24 +237,27 @@ export const Menubar = ({
                     exact
                   />
                 )}
+                <Menu.Divider />
                 <Menu.Item
-                  label="Projects"
+                  label="Document Annotation"
                   to="/projects"
                   icon={<IconFolder />}
                   data-external
                   exact
                 />
+
+                <Menu.Item
+                  label="Excel Annotation"
+                  to="/aviation"
+                  icon={<IconFolder />}
+                  data-external
+                  exact
+                />
+                <Menu.Divider />
                 <Menu.Item
                   label="Organization"
                   to="/organization"
                   icon={<IconPersonInCircle />}
-                  data-external
-                  exact
-                />
-                <Menu.Item
-                  label="Aviation"
-                  to="/aviation"
-                  icon={<IconFolder />}
                   data-external
                   exact
                 />
