@@ -53,8 +53,8 @@
             source "$(poetry env info --path)/bin/activate"
 
             # Install CPU-only PyTorch versions
-            echo "Installing CPU-only PyTorch packages..."
-            pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu --force-reinstall --no-deps
+            # echo "Installing CPU-only PyTorch packages..."
+            # pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu --force-reinstall --no-deps
 
             export LD_LIBRARY_PATH=${pkgs.stdenv.cc.cc.lib}/lib:${pkgs.libGL}/lib:${pkgs.libglvnd}/lib:${pkgs.glib.out}/lib:${pkgs.zlib}/lib:$LD_LIBRARY_PATH
           '';
