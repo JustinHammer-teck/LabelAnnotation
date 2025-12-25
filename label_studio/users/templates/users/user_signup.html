@@ -1,46 +1,50 @@
 {% extends 'users/user_base.html' %}
 {% load static %}
 
+{% block page_title %}1 注册界面{% endblock %}
+
 {% block user_content %}
-
-  <form id="signup-form"
-        action="{% url 'user-signup' %}?next={{ next }}{% if token %}&token={{ token }}{% endif %}"
-        method="post"
-  >
-    {% csrf_token %}
-    <div>
-      <input type="text" class="lsf-input-ls" name="email" id="email" placeholder="Email" value="{{ form.data.email }}">
-      {% if user_form.errors.email %}
-        <ul class="field_errors">
-          {% for error in user_form.errors.email %}
-            <li>{{ error }}</li>
-          {% endfor %}
-        </ul>
-      {% endif %}
+  <ul class="toggle cea-toggle">
+    <li class="active">注册</li>
+    <li><a href="{{ settings.HOSTNAME }}{% url 'user-login' %}">登录</a></li>
+  </ul>
+  <div class="form-wrapper">
+    <form id="signup-form"
+          action="{% url 'user-signup' %}?next={{ next }}{% if token %}&token={{ token }}{% endif %}"
+          method="post"
+    >
+      {% csrf_token %}
+      <div class="input-wrapper">
+        <label for="email" class="visually-hidden">邮箱</label>
+        <input type="text" class="lsf-input-ls" name="email" id="email" value="{{ form.data.email }}" placeholder="邮箱">
+        {% if user_form.errors.email %}
+          <ul class="field_errors">
+            {% for error in user_form.errors.email %}
+              <li>{{ error }}</li>
+            {% endfor %}
+          </ul>
+        {% endif %}
       </div>
-    <div>
-      <input type="password" class="lsf-input-ls" name="password" id="password" placeholder="Password">
-      {% if user_form.errors.password %}
-        <ul class="field_errors">
-          {% for error in user_form.errors.password %}
-            <li>{{ error }}</li>
-          {% endfor %}
-        </ul>
-      {% endif %}
+      <div class="input-wrapper">
+        <label for="password" class="visually-hidden">密码</label>
+        <input type="password" class="lsf-input-ls" name="password" id="password" placeholder="密码">
+        {% if user_form.errors.password %}
+          <ul class="field_errors">
+            {% for error in user_form.errors.password %}
+              <li>{{ error }}</li>
+            {% endfor %}
+          </ul>
+        {% endif %}
       </div>
-
-    <div>
-      <input name="allow_newsletters" id="allow_newsletters" type="hidden" value="false">
-    </div>
-
-    {% if form.non_field_errors %}
-      {% for error in form.non_field_errors %}
-        <p class="error">
-          {{ error }}
-        </p>
-      {% endfor %}
-    {% endif %}
-    <p><button type="submit" aria-label="Create Account" class="lsf-button-ls lsf-button-ls_look_primary">Create Account</button></p>
-  </form>
-
+      <div>
+        <input name="allow_newsletters" id="allow_newsletters" type="hidden" value="false">
+      </div>
+      {% if form.non_field_errors %}
+        {% for error in form.non_field_errors %}
+          <p class="error">{{ error }}</p>
+        {% endfor %}
+      {% endif %}
+      <button type="submit" aria-label="创建账户" class="lsf-button-ls lsf-button-ls_look_primary">创建账户</button>
+    </form>
+  </div>
 {% endblock %}

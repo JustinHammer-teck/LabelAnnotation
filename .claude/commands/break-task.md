@@ -1,5 +1,5 @@
 ---
-allowed-tools: Bash(git:*), Bash(ls:*), Bash(date:*), Bash(mkdir:*), Read, Write, Edit, Glob, Grep, Task
+allowed-tools: Bash(git:*), Bash(ls:*), Bash(date:*), Bash(mkdir .claude/planning/*), Bash(rm -rf .claude/planning/*), Bash(mv .claude/planning/*), Bash(cp .claude/planning/*), Read, Write, Edit, Glob, Grep, Task
 argument-hint: [task description, e.g., "Add user authentication"]
 description: Decompose a task into TDD-driven phases with agent assignments
 ---

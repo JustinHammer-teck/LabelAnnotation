@@ -1,10 +1,17 @@
 ---
-allowed-tools: Bash(git:*), Bash(date:*), Read, Write, Edit, Glob, Grep, Task
+allowed-tools: Bash(git:*), Bash(date:*), Write(.claude/progress.md:*), Read, Glob, Grep, Task
 argument-hint: [description of what you want the report to cover]
 description: Generate a progress report with git context and semantic tags
 ---
 
 # Progress Report Generator
+
+## CRITICAL: Overwrite Behavior
+
+**ALWAYS use the Write tool to completely replace `.claude/progress.md` with only the current progress.**
+- Do NOT append to existing content
+- Do NOT preserve previous report history
+- Each report is a fresh snapshot of current state only
 
 ## Input
 - Report scope/focus: $ARGUMENTS
@@ -23,25 +30,17 @@ description: Generate a progress report with git context and semantic tags
    - Collect git information (branch, commits, modified files)
    - Identify scope from `$ARGUMENTS` or use general project scope
 
-2. **Optimize Context** (via @context-master agent)
-   Use the Task tool with `subagent_type: "context-manager"` to optimize the raw context:
-   - Remove redundant information (duplicate commit prefixes, noise)
-   - Group related commits by feature/type
-   - Extract key patterns and themes
-   - Structure for fast AI retrieval
-   - Apply semantic categorization
-
-3. **Analyze Progress**
-   Using the optimized context:
+2. **Analyze Progress**
    - Categorize commits by type (feat, fix, refactor, etc.)
    - Identify completed work items
    - Detect in-progress or blocked work
    - Note any risks or issues
 
-4. **Generate Report**
-   - Write to `.claude/progress.md` (MUST overwrite existing file)
+3. **Generate Report**
+   - **Use Write tool to OVERWRITE `.claude/progress.md` completely**
    - Use semantic tags for AI-optimized retrieval
    - Keep content concise and actionable
+   - Only include current progress, no historical data
 
 ## Output Template
 
@@ -112,26 +111,6 @@ Write the following structure to `.claude/progress.md`:
 - No fluff or redundancy
 - Quantify progress where possible
 - Be specific about blockers and their causes
-
-## Context Optimization Prompt
-
-When invoking the context-manager agent, use this prompt pattern:
-
-```
-Optimize the following git context for a progress report on "{scope}":
-
-RAW CONTEXT:
-{paste raw git data here}
-
-OPTIMIZE BY:
-1. Remove noise (merge commits, trivial changes)
-2. Group commits by feature/module
-3. Identify: [COMPLETE], [IN-PROGRESS], [BLOCKED] items
-4. Extract metrics (commit count, files changed)
-5. Flag any risks or blockers
-
-Return structured, concise context ready for report generation.
-```
 
 ## Examples
 

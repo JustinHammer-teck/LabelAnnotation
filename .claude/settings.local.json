@@ -8,6 +8,19 @@
     "deny": [],
     "ask": []
   },
+  "hooks": {
+    "Stop": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "Analyze the session to determine if a progress report is needed. APPROVE if ANY of these are true: 1) /progress-report or SlashCommand with progress-report was already executed in this session, 2) No significant code changes were made (only read operations, questions, or minor edits to .md/.json config files), 3) Session was exploratory/research only (no Write/Edit to source code files like .ts, .tsx, .scss, .css, .js, .jsx, .py). BLOCK only if ALL of these are true: 1) Significant source code was created or modified (Write/Edit to .ts/.tsx/.scss/.css/.js/.jsx/.py files), 2) /progress-report was NOT executed, 3) Changes were part of a planned implementation task. Return {\"decision\": \"approve\"} or {\"decision\": \"block\", \"reason\": \"Source code changes detected. Run /progress-report to document before stopping.\"}."
+          }
+        ]
+      }
+    ]
+  },
   "statusLine": {
     "type": "command",
     "command": "bash /home/moritzzmn/projects/labelstudio/.claude/scripts/statusline.sh"

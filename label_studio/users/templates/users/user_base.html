@@ -15,19 +15,16 @@ gtag('config', 'UA-129877673-1');
 {% endblock %}
 
 {% block content %}
-    <div class="login_page_new_ui">
-        <div class="left">
-            <h1>Document Annotation</h1>
-        </div>
-        <div class="right">
-            <div class="toggle">
-                {% if not settings.DISABLE_SIGNUP_WITHOUT_LINK %}
-                  <a href="{{ settings.HOSTNAME }}/user/signup" class="{% if 'signup' in request.path %}active{% endif %}">Sign up</a>
-                  <a href="{{ settings.HOSTNAME }}/user/login" class="{% if 'login' in request.path %}active{% endif %}">Log in</a>
-                {% endif %}
-            </div>
-            {% block user_content %}
-        </div>
+<!-- China Eastern Airlines Theme Header -->
+<div class="cea-header">
+  <span class="cea-header-title">{% block page_title %}登录界面{% endblock %}</span>
+  <img src="{{ settings.HOSTNAME }}{% static 'images/airline_logo.jpg' %}" alt="China Eastern Airlines Logo" class="cea-header-logo">
+</div>
+
+<div class="login_page_new_ui cea-login-page">
+    <div class="right">
+        {% block user_content %}
     </div>
+</div>
   {% endblock %}
 {% endblock %}
