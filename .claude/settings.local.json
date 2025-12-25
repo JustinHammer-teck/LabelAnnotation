@@ -2,9 +2,14 @@
   "permissions": {
     "allow": [
       "Bash(cat:*)",
-      "Bash(yarn nx test:*)"
+      "Bash(yarn nx test:*)",
+      "Bash(tree:*)"
     ],
     "deny": [],
     "ask": []
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "bash /home/moritzzmn/projects/labelstudio/.claude/scripts/statusline.sh"
   }
 }
