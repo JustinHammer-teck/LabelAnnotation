@@ -11,6 +11,16 @@ jest.mock('../../api', () => ({
   useAviationApi: () => mockApi,
 }));
 
+// Mock i18n to return Chinese as current language
+jest.mock('../../i18n', () => ({
+  useAviationTranslation: () => ({
+    t: (key: string) => key,
+    currentLanguage: 'cn',
+    changeLanguage: jest.fn(),
+    i18n: {} as any,
+  }),
+}));
+
 /**
  * Reference: ThreatModule.js:67-79
  * const buildAbilityTreeData = () => {

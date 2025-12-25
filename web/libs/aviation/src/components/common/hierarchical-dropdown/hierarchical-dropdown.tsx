@@ -1,5 +1,6 @@
 import { type FC, useRef, useState, useEffect, useCallback, useMemo, useId } from 'react';
 import type { DropdownOption, HierarchicalSelection } from '../../../types/dropdown.types';
+import { useAviationTranslation } from '../../../i18n';
 import styles from './hierarchical-dropdown.module.scss';
 
 export interface HierarchicalDropdownProps {
@@ -25,6 +26,24 @@ export const HierarchicalDropdown: FC<HierarchicalDropdownProps> = ({
   const dropdownId = externalId ?? generatedId;
   const listboxId = `${dropdownId}-listbox`;
 
+  const { t, currentLanguage } = useAviationTranslation();
+
+  // Helper to get localized label for dropdown options
+  const getLabel = useCallback(
+    (opt: DropdownOption) => (currentLanguage === 'cn' ? opt.label_zh || opt.label : opt.label),
+    [currentLanguage],
+  );
+
+  // Get placeholder text based on category
+  const getPlaceholder = useCallback(() => {
+    const placeholderKeys: Record<string, string> = {
+      threat: 'hierarchical_dropdown.select_threat_type',
+      error: 'hierarchical_dropdown.select_error_type',
+      uas: 'hierarchical_dropdown.select_uas_type',
+    };
+    return t(placeholderKeys[category] || 'hierarchical_dropdown.select_threat_type');
+  }, [category, t]);
+
   const [isOpen, setIsOpen] = useState(false);
   const [selectedL1, setSelectedL1] = useState<string | null>(value?.level1 ?? null);
   const [selectedL2, setSelectedL2] = useState<string | null>(value?.level2 ?? null);
@@ -49,19 +68,19 @@ export const HierarchicalDropdown: FC<HierarchicalDropdownProps> = ({
     const l1 = options.find((opt) => opt.code === value.level1);
     if (!l1) return null;
 
-    const parts = [l1.label];
+    const parts = [getLabel(l1)];
     if (value.level2 && l1.children) {
       const l2 = l1.children.find((opt) => opt.code === value.level2);
       if (l2) {
-        parts.push(l2.label);
+        parts.push(getLabel(l2));
         if (value.level3 && l2.children) {
           const l3 = l2.children.find((opt) => opt.code === value.level3);
-          if (l3) parts.push(l3.label);
+          if (l3) parts.push(getLabel(l3));
         }
       }
     }
     return parts.join(' > ');
-  }, [value, options]);
+  }, [value, options, getLabel]);
 
   useEffect(() => {
     setSelectedL1(value?.level1 ?? null);
@@ -175,7 +194,7 @@ export const HierarchicalDropdown: FC<HierarchicalDropdownProps> = ({
           aria-controls={isOpen ? listboxId : undefined}
         >
           <span className={`${styles.triggerText} ${!selectedPath ? styles.placeholder : ''}`}>
-            {selectedPath || `Select ${category} type...`}
+            {selectedPath || getPlaceholder()}
           </span>
           <span className={`${styles.triggerIcon} ${isOpen ? styles.open : ''}`}>
             <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
@@ -184,7 +203,7 @@ export const HierarchicalDropdown: FC<HierarchicalDropdownProps> = ({
           </span>
         </button>
         {value && !disabled && (
-          <button type="button" className={styles.clearButton} onClick={handleClear} aria-label="Clear selection">
+          <button type="button" className={styles.clearButton} onClick={handleClear} aria-label={t('hierarchical_dropdown.clear_selection')}>
             ×
           </button>
         )}
@@ -193,9 +212,9 @@ export const HierarchicalDropdown: FC<HierarchicalDropdownProps> = ({
       {isOpen && (
         <div id={listboxId} className={styles.dropdown} role="listbox">
           <div className={styles.column}>
-            <div className={styles.columnHeader}>Level 1</div>
+            <div className={styles.columnHeader}>{t('hierarchical_dropdown.level1')}</div>
             {l1Options.length === 0 ? (
-              <div className={styles.emptyColumn}>No options</div>
+              <div className={styles.emptyColumn}>{t('hierarchical_dropdown.no_options')}</div>
             ) : (
               l1Options.map((opt) => (
                 <div
@@ -207,7 +226,7 @@ export const HierarchicalDropdown: FC<HierarchicalDropdownProps> = ({
                   onClick={() => handleL1Select(opt.code)}
                   onKeyDown={(e) => handleOptionKeyDown(e, () => handleL1Select(opt.code))}
                 >
-                  <span className={styles.optionLabel}>{opt.label}</span>
+                  <span className={styles.optionLabel}>{getLabel(opt)}</span>
                   <span className={styles.optionCode}>{opt.code}</span>
                 </div>
               ))
@@ -215,11 +234,11 @@ export const HierarchicalDropdown: FC<HierarchicalDropdownProps> = ({
           </div>
 
           <div className={styles.column}>
-            <div className={styles.columnHeader}>Level 2</div>
+            <div className={styles.columnHeader}>{t('hierarchical_dropdown.level2')}</div>
             {!selectedL1 ? (
-              <div className={styles.emptyColumn}>Select Level 1 first</div>
+              <div className={styles.emptyColumn}>{t('hierarchical_dropdown.select_level1_first')}</div>
             ) : l2Options.length === 0 ? (
-              <div className={styles.emptyColumn}>No options</div>
+              <div className={styles.emptyColumn}>{t('hierarchical_dropdown.no_options')}</div>
             ) : (
               l2Options.map((opt) => (
                 <div
@@ -231,7 +250,7 @@ export const HierarchicalDropdown: FC<HierarchicalDropdownProps> = ({
                   onClick={() => handleL2Select(opt.code)}
                   onKeyDown={(e) => handleOptionKeyDown(e, () => handleL2Select(opt.code))}
                 >
-                  <span className={styles.optionLabel}>{opt.label}</span>
+                  <span className={styles.optionLabel}>{getLabel(opt)}</span>
                   <span className={styles.optionCode}>{opt.code}</span>
                 </div>
               ))
@@ -239,11 +258,11 @@ export const HierarchicalDropdown: FC<HierarchicalDropdownProps> = ({
           </div>
 
           <div className={styles.column}>
-            <div className={styles.columnHeader}>Level 3</div>
+            <div className={styles.columnHeader}>{t('hierarchical_dropdown.level3')}</div>
             {!selectedL2 ? (
-              <div className={styles.emptyColumn}>Select Level 2 first</div>
+              <div className={styles.emptyColumn}>{t('hierarchical_dropdown.select_level2_first')}</div>
             ) : l3Options.length === 0 ? (
-              <div className={styles.emptyColumn}>No options</div>
+              <div className={styles.emptyColumn}>{t('hierarchical_dropdown.no_options')}</div>
             ) : (
               l3Options.map((opt) => (
                 <div
@@ -255,7 +274,7 @@ export const HierarchicalDropdown: FC<HierarchicalDropdownProps> = ({
                   onClick={() => handleL3Select(opt.code)}
                   onKeyDown={(e) => handleOptionKeyDown(e, () => handleL3Select(opt.code))}
                 >
-                  <span className={styles.optionLabel}>{opt.label}</span>
+                  <span className={styles.optionLabel}>{getLabel(opt)}</span>
                   <span className={styles.optionCode}>{opt.code}</span>
                 </div>
               ))

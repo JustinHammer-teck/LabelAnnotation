@@ -1,5 +1,6 @@
 import { type FC, useMemo } from 'react';
 import type { LabelingItem } from '../../../types/annotation.types';
+import { useAviationTranslation } from '../../../i18n';
 import styles from './competency-summary.module.scss';
 
 export interface CompetencySummaryProps {
@@ -13,23 +14,25 @@ interface Competency {
   source: 'type' | 'coping';
 }
 
-const CATEGORY_TITLES: Record<string, string> = {
-  threat: '威胁相关胜任力',
-  error: '差错相关胜任力',
-  uas: 'UAS相关胜任力',
+const CATEGORY_TITLE_KEYS: Record<string, string> = {
+  threat: 'competency.threat_related',
+  error: 'competency.error_related',
+  uas: 'competency.uas_related',
 };
 
-const COPING_TO_COMPETENCY: Record<string, { code: string; label: string }> = {
-  situation_awareness: { code: 'SA', label: '情境意识' },
-  decision_making: { code: 'DM', label: '决策能力' },
-  communication: { code: 'COM', label: '沟通能力' },
-  workload_management: { code: 'WM', label: '工作负荷管理' },
-  crew_coordination: { code: 'CC', label: '机组协作' },
-  stress_management: { code: 'SM', label: '压力管理' },
-  automation_management: { code: 'AM', label: '自动化管理' },
+const COPING_TO_COMPETENCY: Record<string, { code: string; labelKey: string }> = {
+  situation_awareness: { code: 'SA', labelKey: 'competency.situation_awareness' },
+  decision_making: { code: 'DM', labelKey: 'competency.decision_making' },
+  communication: { code: 'COM', labelKey: 'competency.communication' },
+  workload_management: { code: 'WM', labelKey: 'competency.workload_management' },
+  crew_coordination: { code: 'CC', labelKey: 'competency.crew_coordination' },
+  stress_management: { code: 'SM', labelKey: 'competency.stress_management' },
+  automation_management: { code: 'AM', labelKey: 'competency.automation_management' },
 };
 
 export const CompetencySummary: FC<CompetencySummaryProps> = ({ category, item }) => {
+  const { t } = useAviationTranslation();
+
   const getField = <T,>(suffix: string): T => {
     return item[`${category}_${suffix}` as keyof LabelingItem] as T;
   };
@@ -58,16 +61,17 @@ export const CompetencySummary: FC<CompetencySummaryProps> = ({ category, item }
       if (competency) {
         result.push({
           code: competency.code,
-          label: competency.label,
+          label: t(competency.labelKey),
           source: 'coping',
         });
       }
     }
 
     return result;
-  }, [category, item]);
+  }, [category, item, t]);
 
-  const title = CATEGORY_TITLES[category] ?? '相关胜任力';
+  const titleKey = CATEGORY_TITLE_KEYS[category] ?? 'competency.threat_related';
+  const title = t(titleKey);
 
   if (competencies.length === 0) {
     return null;

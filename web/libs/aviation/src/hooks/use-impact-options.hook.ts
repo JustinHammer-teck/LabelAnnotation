@@ -1,46 +1,36 @@
 import { useMemo } from 'react';
+import { useAviationTranslation } from '../i18n';
 
 interface ImpactOption {
   value: string;
   label: string;
 }
 
-interface ImpactConfig {
-  impacts: ImpactOption[];
+interface ImpactConfigStatic {
+  impacts: string[];
   autoSelect: string | null;
 }
 
 /**
  * Configuration for threat impact options based on management selection
  * Reference: effectAndManage.json - threatIdentification.threatManagement
+ * Note: Stores impact keys instead of labels - labels are translated at runtime
  */
-export const THREAT_IMPACT_CONFIG: Record<string, ImpactConfig> = {
+export const THREAT_IMPACT_CONFIG: Record<string, ImpactConfigStatic> = {
   managed: {
-    impacts: [{ value: 'none', label: '无关紧要' }],
+    impacts: ['none'],
     autoSelect: 'none',
   },
   unmanaged: {
-    impacts: [
-      { value: 'none', label: '无关紧要' },
-      { value: 'leads_to_error', label: '导致差错' },
-      { value: 'leads_to_uas_t', label: '导致UAS T' },
-    ],
+    impacts: ['none', 'leads_to_error', 'leads_to_uas_t'],
     autoSelect: null,
   },
   ineffective: {
-    impacts: [
-      { value: 'none', label: '无关紧要' },
-      { value: 'leads_to_error', label: '导致差错' },
-      { value: 'leads_to_uas_t', label: '导致UAS T' },
-    ],
+    impacts: ['none', 'leads_to_error', 'leads_to_uas_t'],
     autoSelect: null,
   },
   unobserved: {
-    impacts: [
-      { value: 'none', label: '无关紧要' },
-      { value: 'leads_to_error', label: '导致差错' },
-      { value: 'leads_to_uas_t', label: '导致UAS T' },
-    ],
+    impacts: ['none', 'leads_to_error', 'leads_to_uas_t'],
     autoSelect: null,
   },
 };
@@ -48,32 +38,23 @@ export const THREAT_IMPACT_CONFIG: Record<string, ImpactConfig> = {
 /**
  * Configuration for error impact options based on management selection
  * Reference: effectAndManage.json - errorIdentification.errorManagement
- * Note: Error has 2 impact options (no "导致差错" - errors don't lead to errors)
+ * Note: Error has 2 impact options (no "leads_to_error" - errors don't lead to errors)
  */
-export const ERROR_IMPACT_CONFIG: Record<string, ImpactConfig> = {
+export const ERROR_IMPACT_CONFIG: Record<string, ImpactConfigStatic> = {
   managed: {
-    impacts: [{ value: 'none', label: '无关紧要' }],
+    impacts: ['none'],
     autoSelect: 'none',
   },
   unmanaged: {
-    impacts: [
-      { value: 'none', label: '无关紧要' },
-      { value: 'leads_to_uas_e', label: '导致UAS E' },
-    ],
+    impacts: ['none', 'leads_to_uas_e'],
     autoSelect: null,
   },
   ineffective: {
-    impacts: [
-      { value: 'none', label: '无关紧要' },
-      { value: 'leads_to_uas_e', label: '导致UAS E' },
-    ],
+    impacts: ['none', 'leads_to_uas_e'],
     autoSelect: null,
   },
   unobserved: {
-    impacts: [
-      { value: 'none', label: '无关紧要' },
-      { value: 'leads_to_uas_e', label: '导致UAS E' },
-    ],
+    impacts: ['none', 'leads_to_uas_e'],
     autoSelect: null,
   },
 };
@@ -100,6 +81,8 @@ export const useImpactOptions = (
   category: 'threat' | 'error' | 'uas',
   managementValue: string | null,
 ): UseImpactOptionsResult => {
+  const { t } = useAviationTranslation();
+
   return useMemo(() => {
     if (category === 'uas' || !managementValue) {
       return { impactOptions: [], autoSelectValue: null, isImpactDisabled: true };
@@ -113,10 +96,16 @@ export const useImpactOptions = (
       return { impactOptions: [], autoSelectValue: null, isImpactDisabled: true };
     }
 
+    // Translate impact values to labels using i18n
+    const impactOptions: ImpactOption[] = config.impacts.map((value) => ({
+      value,
+      label: t(`impact.${value}`),
+    }));
+
     return {
-      impactOptions: config.impacts,
+      impactOptions,
       autoSelectValue: config.autoSelect,
-      isImpactDisabled: config.impacts.length === 1,
+      isImpactDisabled: impactOptions.length === 1,
     };
-  }, [category, managementValue]);
+  }, [category, managementValue, t]);
 };

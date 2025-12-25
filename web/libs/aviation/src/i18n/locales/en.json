@@ -25,8 +25,8 @@
     },
     "navigation": {
       "event_counter": "{{current}} / {{total}}",
-      "prev_event": "Previous Event",
-      "next_event": "Next Event",
+      "prev_event": "Previous",
+      "next_event": "Next",
       "first_event": "This is the first event",
       "last_event": "This is the last event"
     },
@@ -37,6 +37,7 @@
         "saved": "Saved",
         "error": "Save failed"
       },
+      "save_annotation": "Save Annotation",
       "submit_for_review": "Submit for Review"
     },
     "event": {
@@ -58,8 +59,10 @@
       "enter_remarks": "Enter remarks"
     },
     "result_performance": {
-      "title": "Result Performance",
+      "title": "Result Performance Module",
+      "panel_title": "Result Performance Module",
       "result_item": "Result {{index}}",
+      "add_result": "Add Result",
       "no_type": "No Type",
       "event_type": "Event Type",
       "flight_phase": "Flight Phase",
@@ -70,7 +73,7 @@
       "training_topics": "Training Topics",
       "objectives": "Target Objectives",
       "select_training_topics": "Select training topics",
-      "auto_summary": "Auto Summary",
+      "auto_summary": "Auto Summary Area",
       "threat_summary": "Threat Summary",
       "error_summary": "Error Summary",
       "competency_summary": "Competency Summary"
@@ -80,12 +83,16 @@
       "annotation_item": "Annotation {{index}}",
       "not_linked": "Not Linked",
       "linked_to": "Linked: {{type}}",
-      "link_event_type": "Link Event Type"
+      "link_event_type": "Link Event Type",
+      "add": "Add Annotation",
+      "notes_label": "End Status Description",
+      "notes_placeholder": "Add additional description about the event's end status"
     },
     "recognition": {
       "threat": {
         "title": "Threat Identification",
         "type": "Threat Type",
+        "type_label": "Threat: {{label}}",
         "level1": "Level 1",
         "level2": "Level 2",
         "level3": "Level 3"
@@ -93,6 +100,7 @@
       "error": {
         "title": "Error Identification",
         "type": "Error Type",
+        "type_label": "Error: {{label}}",
         "level1": "Level 1",
         "level2": "Level 2",
         "level3": "Level 3"
@@ -100,10 +108,11 @@
       "uas": {
         "title": "UAS Identification",
         "type": "UAS Type",
+        "type_label": "UAS: {{label}}",
         "level1": "Level 1",
         "level2": "Level 2",
         "level3": "Level 3",
-        "not_required": "UAS not required based on relevance"
+        "not_required": "Based on relevance UAS identification is not required"
       },
       "management": "Management",
       "impact": "Impact",
@@ -112,20 +121,23 @@
       "select_management": "Select management",
       "select_impact": "Select impact",
       "select_coping": "Select coping ability",
-      "enter_description": "Enter description"
+      "enter_description": "Enter description",
+      "enter_threat_description": "Can supplement threat description",
+      "enter_error_description": "Can supplement error description",
+      "enter_uas_description": "Can supplement UAS event description"
     },
     "training_topics": {
       "title": "Training Topics",
       "threat_related": "Threat Related",
       "error_related": "Error Related",
       "uas_related": "UAS Related",
-      "auto_generated": "Auto-generated after selecting labels",
-      "auto_filled": "Auto-filled",
+      "auto_generated": "Auto-generated after selecting Threat/Error/UAS labels",
+      "auto_filled": "Auto-populated",
       "no_topics": "No training topics",
       "count": "{{count}} topics"
     },
     "toast": {
-      "save_success": "Changes saved successfully",
+      "save_success": "Annotation saved to memory",
       "save_error": "Failed to save changes",
       "submit_success": "Submitted for review",
       "submit_error": "Failed to submit",
@@ -141,8 +153,94 @@
       "submit_message": "Are you sure you want to submit this annotation for review?"
     },
     "empty": {
-      "no_annotations": "No annotations. Click Add to create.",
-      "no_results": "No results. Click Add to create."
+      "no_annotations": "No annotations, please click top-right to add",
+      "no_results": "No result performance, please click top-right to add",
+      "no_event": "No Event Selected",
+      "no_event_hint": "Please select an event from the task list."
+    },
+    "error": {
+      "load_failed": "Failed to load event: {{message}}",
+      "retry": "Retry"
+    },
+    "coping": {
+      "knowledge": "Knowledge",
+      "procedure": "Procedure",
+      "knowledge_app_1": "Knowledge Application 1",
+      "knowledge_app_2": "Knowledge Application 2",
+      "procedure_app_1": "Procedure Application 1",
+      "procedure_app_2": "Procedure Application 2"
+    },
+    "competency": {
+      "threat_related": "Threat-Related Competency",
+      "error_related": "Error-Related Competency",
+      "uas_related": "UAS-Related Competency",
+      "situation_awareness": "Situation Awareness",
+      "decision_making": "Decision Making",
+      "communication": "Communication",
+      "workload_management": "Workload Management",
+      "crew_coordination": "Crew Coordination",
+      "stress_management": "Stress Management",
+      "automation_management": "Automation Management"
+    },
+    "defaults": {
+      "unknown_unit": "Unknown Unit",
+      "unnamed": "Unnamed",
+      "unnamed_type": "Unnamed Type",
+      "no_phase": "No Phase",
+      "new_assessment": "New Assessment",
+      "result_label": "Result {{index}}: {{eventType}} - {{flightPhase}}"
+    },
+    "impact": {
+      "none": "None",
+      "leads_to_error": "Leads to Error",
+      "leads_to_uas_t": "Leads to UAS T",
+      "leads_to_uas_e": "Leads to UAS E"
+    },
+    "management_state": {
+      "managed": "Managed",
+      "unmanaged": "Unmanaged",
+      "ineffective": "Ineffective",
+      "unobserved": "Unobserved"
+    },
+    "placeholders": {
+      "event_description": "Enter event description...",
+      "select_aircraft": "Select aircraft type",
+      "enter_aircraft_type": "Enter aircraft type",
+      "four_letter_code": "ICAO code",
+      "enter_remarks": "Enter remarks...",
+      "takeoff": "Takeoff",
+      "landing": "Landing",
+      "alternate": "Alternate",
+      "select": "Please select",
+      "select_event_type": "Select event type",
+      "select_flight_phase": "Select flight phase",
+      "enter_training_plan": "Enter proposed training plan",
+      "enter_goal": "Enter target objectives",
+      "select_result": "Select associated result performance"
+    },
+    "relevance": {
+      "from_threat": "From Threat",
+      "from_error": "From Error",
+      "uas_requirement": "UAS requires threat impact \"Leads to UAS T\" or error impact \"Leads to UAS E\""
+    },
+    "upload": {
+      "empty_file": "Excel file is empty or has incorrect format",
+      "parse_error": "Failed to parse Excel file, please check format",
+      "no_file": "Please upload an Excel file first",
+      "start_hint": "Upload an Excel file to start annotation",
+      "format_hint": "Supports .xlsx format files"
+    },
+    "hierarchical_dropdown": {
+      "select_threat_type": "Select threat type...",
+      "select_error_type": "Select error type...",
+      "select_uas_type": "Select UAS type...",
+      "level1": "Level 1",
+      "level2": "Level 2",
+      "level3": "Level 3",
+      "no_options": "No options",
+      "select_level1_first": "Select Level 1 first",
+      "select_level2_first": "Select Level 2 first",
+      "clear_selection": "Clear selection"
     }
   }
 }

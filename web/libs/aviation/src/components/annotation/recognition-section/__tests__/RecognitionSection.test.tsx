@@ -4,6 +4,49 @@ import { RecognitionSection } from '../RecognitionSection';
 import type { LabelingItem } from '../../../../types/annotation.types';
 import type { DropdownOption } from '../../../../types/dropdown.types';
 
+jest.mock('../../../../i18n', () => ({
+  useAviationTranslation: () => ({
+    t: (key: string) => {
+      const translations: Record<string, string> = {
+        // Impact options
+        'impact.none': '无关紧要',
+        'impact.leads_to_error': '导致差错',
+        'impact.leads_to_uas_t': '导致UAS T',
+        'impact.leads_to_uas_e': '导致UAS E',
+        // Management state options
+        'management_state.managed': '管理的',
+        'management_state.unmanaged': '未管理',
+        'management_state.ineffective': '无效管理',
+        'management_state.unobserved': '未观察到',
+        // Recognition section labels
+        'recognition.threat.title': '威胁识别',
+        'recognition.threat.type': '威胁类型',
+        'recognition.error.title': '差错识别',
+        'recognition.error.type': '差错类型',
+        'recognition.uas.title': 'UAS识别',
+        'recognition.uas.type': 'UAS类型',
+        'recognition.management': '管理',
+        'recognition.impact': '影响',
+        'recognition.coping_ability': '应对能力',
+        'recognition.description': '描述',
+        'recognition.select_management': '选择管理',
+        'recognition.select_impact': '选择影响',
+        'recognition.select_coping': '选择应对能力',
+        'recognition.enter_description': '可补充描述',
+        'recognition.enter_threat_description': '可补充该威胁的描述',
+        'recognition.enter_error_description': '可补充该差错的描述',
+        'recognition.enter_uas_description': '可补充该UAS事件的描述',
+        // Training topics
+        'training_topics.title': '训练主题',
+      };
+      return translations[key] || key;
+    },
+    currentLanguage: 'cn',
+    changeLanguage: jest.fn(),
+    i18n: {} as any,
+  }),
+}));
+
 jest.mock('../../../../hooks/use-coping-abilities.hook', () => ({
   useCopingAbilities: () => ({
     loading: false,
@@ -91,7 +134,7 @@ describe('RecognitionSection - Gap 1: Management → Impact Conditional Mapping'
         />
       );
 
-      const managementSelect = screen.getByLabelText('管理状态选择');
+      const managementSelect = screen.getByLabelText('管理');
       await userEvent.click(managementSelect);
       await userEvent.click(screen.getByText('管理的'));
 
@@ -122,7 +165,7 @@ describe('RecognitionSection - Gap 1: Management → Impact Conditional Mapping'
         />
       );
 
-      const managementSelect = screen.getByLabelText('管理状态选择');
+      const managementSelect = screen.getByLabelText('管理');
       await userEvent.click(managementSelect);
       await userEvent.click(screen.getByText('未管理'));
 
@@ -153,7 +196,7 @@ describe('RecognitionSection - Gap 1: Management → Impact Conditional Mapping'
         />
       );
 
-      const impactSelect = screen.getByLabelText('影响选择');
+      const impactSelect = screen.getByLabelText('影响');
       expect(impactSelect).toBeDisabled();
       expect(screen.getByText('无关紧要')).toBeInTheDocument();
     });
@@ -176,7 +219,7 @@ describe('RecognitionSection - Gap 1: Management → Impact Conditional Mapping'
         />
       );
 
-      const impactSelect = screen.getByLabelText('影响选择');
+      const impactSelect = screen.getByLabelText('影响');
       await userEvent.click(impactSelect);
 
       expect(screen.getByText('无关紧要')).toBeInTheDocument();
@@ -203,7 +246,7 @@ describe('RecognitionSection - Gap 1: Management → Impact Conditional Mapping'
         />
       );
 
-      const impactSelect = screen.getByLabelText('影响选择');
+      const impactSelect = screen.getByLabelText('影响');
       expect(impactSelect).toBeDisabled();
     });
 
@@ -225,7 +268,7 @@ describe('RecognitionSection - Gap 1: Management → Impact Conditional Mapping'
         />
       );
 
-      const impactSelect = screen.getByLabelText('影响选择');
+      const impactSelect = screen.getByLabelText('影响');
       expect(impactSelect).not.toBeDisabled();
     });
   });
@@ -249,7 +292,7 @@ describe('RecognitionSection - Gap 1: Management → Impact Conditional Mapping'
         />
       );
 
-      const managementSelect = screen.getByLabelText('管理状态选择');
+      const managementSelect = screen.getByLabelText('管理');
       await userEvent.click(managementSelect);
       await userEvent.click(screen.getByText('管理的'));
 
@@ -277,7 +320,7 @@ describe('RecognitionSection - Gap 1: Management → Impact Conditional Mapping'
         />
       );
 
-      const impactSelect = screen.getByLabelText('影响选择');
+      const impactSelect = screen.getByLabelText('影响');
       await userEvent.click(impactSelect);
 
       expect(screen.getByText('无关紧要')).toBeInTheDocument();
@@ -306,7 +349,7 @@ describe('RecognitionSection - Gap 1: Management → Impact Conditional Mapping'
         />
       );
 
-      const impactSelect = screen.getByLabelText('影响选择');
+      const impactSelect = screen.getByLabelText('影响');
       expect(impactSelect).toBeDisabled();
     });
 
@@ -327,7 +370,7 @@ describe('RecognitionSection - Gap 1: Management → Impact Conditional Mapping'
         />
       );
 
-      const managementSelect = screen.getByLabelText('管理状态选择');
+      const managementSelect = screen.getByLabelText('管理');
       await userEvent.click(managementSelect);
       await userEvent.click(screen.getByText('管理的'));
 
@@ -356,7 +399,7 @@ describe('RecognitionSection - Gap 1: Management → Impact Conditional Mapping'
         />
       );
 
-      const impactSelect = screen.getByLabelText('影响选择');
+      const impactSelect = screen.getByLabelText('影响');
       expect(impactSelect).toBeDisabled();
     });
 
@@ -382,7 +425,7 @@ describe('RecognitionSection - Gap 1: Management → Impact Conditional Mapping'
         />
       );
 
-      const managementSelect = screen.getByLabelText('管理状态选择');
+      const managementSelect = screen.getByLabelText('管理');
       await userEvent.click(managementSelect);
       await userEvent.click(screen.getByText('未管理'));
 

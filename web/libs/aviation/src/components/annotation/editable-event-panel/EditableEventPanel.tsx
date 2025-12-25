@@ -1,6 +1,7 @@
 import { type FC, useCallback, memo } from 'react';
 import { TextArea } from '../../common';
 import type { AviationEvent } from '../../../types';
+import { useAviationTranslation } from '../../../i18n';
 import styles from './editable-event-panel.module.scss';
 
 export interface EditableEventPanelProps {
@@ -14,6 +15,7 @@ const EditableEventPanelComponent: FC<EditableEventPanelProps> = ({
   eventIndex,
   onUpdate,
 }) => {
+  const { t } = useAviationTranslation();
 
   const handleDescriptionChange = useCallback(
     (value: string) => onUpdate('event_description', value),
@@ -58,7 +60,7 @@ const EditableEventPanelComponent: FC<EditableEventPanelProps> = ({
   return (
     <div className={styles.panel}>
       <div className={styles.header}>
-        <h3 className={styles.title}>事件描述</h3>
+        <h3 className={styles.title}>{t('event.description')}</h3>
         <div className={styles.eventBadge}>
           Event_{eventIndex} | {event.event_number}
         </div>
@@ -70,48 +72,48 @@ const EditableEventPanelComponent: FC<EditableEventPanelProps> = ({
             value={event.event_description}
             onChange={handleDescriptionChange}
             rows={8}
-            placeholder="请输入事件描述..."
-            aria-label="事件描述"
+            placeholder={t('placeholders.event_description')}
+            aria-label={t('event.description')}
           />
         </div>
       </div>
 
       <div className={styles.section}>
-        <h4 className={styles.sectionTitle}>基本信息</h4>
+        <h4 className={styles.sectionTitle}>{t('basic_info.title')}</h4>
         <div className={styles.fieldsGrid}>
           <div className={styles.field}>
-            <label className={styles.fieldLabel}>日期</label>
+            <label className={styles.fieldLabel}>{t('basic_info.date')}</label>
             <div className={styles.fieldInput}>
               <input
                 type="date"
                 value={event.date}
                 onChange={handleDateChange}
-                aria-label="日期"
+                aria-label={t('basic_info.date')}
               />
             </div>
           </div>
 
           <div className={styles.field}>
-            <label className={styles.fieldLabel}>时间</label>
+            <label className={styles.fieldLabel}>{t('basic_info.time')}</label>
             <div className={styles.fieldInput}>
               <input
                 type="time"
                 value={event.time || ''}
                 onChange={handleTimeChange}
-                aria-label="时间"
+                aria-label={t('basic_info.time')}
               />
             </div>
           </div>
 
           <div className={styles.field}>
-            <label className={styles.fieldLabel}>机型</label>
+            <label className={styles.fieldLabel}>{t('basic_info.aircraft_type')}</label>
             <div className={styles.fieldInput}>
               <input
                 type="text"
                 value={event.aircraft_type}
                 onChange={handleAircraftTypeChange}
-                placeholder="请输入机型"
-                aria-label="机型"
+                placeholder={t('placeholders.enter_aircraft_type')}
+                aria-label={t('basic_info.aircraft_type')}
               />
             </div>
           </div>
@@ -119,40 +121,40 @@ const EditableEventPanelComponent: FC<EditableEventPanelProps> = ({
 
         <div className={styles.fieldsGrid}>
           <div className={styles.field}>
-            <label className={styles.fieldLabel}>起飞机场</label>
+            <label className={styles.fieldLabel}>{t('basic_info.departure_airport')}</label>
             <div className={styles.fieldInput}>
               <input
                 type="text"
                 value={event.departure_airport}
                 onChange={handleDepartureAirportChange}
-                placeholder="四字代码"
-                aria-label="起飞机场"
+                placeholder={t('placeholders.four_letter_code')}
+                aria-label={t('basic_info.departure_airport')}
               />
             </div>
           </div>
 
           <div className={styles.field}>
-            <label className={styles.fieldLabel}>落地机场</label>
+            <label className={styles.fieldLabel}>{t('basic_info.landing_airport')}</label>
             <div className={styles.fieldInput}>
               <input
                 type="text"
                 value={event.arrival_airport}
                 onChange={handleArrivalAirportChange}
-                placeholder="四字代码"
-                aria-label="落地机场"
+                placeholder={t('placeholders.four_letter_code')}
+                aria-label={t('basic_info.landing_airport')}
               />
             </div>
           </div>
 
           <div className={styles.field}>
-            <label className={styles.fieldLabel}>实际降落机场</label>
+            <label className={styles.fieldLabel}>{t('basic_info.actual_landing')}</label>
             <div className={styles.fieldInput}>
               <input
                 type="text"
                 value={event.actual_landing_airport}
                 onChange={handleActualLandingAirportChange}
-                placeholder="四字代码"
-                aria-label="实际降落机场"
+                placeholder={t('placeholders.four_letter_code')}
+                aria-label={t('basic_info.actual_landing')}
               />
             </div>
           </div>
@@ -160,13 +162,13 @@ const EditableEventPanelComponent: FC<EditableEventPanelProps> = ({
       </div>
 
       <div className={`${styles.section} ${styles.remarksSection}`}>
-        <h4 className={styles.sectionTitle}>备注</h4>
+        <h4 className={styles.sectionTitle}>{t('basic_info.remarks')}</h4>
         <TextArea
           value={event.remarks}
           onChange={handleRemarksChange}
           rows={3}
-          placeholder="请输入备注..."
-          aria-label="备注"
+          placeholder={t('placeholders.enter_remarks')}
+          aria-label={t('basic_info.remarks')}
         />
       </div>
     </div>

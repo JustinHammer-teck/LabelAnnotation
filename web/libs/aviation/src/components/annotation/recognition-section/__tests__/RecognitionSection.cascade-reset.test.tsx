@@ -4,6 +4,48 @@ import { RecognitionSection } from '../RecognitionSection';
 import type { LabelingItem } from '../../../../types/annotation.types';
 import type { DropdownOption } from '../../../../types/dropdown.types';
 
+jest.mock('../../../../i18n', () => ({
+  useAviationTranslation: () => ({
+    t: (key: string) => {
+      const translations: Record<string, string> = {
+        'recognition.threat.title': 'Threat Identification',
+        'recognition.error.title': 'Error Identification',
+        'recognition.uas.title': 'UAS Identification',
+        'recognition.threat.type': 'Threat Type',
+        'recognition.error.type': 'Error Type',
+        'recognition.uas.type': 'UAS Type',
+        'recognition.management': 'Management',
+        'recognition.impact': 'Impact',
+        'recognition.coping_ability': 'Coping Ability',
+        'recognition.description': 'Description',
+        'recognition.select_management': 'Select management',
+        'recognition.select_impact': 'Select impact',
+        'recognition.select_coping': 'Select coping ability',
+        'recognition.enter_threat_description': 'Enter threat description',
+        'recognition.enter_error_description': 'Enter error description',
+        'recognition.enter_uas_description': 'Enter UAS description',
+        'management_state.managed': 'Managed',
+        'management_state.unmanaged': 'Unmanaged',
+        'management_state.ineffective': 'Ineffective',
+        'management_state.unobserved': 'Unobserved',
+        'training_topics.title': 'Training Topics',
+        'hierarchical_dropdown.select_threat_type': 'Select threat type...',
+        'hierarchical_dropdown.select_error_type': 'Select error type...',
+        'hierarchical_dropdown.select_uas_type': 'Select UAS type...',
+        'hierarchical_dropdown.level1': 'Level 1',
+        'hierarchical_dropdown.level2': 'Level 2',
+        'hierarchical_dropdown.level3': 'Level 3',
+        'hierarchical_dropdown.no_options': 'No options',
+        'hierarchical_dropdown.select_level1_first': 'Select Level 1 first',
+        'hierarchical_dropdown.select_level2_first': 'Select Level 2 first',
+        'hierarchical_dropdown.clear_selection': 'Clear selection',
+      };
+      return translations[key] || key;
+    },
+    currentLanguage: 'en',
+  }),
+}));
+
 jest.mock('../../../../hooks/use-coping-abilities.hook', () => ({
   useCopingAbilities: () => ({
     loading: false,

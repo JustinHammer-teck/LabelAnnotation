@@ -7,7 +7,7 @@ import cnTranslations from '../locales/cn/translation.json';
 i18n
   .use(initReactI18next)
   .init({
-    resources: { // Put all translations directly into the config
+    resources: {
       en: { translation: enTranslations },
       cn: { translation: cnTranslations },
     },

@@ -25,8 +25,8 @@
     },
     "navigation": {
       "event_counter": "{{current}} / {{total}}",
-      "prev_event": "上一事件",
-      "next_event": "下一事件",
+      "prev_event": "上一条",
+      "next_event": "下一条",
       "first_event": "已是第一个事件",
       "last_event": "已是最后一个事件"
     },
@@ -37,6 +37,7 @@
         "saved": "已保存",
         "error": "保存失败"
       },
+      "save_annotation": "保存标注",
       "submit_for_review": "提交审核"
     },
     "event": {
@@ -58,8 +59,10 @@
       "enter_remarks": "请输入备注信息"
     },
     "result_performance": {
-      "title": "结果绩效",
+      "title": "结果绩效模块",
+      "panel_title": "结果绩效模块",
       "result_item": "结果 {{index}}",
+      "add_result": "添加结果",
       "no_type": "未选择类型",
       "event_type": "事件类型",
       "flight_phase": "飞行阶段",
@@ -70,22 +73,26 @@
       "training_topics": "训练主题",
       "objectives": "所需达到的目标",
       "select_training_topics": "选择训练主题",
-      "auto_summary": "自动汇总",
+      "auto_summary": "自动汇总区域",
       "threat_summary": "威胁汇总",
       "error_summary": "差错汇总",
       "competency_summary": "胜任力汇总"
     },
     "labeling": {
-      "title": "标签标注",
+      "title": "标签标注模块",
       "annotation_item": "标注 {{index}}",
       "not_linked": "未关联",
       "linked_to": "已关联: {{type}}",
-      "link_event_type": "关联事件类型"
+      "link_event_type": "关联事件类型",
+      "add": "添加标注",
+      "notes_label": "结束状态描述",
+      "notes_placeholder": "可补充该事件结束状态的文字说明"
     },
     "recognition": {
       "threat": {
         "title": "威胁识别",
         "type": "威胁类型",
+        "type_label": "威胁: {{label}}",
         "level1": "一级",
         "level2": "二级",
         "level3": "三级"
@@ -93,6 +100,7 @@
       "error": {
         "title": "差错识别",
         "type": "差错类型",
+        "type_label": "差错: {{label}}",
         "level1": "一级",
         "level2": "二级",
         "level3": "三级"
@@ -100,10 +108,11 @@
       "uas": {
         "title": "UAS识别",
         "type": "UAS类型",
+        "type_label": "UAS: {{label}}",
         "level1": "一级",
         "level2": "二级",
         "level3": "三级",
-        "not_required": "根据相关性判断，无需填写UAS"
+        "not_required": "根据相关性当前不需要填写UAS识别"
       },
       "management": "管理",
       "impact": "影响",
@@ -112,20 +121,23 @@
       "select_management": "选择管理",
       "select_impact": "选择影响",
       "select_coping": "选择应对能力",
-      "enter_description": "可补充描述"
+      "enter_description": "可补充描述",
+      "enter_threat_description": "可补充该威胁的描述",
+      "enter_error_description": "可补充该差错的描述",
+      "enter_uas_description": "可补充该UAS事件的描述"
     },
     "training_topics": {
       "title": "训练主题",
       "threat_related": "威胁相关",
       "error_related": "差错相关",
       "uas_related": "UAS相关",
-      "auto_generated": "选择标签后自动生成",
-      "auto_filled": "自动填充",
+      "auto_generated": "选择威胁/差错/UAS标签后自动生成训练主题",
+      "auto_filled": "自动带入",
       "no_topics": "暂无训练主题",
       "count": "{{count}} 个主题"
     },
     "toast": {
-      "save_success": "保存成功",
+      "save_success": "标注已保存到内存",
       "save_error": "保存失败",
       "submit_success": "已提交审核",
       "submit_error": "提交失败",
@@ -141,8 +153,94 @@
       "submit_message": "确定要提交此标注进行审核吗？"
     },
     "empty": {
-      "no_annotations": "暂无标注，点击添加创建",
-      "no_results": "暂无结果，点击添加创建"
+      "no_annotations": "暂无标注请点击右上角添加",
+      "no_results": "暂无结果绩效请点击右上角添加",
+      "no_event": "未选择事件",
+      "no_event_hint": "请从任务列表中选择一个事件。"
+    },
+    "error": {
+      "load_failed": "加载事件失败：{{message}}",
+      "retry": "重试"
+    },
+    "coping": {
+      "knowledge": "知识",
+      "procedure": "程序",
+      "knowledge_app_1": "知识应用 1",
+      "knowledge_app_2": "知识应用 2",
+      "procedure_app_1": "程序应用 1",
+      "procedure_app_2": "程序应用 2"
+    },
+    "competency": {
+      "threat_related": "威胁相关胜任力",
+      "error_related": "差错相关胜任力",
+      "uas_related": "UAS相关胜任力",
+      "situation_awareness": "情境意识",
+      "decision_making": "决策能力",
+      "communication": "沟通能力",
+      "workload_management": "工作负荷管理",
+      "crew_coordination": "机组协作",
+      "stress_management": "压力管理",
+      "automation_management": "自动化管理"
+    },
+    "defaults": {
+      "unknown_unit": "未知单位",
+      "unnamed": "未命名",
+      "unnamed_type": "未命名类型",
+      "no_phase": "未选阶段",
+      "new_assessment": "新建评估",
+      "result_label": "结果 {{index}}: {{eventType}} - {{flightPhase}}"
+    },
+    "impact": {
+      "none": "无关紧要",
+      "leads_to_error": "导致差错",
+      "leads_to_uas_t": "导致UAS T",
+      "leads_to_uas_e": "导致UAS E"
+    },
+    "management_state": {
+      "managed": "管理的",
+      "unmanaged": "未管理",
+      "ineffective": "无效管理",
+      "unobserved": "未观察到"
+    },
+    "placeholders": {
+      "event_description": "请输入事件描述...",
+      "select_aircraft": "选择机型",
+      "enter_aircraft_type": "请输入机型",
+      "four_letter_code": "四字代码",
+      "enter_remarks": "请输入备注...",
+      "takeoff": "起飞",
+      "landing": "落地",
+      "alternate": "备降",
+      "select": "请选择",
+      "select_event_type": "选择事件类型",
+      "select_flight_phase": "选择飞行阶段",
+      "enter_training_plan": "输入设想训练方案",
+      "enter_goal": "输入所需达到的目标",
+      "select_result": "请选择关联的结果绩效"
+    },
+    "relevance": {
+      "from_threat": "来源于威胁",
+      "from_error": "来源于差错",
+      "uas_requirement": "UAS需要威胁影响为\"导致UAS T\"或差错影响为\"导致UAS E\""
+    },
+    "upload": {
+      "empty_file": "Excel文件为空或格式不正确",
+      "parse_error": "Excel文件解析失败，请检查文件格式",
+      "no_file": "请先上传Excel文件",
+      "start_hint": "请上传Excel文件开始标注",
+      "format_hint": "支持.xlsx格式文件"
+    },
+    "hierarchical_dropdown": {
+      "select_threat_type": "选择威胁类型...",
+      "select_error_type": "选择差错类型...",
+      "select_uas_type": "选择UAS类型...",
+      "level1": "一级",
+      "level2": "二级",
+      "level3": "三级",
+      "no_options": "暂无选项",
+      "select_level1_first": "请先选择一级",
+      "select_level2_first": "请先选择二级",
+      "clear_selection": "清除选择"
     }
   }
 }
