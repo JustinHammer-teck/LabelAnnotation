@@ -2,7 +2,7 @@
 name: agent-planning-orchestrator
 description: Enterprise-grade task planning and orchestration specialist. MUST BE USED for complex multi-phase projects, task decomposition, agent coordination, and TDD-driven development. Use PROACTIVELY when projects require multiple phases, task breakdown, or multi-agent collaboration.
 tools: Plan, Read, Write, Edit, Bash, Grep, Glob, Task, Agent
-model: opus
+model: sonnet
 permissionMode: default
 skills: code-reviewer
 ---

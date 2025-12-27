@@ -6,7 +6,7 @@ description: Decompose a task into TDD-driven phases with agent assignments
 
 # Task Breakdown Generator
 
-Decomposes a task into TDD-driven phases using @context-master, @planning-orchestrator, and @agent-organizer. Generates planning documents in `.claude/planning/{feature-name}/`.
+Decomposes a task into TDD-driven phases using @knowledge-master, @context-master, @planning-orchestrator, and @agent-organizer. Generates planning documents in `.claude/planning/{feature-name}/`.
 
 ## Input
 
@@ -61,34 +61,78 @@ Use the Task tool with `subagent_type: "context-manager"` to analyze the codebas
 ```
 Analyze this task for context: "$ARGUMENTS"
 
-Examine the codebase and return:
+Examine the codebase and return STRUCTURED context with EXACT file paths (not patterns).
 
-1. **Domain Classification**:
-   - `frontend` - if task involves: component, hook, React, UI, tsx, Jotai, state
-   - `backend` - if task involves: API, model, view, serializer, Django, migration
-   - `full-stack` - if task involves both frontend and backend
+## 1. Domain Classification
+- `frontend` | `backend` | `full-stack`
+- Primary module path(s)
 
-2. **Affected Modules** (with CLAUDE.md references):
-   - List each module that will be modified
-   - Include path to relevant CLAUDE.md file
-   - Note key patterns from each module
+## 2. Affected Modules (with CLAUDE.md references)
+- List each module that will be modified
+- Include path to relevant CLAUDE.md file
+- Extract 3-5 most relevant sections from each CLAUDE.md
 
-3. **Related Existing Files**:
-   - Find similar implementations in the codebase
-   - Identify files that will need modification
-   - Note any shared utilities or patterns
+## 3. File Inventory (EXACT ABSOLUTE PATHS REQUIRED)
 
-4. **Test Infrastructure**:
-   - Backend: pytest configuration, test file locations
-   - Frontend: Jest/Nx configuration, spec file patterns
-   - Coverage requirements (80% threshold)
+### Files to Modify
+| File (absolute path) | Purpose | Key Functions/Classes to Change |
+|---------------------|---------|--------------------------------|
+| `/home/.../path/to/file.ts` | Description | `functionName`, `ClassName` |
 
-5. **Dependencies and Risks**:
-   - External dependencies needed
-   - Potential breaking changes
-   - Integration points with other features
+### Files to Create
+| File (absolute path) | Template/Pattern Source |
+|---------------------|------------------------|
+| `/home/.../path/to/new-file.ts` | Copy pattern from `/home/.../similar.ts` |
 
-Return a structured analysis for use in planning.
+### Reference Files (Read-Only for Context)
+| File (absolute path) | What to Extract |
+|---------------------|-----------------|
+| `/home/.../types/index.ts` | Type definitions to import |
+
+### Supplementary Files (Related Context)
+| File (absolute path) | Relationship | What to Note |
+|---------------------|--------------|--------------|
+| `/home/.../related-component.tsx` | Similar implementation | Pattern to follow |
+| `/home/.../parent-component.tsx` | Parent component | Props passed down |
+
+## 4. Import Map
+
+For each file to create/modify, list exact imports needed (ready to copy/paste):
+```typescript
+// For: /home/.../new-component.tsx
+import { type FC } from 'react';
+import { useAtom } from 'jotai';
+import type { SomeType } from '../types';
+```
+
+## 5. Pattern Examples (5-10 lines each)
+
+Extract minimal code snippets showing:
+- Component pattern (if frontend) - function signature and structure
+- Hook pattern (if creating hooks) - return type and key logic
+- API view pattern (if backend) - class structure
+- Test pattern - example test structure
+
+## 6. Test Infrastructure
+
+### Backend Tests
+- Test directory: exact path
+- Existing test files: list relevant files
+- Fixtures/factories: exact path
+- Run command: exact pytest command
+
+### Frontend Tests
+- Test pattern: `*.spec.ts` or `__tests__/*.test.tsx`
+- Mock setup files: exact paths
+- Jest mocks needed: list mock patterns to copy
+- Run command: exact nx test command
+
+## 7. Dependencies and Risks
+- External dependencies needed
+- Potential breaking changes
+- Integration points with other features
+
+Return a structured analysis for use in planning and context file generation.
 ```
 
 ### Step 4: Task Decomposition (via @planning-orchestrator)
@@ -166,6 +210,28 @@ Create the output directory and files:
 1. Create directory: `.claude/planning/{feature-name}/`
 2. Generate `00-overview.md` using the Overview Template
 3. Generate phase documents `01-phase-{name}.md` through `NN-phase-{name}.md` using the Phase Template
+
+### Step 6a: Generate Context Files
+
+After generating planning documents, create context helper files that subagents will read BEFORE starting work. This eliminates wasteful file discovery via `Bash(ls)` and `Grep`.
+
+1. Create directory: `.claude/planning/{feature-name}/context/`
+
+2. Generate `00-shared.md` with common context shared by ALL phases:
+   - CLAUDE.md excerpts (relevant sections only)
+   - Common import map (imports used across phases)
+   - Test infrastructure (commands, mock patterns)
+   - Key code patterns (5-10 lines each)
+
+3. For each phase, generate `context-{phase-name}.md` with phase-specific context:
+   - Files to Modify (exact paths with functions to change)
+   - Files to Create (with template source paths)
+   - Reference Files to Read First
+   - Supplementary Files (related files for broader context)
+   - Phase-specific imports
+   - Phase-specific test pattern
+
+**CRITICAL**: Context files must contain EXACT absolute paths, not patterns. Subagents should NOT need to use `ls` or `Glob` to find files.
 
 ---
 
@@ -411,6 +477,181 @@ Example for Phase 3:
 {Additional context, considerations, or warnings}
 ```
 
+### Context File Templates
+
+#### 00-shared.md Template (Shared Context)
+
+```markdown
+# Shared Context: {feature-name}
+
+**Auto-generated by /break-task. Read this FIRST before starting any phase.**
+
+## CLAUDE.md References
+
+### Primary: {module}/CLAUDE.md
+
+{Copy 3-5 most relevant sections from the module's CLAUDE.md}
+
+### Additional References
+- `{path/to/other/CLAUDE.md}` - {reason}
+
+## Common Import Map
+
+These imports are used across multiple phases:
+
+```typescript
+// Types
+import type { TypeA, TypeB } from '@module/types';
+
+// Hooks
+import { useHookA } from '@module/hooks/use-hook-a.hook';
+
+// Stores
+import { atomA } from '@module/stores/store-a.store';
+
+// Utils
+import { utilFn } from '@module/utils';
+```
+
+## Test Infrastructure
+
+### Frontend (Jest)
+```bash
+# Run all module tests
+cd web && nx test {project}
+
+# Run specific test file
+cd web && nx test {project} --testFile={filename}.test.tsx
+
+# Run with coverage
+cd web && nx test {project} --coverage
+```
+
+**Jest Mock Patterns (copy to your test file):**
+```typescript
+// Mock i18n
+jest.mock('../../i18n', () => ({
+  useTranslation: () => ({ t: (key: string) => key }),
+}));
+
+// Mock API context
+jest.mock('../../api/context', () => ({
+  useApi: () => mockApiClient,
+}));
+```
+
+**Test utilities location:** `{path/to/test-utils/}`
+
+### Backend (pytest)
+```bash
+# Run module tests
+pytest {path/to/tests/} -v
+
+# Run with coverage
+pytest {path/to/tests/} --cov={module}
+```
+
+**Test factories location:** `{path/to/tests/factories.py}`
+
+## Key Patterns (5-10 lines each)
+
+### Component Pattern
+```typescript
+export interface ComponentProps {
+  id: number;
+}
+
+export const Component: FC<ComponentProps> = ({ id }) => {
+  return <div>...</div>;
+};
+```
+
+### Hook Pattern
+```typescript
+export const useHook = (param: number): ResultType => {
+  // key logic here
+  return { data, loading };
+};
+```
+```
+
+#### context-{phase-name}.md Template (Per-Phase Context)
+
+```markdown
+# Phase Context: {Phase Title}
+
+**Read this BEFORE starting Phase {N}. Contains exact paths and patterns.**
+
+## Files for This Phase
+
+### Files to Modify
+
+| File | Purpose | Functions to Change |
+|------|---------|---------------------|
+| `{absolute/path/to/file.tsx}` | Description | `FunctionName` |
+
+### Files to Create
+
+| File | Template Source |
+|------|-----------------|
+| `{absolute/path/to/new-file.tsx}` | Pattern from `{absolute/path/to/similar.tsx}` |
+
+### Reference Files (Read First)
+
+| File | What to Extract |
+|------|-----------------|
+| `{absolute/path/to/types.ts}` | Type definitions |
+| `{absolute/path/to/related.tsx}` | Usage pattern |
+
+### Supplementary Files (Related Context)
+
+| File | Relationship | What to Note |
+|------|--------------|--------------|
+| `{path/to/related-component.tsx}` | Uses same hook | State handling pattern |
+| `{path/to/parent-component.tsx}` | Wraps this component | Props passed down |
+| `{path/to/sibling-component.tsx}` | Similar implementation | Pattern to follow |
+
+**Why read these?** These files show patterns and dependencies you must follow.
+
+## Imports for This Phase
+
+```typescript
+// Add these imports to {file}
+import { SomeType } from '../types';
+import { useHook } from '../hooks/use-hook.hook';
+```
+
+## Phase-Specific Pattern (5-10 lines)
+
+```typescript
+// Example showing the exact pattern to implement
+const example = () => {
+  // key structure here
+};
+```
+
+## Test Pattern for This Phase
+
+```typescript
+describe('{Component} - {Test Category}', () => {
+  it('should {expected behavior}', () => {
+    render(<Component {...mockProps} />);
+    expect(screen.getByTestId('element')).toBeInTheDocument();
+  });
+});
+```
+
+## Test Commands for This Phase
+
+```bash
+# Run phase tests
+{exact test command}
+
+# Verify no regression
+{full test suite command}
+```
+```
+
 ---
 
 ## Test Command Auto-Detection
@@ -443,18 +684,46 @@ Planning documents created:
   ├── 00-overview.md
   ├── 01-phase-{name}.md
   ├── 02-phase-{name}.md
-  └── ...
+  ├── ...
+  └── context/
+      ├── 00-shared.md
+      ├── context-{phase-1-name}.md
+      ├── context-{phase-2-name}.md
+      └── ...
 
 Phases: {count}
 Parallel groups: {count or "None (sequential)"}
 Assigned agents: {list}
+Context files: {count} (1 shared + {phase count} per-phase)
 
 Next steps:
 1. Review 00-overview.md for task summary
 2. Start with Phase 01 following TDD cycle
-3. Each phase requires @code-reviewer approval
-4. All tests must pass cumulatively before proceeding
+3. Agents will read context files automatically before starting
+4. Each phase requires @code-reviewer approval
+5. All tests must pass cumulatively before proceeding
 ```
+
+---
+
+## Final Step: Generate Progress Report
+
+After completing all output, invoke the progress report slash command to document this planning session:
+
+```
+/progress-report Planning complete for {feature-name}. Next: /execute-plan {feature-name}
+```
+
+This ensures:
+1. Planning work is documented in `.claude/progress.md`
+2. The feature name and execution command are captured
+3. Next session can auto-detect what to work on
+
+**The progress report MUST include:**
+- Scope: {feature-name} implementation
+- [IN-PROGRESS] Planning for {feature-name}
+- [TODO] Execute Phase 01: {first phase name}
+- [ACTION] Run `/execute-plan {feature-name}` to start implementation
 
 ---
 
