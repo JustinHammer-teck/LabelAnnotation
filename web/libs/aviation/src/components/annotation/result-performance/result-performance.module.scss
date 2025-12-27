@@ -47,7 +47,7 @@
   background: #fff;
   border: 1px solid $aviation-border-color;
   border-radius: $aviation-border-radius;
-  overflow: hidden;
+  overflow: visible;
   transition: box-shadow 0.3s;
 
   &:hover {
@@ -124,7 +124,7 @@
 
 .itemContent {
   max-height: 2000px;
-  overflow: hidden;
+  overflow: visible;
   transition: max-height 0.3s ease, opacity 0.3s ease;
   opacity: 1;
 }
@@ -250,4 +250,29 @@
   border: 1px solid $aviation-border-color;
   border-radius: $aviation-border-radius;
   font-weight: 500;
+}
+
+.disabled {
+  opacity: 0.7;
+
+  input,
+  textarea,
+  select,
+  button {
+    cursor: not-allowed;
+    background-color: $aviation-bg-disabled;
+  }
+}
+
+.deleteButton {
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+
+    &:hover {
+      background: transparent;
+      border-color: transparent;
+      color: $aviation-text-muted;
+    }
+  }
 }

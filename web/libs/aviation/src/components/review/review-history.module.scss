@@ -1,0 +1,284 @@
+@use '../../assets/styles/variables' as *;
+
+.reviewHistory {
+  background: #fff;
+  border: 1px solid $aviation-border-color;
+  border-radius: $aviation-border-radius;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: ($aviation-spacing-unit * 1.5) ($aviation-spacing-unit * 2);
+  border-bottom: 1px solid $aviation-border-color;
+}
+
+.title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: $aviation-text-color;
+}
+
+.count {
+  font-size: 12px;
+  color: $aviation-text-muted;
+}
+
+.body {
+  padding: ($aviation-spacing-unit * 2);
+}
+
+// Empty and loading states
+.emptyState {
+  margin: 0;
+  padding: ($aviation-spacing-unit * 2) 0;
+  text-align: center;
+  font-size: 14px;
+  color: $aviation-text-muted;
+}
+
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: $aviation-spacing-unit;
+  padding: ($aviation-spacing-unit * 2) 0;
+  font-size: 14px;
+  color: $aviation-text-secondary;
+}
+
+.loadingSpinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid $aviation-border-color;
+  border-top-color: $aviation-primary-color;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// Timeline structure
+.timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.timelineItem {
+  display: flex;
+  gap: ($aviation-spacing-unit * 1.5);
+  position: relative;
+
+  &:not(.last) {
+    padding-bottom: ($aviation-spacing-unit * 2);
+  }
+}
+
+.timelineConnector {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+  width: 20px;
+}
+
+.timelineDot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  z-index: 1;
+
+  &.statusApproved {
+    background-color: $aviation-success-color;
+    box-shadow: 0 0 0 3px rgba($aviation-success-color, 0.2);
+  }
+
+  &.statusRejected {
+    background-color: $aviation-error-color;
+    box-shadow: 0 0 0 3px rgba($aviation-error-color, 0.2);
+  }
+
+  &.statusRevision {
+    background-color: $aviation-warning-color;
+    box-shadow: 0 0 0 3px rgba($aviation-warning-color, 0.2);
+  }
+}
+
+.timelineLine {
+  width: 2px;
+  flex: 1;
+  background-color: $aviation-border-color;
+  margin-top: $aviation-spacing-unit;
+}
+
+.timelineContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.timelineHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: $aviation-spacing-unit;
+  margin-bottom: $aviation-spacing-unit;
+
+  &.expandable {
+    cursor: pointer;
+    border-radius: $aviation-border-radius;
+    padding: ($aviation-spacing-unit / 2);
+    margin: -($aviation-spacing-unit / 2);
+    margin-bottom: ($aviation-spacing-unit / 2);
+    transition: background-color 0.15s ease;
+
+    &:hover {
+      background-color: $aviation-bg-hover;
+    }
+
+    &:focus {
+      outline: 2px solid $aviation-primary-color;
+      outline-offset: 2px;
+    }
+  }
+}
+
+.expandIcon {
+  font-size: 10px;
+  color: $aviation-text-muted;
+  margin-left: auto;
+}
+
+// Status badge
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: $aviation-border-radius;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.5;
+
+  &.statusApproved {
+    background-color: rgba($aviation-success-color, 0.1);
+    color: $aviation-success-color;
+  }
+
+  &.statusRejected {
+    background-color: rgba($aviation-error-color, 0.1);
+    color: $aviation-error-color;
+  }
+
+  &.statusRevision {
+    background-color: rgba($aviation-warning-color, 0.1);
+    color: darken($aviation-warning-color, 10%);
+  }
+}
+
+.reviewer {
+  font-size: 13px;
+  font-weight: 500;
+  color: $aviation-text-color;
+}
+
+.timestamp {
+  font-size: 12px;
+  color: $aviation-text-muted;
+  cursor: help;
+}
+
+.comment {
+  margin: 0 0 $aviation-spacing-unit;
+  padding: $aviation-spacing-unit ($aviation-spacing-unit * 1.5);
+  background: $aviation-bg-hover;
+  border-radius: $aviation-border-radius;
+  font-size: 13px;
+  line-height: 1.5;
+  color: $aviation-text-secondary;
+}
+
+// Field feedback list
+.feedbackList {
+  list-style: none;
+  margin: $aviation-spacing-unit 0 0;
+  padding: 0;
+  border: 1px solid $aviation-border-color;
+  border-radius: $aviation-border-radius;
+  overflow: visible;
+}
+
+.feedbackItem {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: $aviation-spacing-unit;
+  padding: $aviation-spacing-unit ($aviation-spacing-unit * 1.5);
+  border-bottom: 1px solid $aviation-border-color;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.feedbackField {
+  font-size: 12px;
+  font-weight: 500;
+  color: $aviation-text-color;
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Mono', monospace;
+  background: rgba($aviation-primary-color, 0.08);
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+
+.feedbackType {
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 3px;
+
+  &[data-type='partial'] {
+    background-color: rgba($aviation-warning-color, 0.1);
+    color: darken($aviation-warning-color, 10%);
+  }
+
+  &[data-type='full'] {
+    background-color: rgba($aviation-error-color, 0.1);
+    color: $aviation-error-color;
+  }
+
+  &[data-type='revision'] {
+    background-color: rgba($aviation-primary-color, 0.1);
+    color: $aviation-primary-color;
+  }
+}
+
+.feedbackComment {
+  flex-basis: 100%;
+  margin: ($aviation-spacing-unit / 2) 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: $aviation-text-secondary;
+}
+
+// Responsive adjustments
+@media (max-width: 480px) {
+  .timelineHeader {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .expandIcon {
+    position: absolute;
+    right: 0;
+    top: 0;
+  }
+}

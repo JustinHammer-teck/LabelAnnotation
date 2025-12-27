@@ -7,10 +7,14 @@ import styles from './result-performance.module.scss';
 
 export interface ResultPerformancePanelProps {
   eventId: number;
+  disabled?: boolean;
+  disabledTooltip?: string;
 }
 
 export const ResultPerformancePanel: FC<ResultPerformancePanelProps> = ({
   eventId,
+  disabled = false,
+  disabledTooltip,
 }) => {
   const { t } = useAviationTranslation();
   const {
@@ -28,8 +32,9 @@ export const ResultPerformancePanel: FC<ResultPerformancePanelProps> = ({
   }, [fetchPerformances]);
 
   const handleAdd = useCallback(() => {
+    if (disabled) return;
     createPerformance({});
-  }, [createPerformance]);
+  }, [createPerformance, disabled]);
 
   const handleUpdate = useCallback(
     (id: number, data: Record<string, unknown>) => {
@@ -49,7 +54,14 @@ export const ResultPerformancePanel: FC<ResultPerformancePanelProps> = ({
     <div className={styles.panel}>
       <div className={styles.panelHeader}>
         <h3 className={styles.panelTitle}>{t('result_performance.panel_title')}</h3>
-        <Button variant="primary" size="small" onClick={handleAdd}>
+        <Button
+          variant="primary"
+          size="small"
+          onClick={handleAdd}
+          disabled={disabled}
+          title={disabled ? disabledTooltip : undefined}
+          data-testid="button-add-result"
+        >
           {t('result_performance.add_result')}
         </Button>
       </div>
@@ -70,6 +82,8 @@ export const ResultPerformancePanel: FC<ResultPerformancePanelProps> = ({
               onUpdate={handleUpdate}
               onDelete={handleDelete}
               defaultExpanded={index === 0}
+              disabled={disabled}
+              deleteTooltip={disabledTooltip}
             />
           ))}
         </div>

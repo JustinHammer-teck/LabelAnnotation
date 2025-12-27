@@ -25,7 +25,9 @@
 .body {
   display: flex;
   flex: 1;
-  overflow: hidden;
+  // Note: overflow changed from hidden to visible to allow review tooltips to render
+  // outside left column bounds. Child containers handle their own scroll behavior.
+  overflow: visible;
 }
 
 .content {
