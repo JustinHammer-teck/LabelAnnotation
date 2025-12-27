@@ -3,6 +3,48 @@ import { RecognitionSection } from '../RecognitionSection';
 import type { LabelingItem } from '../../../../types/annotation.types';
 import type { DropdownOption } from '../../../../types/dropdown.types';
 
+// Mock i18n
+jest.mock('../../../../i18n', () => ({
+  useAviationTranslation: () => ({
+    t: (key: string) => {
+      const translations: Record<string, string> = {
+        // Impact options
+        'impact.none': 'None',
+        'impact.leads_to_error': 'Leads to Error',
+        'impact.leads_to_uas_t': 'Leads to UAS T',
+        'impact.leads_to_uas_e': 'Leads to UAS E',
+        // Management state options
+        'management_state.managed': 'Managed',
+        'management_state.unmanaged': 'Unmanaged',
+        'management_state.ineffective': 'Ineffective',
+        'management_state.unobserved': 'Unobserved',
+        // Recognition section labels
+        'recognition.threat.type': 'Threat Type',
+        'recognition.error.type': 'Error Type',
+        'recognition.uas.type': 'UAS Type',
+        'recognition.management': 'Management',
+        'recognition.impact': 'Impact',
+        'recognition.coping_ability': 'Coping Ability',
+        'recognition.description': 'Description',
+        'recognition.select_management': 'Select management',
+        'recognition.select_impact': 'Select impact',
+        'recognition.select_coping': 'Select coping ability',
+        'recognition.enter_threat_description': 'Enter threat description',
+        'recognition.enter_error_description': 'Enter error description',
+        'recognition.enter_uas_description': 'Enter UAS description',
+        // Training topics
+        'training_topics.title': 'Training Topics',
+        // Error
+        'error.load_failed': 'Load failed: {{message}}',
+      };
+      return translations[key] || key;
+    },
+    currentLanguage: 'en',
+    changeLanguage: jest.fn(),
+    i18n: {} as any,
+  }),
+}));
+
 jest.mock('../../../../hooks/use-coping-abilities.hook', () => ({
   useCopingAbilities: () => ({
     loading: false,
@@ -64,7 +106,18 @@ const createMockItem = (overrides: Partial<LabelingItem> = {}): LabelingItem => 
 });
 
 const mockOptions: DropdownOption[] = [
-  { id: 1, code: 'TE', label: 'TE环境', children: [] },
+  {
+    id: 1,
+    category: 'threat',
+    level: 1,
+    parent_id: null,
+    code: 'TE',
+    label: 'TE Environment',
+    label_zh: 'TE环境',
+    training_topics: [],
+    is_active: true,
+    children: [],
+  },
 ];
 
 /**

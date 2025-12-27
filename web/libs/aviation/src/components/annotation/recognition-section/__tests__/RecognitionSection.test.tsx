@@ -108,7 +108,18 @@ const createMockItem = (overrides: Partial<LabelingItem> = {}): LabelingItem => 
 });
 
 const mockOptions: DropdownOption[] = [
-  { id: 1, code: 'TE', label: 'TE环境', children: [] },
+  {
+    id: 1,
+    category: 'threat',
+    level: 1,
+    parent_id: null,
+    code: 'TE',
+    label: 'TE Environment',
+    label_zh: 'TE环境',
+    training_topics: [],
+    is_active: true,
+    children: [],
+  },
 ];
 
 describe('RecognitionSection - Gap 1: Management → Impact Conditional Mapping', () => {

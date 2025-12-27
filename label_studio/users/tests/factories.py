@@ -9,6 +9,8 @@ class UserFactory(factory.django.DjangoModelFactory):
     last_name = factory.Faker('last_name')
     username = factory.LazyAttribute(lambda u: u.email.split('@')[0])
     password = factory.Faker('password')
+    is_superuser = False
+    is_staff = False
 
     class Meta:
         model = User
