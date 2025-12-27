@@ -9,6 +9,11 @@ class NotificationEventType(models.TextChoices):
     PROJECT_ASSIGNED = 'project_assigned', _('Project Assigned')
     PROJECT_COMMENTED = 'project_commented', _('Project Task Commented')
     PROJECT_OCR_IMPORT = 'project_ocr_import', _('Project OCR Import')
+    # Aviation review notification types
+    REVIEW_APPROVED = 'review_approved', _('Review Approved')
+    REVIEW_REJECTED = 'review_rejected', _('Review Rejected')
+    REVIEW_REVISION_REQUESTED = 'review_revision_requested', _('Revision Requested')
+    REVIEW_RESUBMITTED = 'review_resubmitted', _('Review Resubmitted')
 
 """ 
 TODO: Redesign the Notification send_notification implementation 

@@ -5,8 +5,10 @@ from django.db import transaction
 from django.db.models import Prefetch, Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
+from drf_yasg.utils import swagger_auto_schema
 from openpyxl import load_workbook
-from rest_framework import status, viewsets
+from rest_framework import generics, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.parsers import MultiPartParser
@@ -17,22 +19,36 @@ from rest_framework.views import APIView
 from projects.models import Project
 from tasks.models import Task
 
+from .permissions import (
+    CanCreateLabelingItem,
+    CanDeleteLabelingItem,
+    CanEditLabelingItem,
+)
+
 from .models import (
     AviationEvent,
     AviationProject,
+    FieldFeedback,
     LabelingItem,
     LabelingItemPerformance,
     ResultPerformance,
+    ReviewDecision,
     TypeHierarchy,
 )
 from .serializers import (
+    ApproveRequestSerializer,
     AviationEventSerializer,
     AviationProjectSerializer,
     CreateAviationProjectSerializer,
     LabelingItemPerformanceSerializer,
     LabelingItemSerializer,
     LinkItemsSerializer,
+    RejectRequestSerializer,
+    ResubmitRequestSerializer,
     ResultPerformanceSerializer,
+    ReviewDecisionSerializer,
+    ReviewHistoryResponseSerializer,
+    RevisionRequestSerializer,
     TypeHierarchySerializer,
 )
 
@@ -188,7 +204,12 @@ class TypeHierarchyViewSet(viewsets.ReadOnlyModelViewSet):
 
 class LabelingItemViewSet(viewsets.ModelViewSet):
     serializer_class = LabelingItemSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (
+        IsAuthenticated,
+        CanEditLabelingItem,
+        CanDeleteLabelingItem,
+        CanCreateLabelingItem,
+    )
 
     def get_queryset(self):
         queryset = LabelingItem.objects.filter(
@@ -591,3 +612,378 @@ class AviationExportView(APIView):
             return response
 
         return Response(service.export_to_json())
+
+
+# =============================================================================
+# Review System API Views
+# =============================================================================
+
+
+class ItemSubmitAPI(generics.GenericAPIView):
+    """
+    POST /api/aviation/items/<pk>/submit/
+
+    Submit a labeling item for review.
+    Changes status from 'draft' to 'submitted'.
+    Only the creator of the item can submit it.
+    """
+    permission_classes = (IsAuthenticated,)
+
+    def get_labeling_item(self, pk):
+        """Get labeling item with organization check."""
+        return get_object_or_404(
+            LabelingItem.objects.select_related('event__task__project'),
+            pk=pk,
+            event__task__project__organization=self.request.user.active_organization
+        )
+
+    @swagger_auto_schema(
+        tags=['Aviation Review'],
+        operation_summary='Submit a labeling item for review',
+        operation_description='Submit a draft labeling item for review. Only draft items can be submitted.',
+        responses={200: LabelingItemSerializer}
+    )
+    def post(self, request, pk):
+        labeling_item = self.get_labeling_item(pk)
+
+        # Validate current status
+        if labeling_item.status != 'draft':
+            return Response(
+                {'error': f'Cannot submit item with status "{labeling_item.status}". Only draft items can be submitted.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Update status
+        labeling_item.status = 'submitted'
+        labeling_item.save(update_fields=['status', 'updated_at'])
+
+        return Response(
+            LabelingItemSerializer(labeling_item).data,
+            status=status.HTTP_200_OK
+        )
+
+
+class ReviewApproveAPI(generics.GenericAPIView):
+    """
+    POST /api/aviation/items/<pk>/approve/
+
+    Approve a labeling item after review.
+
+    Creates a ReviewDecision with status='approved' and updates
+    the LabelingItem status to 'approved'.
+    """
+    permission_classes = (IsAuthenticated,)
+    serializer_class = ApproveRequestSerializer
+
+    def get_labeling_item(self, pk):
+        """Get labeling item with organization check."""
+        return get_object_or_404(
+            LabelingItem.objects.select_related(
+                'event__task__project'
+            ),
+            pk=pk,
+            event__task__project__organization=self.request.user.active_organization
+        )
+
+    @swagger_auto_schema(
+        tags=['Aviation Review'],
+        operation_summary='Approve a labeling item',
+        operation_description='Approve a labeling item after review. Creates a ReviewDecision record.',
+        request_body=ApproveRequestSerializer,
+        responses={200: ReviewDecisionSerializer}
+    )
+    def post(self, request, pk):
+        from .services import send_review_notification
+
+        labeling_item = self.get_labeling_item(pk)
+
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        with transaction.atomic():
+            # Create the review decision
+            decision = ReviewDecision.objects.create(
+                labeling_item=labeling_item,
+                status='approved',
+                reviewer=request.user,
+                reviewer_comment=serializer.validated_data.get('comment', '')
+            )
+
+            # Update labeling item status
+            labeling_item.status = 'approved'
+            labeling_item.reviewed_by = request.user
+            labeling_item.reviewed_at = timezone.now()
+            labeling_item.save(update_fields=['status', 'reviewed_by', 'reviewed_at'])
+
+        # Send notification to annotator
+        send_review_notification(decision)
+
+        return Response(
+            ReviewDecisionSerializer(decision).data,
+            status=status.HTTP_200_OK
+        )
+
+
+class ReviewRejectAPI(generics.GenericAPIView):
+    """
+    POST /api/aviation/items/<pk>/reject/
+
+    Reject a labeling item with field-level feedback.
+
+    Creates a ReviewDecision with status 'rejected_partial' or 'rejected_full',
+    creates FieldFeedback records for each field, and updates the LabelingItem
+    status to 'reviewed'.
+    """
+    permission_classes = (IsAuthenticated,)
+    serializer_class = RejectRequestSerializer
+
+    def get_labeling_item(self, pk):
+        """Get labeling item with organization check."""
+        return get_object_or_404(
+            LabelingItem.objects.select_related(
+                'event__task__project'
+            ),
+            pk=pk,
+            event__task__project__organization=self.request.user.active_organization
+        )
+
+    @swagger_auto_schema(
+        tags=['Aviation Review'],
+        operation_summary='Reject a labeling item',
+        operation_description='Reject a labeling item with field-level feedback. Requires at least one field_feedback.',
+        request_body=RejectRequestSerializer,
+        responses={200: ReviewDecisionSerializer}
+    )
+    def post(self, request, pk):
+        from .services import send_review_notification
+
+        labeling_item = self.get_labeling_item(pk)
+
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        with transaction.atomic():
+            # Create the review decision
+            decision = ReviewDecision.objects.create(
+                labeling_item=labeling_item,
+                status=serializer.validated_data['status'],
+                reviewer=request.user,
+                reviewer_comment=serializer.validated_data.get('comment', '')
+            )
+
+            # Create field feedback records
+            for feedback_data in serializer.validated_data['field_feedbacks']:
+                FieldFeedback.objects.create(
+                    review_decision=decision,
+                    labeling_item=labeling_item,
+                    field_name=feedback_data['field_name'],
+                    feedback_type=feedback_data['feedback_type'],
+                    feedback_comment=feedback_data.get('feedback_comment', ''),
+                    reviewed_by=request.user
+                )
+
+            # Update labeling item status to 'reviewed' (needs revision)
+            labeling_item.status = 'reviewed'
+            labeling_item.reviewed_by = request.user
+            labeling_item.reviewed_at = timezone.now()
+            labeling_item.save(update_fields=['status', 'reviewed_by', 'reviewed_at'])
+
+        # Send notification to annotator
+        send_review_notification(decision)
+
+        return Response(
+            ReviewDecisionSerializer(decision).data,
+            status=status.HTTP_200_OK
+        )
+
+
+class ReviewRevisionAPI(generics.GenericAPIView):
+    """
+    POST /api/aviation/items/<pk>/revision/
+
+    Request revision of a labeling item.
+
+    Creates a ReviewDecision with status='revision_requested',
+    creates FieldFeedback records, and updates the LabelingItem
+    status to 'reviewed'.
+    """
+    permission_classes = (IsAuthenticated,)
+    serializer_class = RevisionRequestSerializer
+
+    def get_labeling_item(self, pk):
+        """Get labeling item with organization check."""
+        return get_object_or_404(
+            LabelingItem.objects.select_related(
+                'event__task__project'
+            ),
+            pk=pk,
+            event__task__project__organization=self.request.user.active_organization
+        )
+
+    @swagger_auto_schema(
+        tags=['Aviation Review'],
+        operation_summary='Request revision of a labeling item',
+        operation_description='Request clarification or revision on specific fields.',
+        request_body=RevisionRequestSerializer,
+        responses={200: ReviewDecisionSerializer}
+    )
+    def post(self, request, pk):
+        from .services import send_review_notification
+
+        labeling_item = self.get_labeling_item(pk)
+
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        with transaction.atomic():
+            # Create the review decision
+            decision = ReviewDecision.objects.create(
+                labeling_item=labeling_item,
+                status='revision_requested',
+                reviewer=request.user,
+                reviewer_comment=serializer.validated_data.get('comment', '')
+            )
+
+            # Create field feedback records
+            for feedback_data in serializer.validated_data['field_feedbacks']:
+                FieldFeedback.objects.create(
+                    review_decision=decision,
+                    labeling_item=labeling_item,
+                    field_name=feedback_data['field_name'],
+                    feedback_type=feedback_data['feedback_type'],
+                    feedback_comment=feedback_data.get('feedback_comment', ''),
+                    reviewed_by=request.user
+                )
+
+            # Update labeling item status to 'reviewed'
+            labeling_item.status = 'reviewed'
+            labeling_item.reviewed_by = request.user
+            labeling_item.reviewed_at = timezone.now()
+            labeling_item.save(update_fields=['status', 'reviewed_by', 'reviewed_at'])
+
+        # Send notification to annotator
+        send_review_notification(decision)
+
+        return Response(
+            ReviewDecisionSerializer(decision).data,
+            status=status.HTTP_200_OK
+        )
+
+
+class ReviewResubmitAPI(generics.GenericAPIView):
+    """
+    POST /api/aviation/items/<pk>/resubmit/
+
+    Resubmit a labeling item after making revisions.
+
+    Updates the LabelingItem status back to 'submitted'.
+    """
+    permission_classes = (IsAuthenticated,)
+    serializer_class = ResubmitRequestSerializer
+
+    def get_labeling_item(self, pk):
+        """Get labeling item with organization check."""
+        return get_object_or_404(
+            LabelingItem.objects.select_related(
+                'event__task__project'
+            ),
+            pk=pk,
+            event__task__project__organization=self.request.user.active_organization
+        )
+
+    @swagger_auto_schema(
+        tags=['Aviation Review'],
+        operation_summary='Resubmit a labeling item',
+        operation_description='Resubmit a labeling item after making requested revisions.',
+        request_body=ResubmitRequestSerializer,
+        responses={200: LabelingItemSerializer}
+    )
+    def post(self, request, pk):
+        from .services import send_resubmit_notification
+
+        labeling_item = self.get_labeling_item(pk)
+
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        with transaction.atomic():
+            # Update labeling item status back to 'submitted'
+            labeling_item.status = 'submitted'
+            labeling_item.save(update_fields=['status'])
+
+        # Send notification to last reviewer
+        send_resubmit_notification(labeling_item, request.user)
+
+        return Response(
+            LabelingItemSerializer(labeling_item).data,
+            status=status.HTTP_200_OK
+        )
+
+
+class ReviewHistoryAPI(generics.GenericAPIView):
+    """
+    GET /api/aviation/items/<pk>/review-history/
+
+    Get the complete review history for a labeling item.
+
+    Returns all ReviewDecisions with nested FieldFeedbacks,
+    the current status, and pending revision fields.
+    """
+    permission_classes = (IsAuthenticated,)
+    serializer_class = ReviewHistoryResponseSerializer
+
+    def get_labeling_item(self, pk):
+        """Get labeling item with organization check."""
+        return get_object_or_404(
+            LabelingItem.objects.select_related(
+                'event__task__project'
+            ).prefetch_related(
+                'review_decisions__field_feedbacks'
+            ),
+            pk=pk,
+            event__task__project__organization=self.request.user.active_organization
+        )
+
+    def get_pending_revision_fields(self, labeling_item):
+        """Get list of field names with pending revision requests."""
+        # Get the latest non-approved decision
+        latest_decision = labeling_item.review_decisions.exclude(
+            status='approved'
+        ).order_by('-created_at').first()
+
+        if not latest_decision:
+            return []
+
+        # If item was approved after this decision, no pending fields
+        approved_decision = labeling_item.review_decisions.filter(
+            status='approved',
+            created_at__gt=latest_decision.created_at
+        ).exists()
+
+        if approved_decision:
+            return []
+
+        # Return field names from the latest non-approved decision
+        return list(
+            latest_decision.field_feedbacks.values_list('field_name', flat=True)
+        )
+
+    @swagger_auto_schema(
+        tags=['Aviation Review'],
+        operation_summary='Get review history for a labeling item',
+        operation_description='Returns all review decisions, field feedbacks, current status, and pending revision fields.',
+        responses={200: ReviewHistoryResponseSerializer}
+    )
+    def get(self, request, pk):
+        labeling_item = self.get_labeling_item(pk)
+
+        decisions = labeling_item.review_decisions.all().order_by('-created_at')
+        pending_fields = self.get_pending_revision_fields(labeling_item)
+
+        response_data = {
+            'current_status': labeling_item.status,
+            'pending_revision_fields': pending_fields,
+            'decisions': ReviewDecisionSerializer(decisions, many=True).data
+        }
+
+        return Response(response_data, status=status.HTTP_200_OK)

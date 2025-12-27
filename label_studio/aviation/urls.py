@@ -17,5 +17,14 @@ urlpatterns = [
     path('api/aviation/', include(router.urls)),
     path('api/aviation/projects/<int:pk>/import-excel/', api.AviationExcelUploadView.as_view(), name='aviation-excel-upload'),
     path('api/aviation/projects/<int:pk>/export/', api.AviationExportView.as_view(), name='aviation-export'),
+
+    # Review System Endpoints
+    path('api/aviation/items/<int:pk>/submit/', api.ItemSubmitAPI.as_view(), name='item-submit'),
+    path('api/aviation/items/<int:pk>/approve/', api.ReviewApproveAPI.as_view(), name='item-approve'),
+    path('api/aviation/items/<int:pk>/reject/', api.ReviewRejectAPI.as_view(), name='item-reject'),
+    path('api/aviation/items/<int:pk>/revision/', api.ReviewRevisionAPI.as_view(), name='item-revision'),
+    path('api/aviation/items/<int:pk>/resubmit/', api.ReviewResubmitAPI.as_view(), name='item-resubmit'),
+    path('api/aviation/items/<int:pk>/review-history/', api.ReviewHistoryAPI.as_view(), name='item-review-history'),
+
     re_path(r'^aviation(?:/(?P<path>.*))?$', views.aviation_page, name='aviation-page'),
 ]
