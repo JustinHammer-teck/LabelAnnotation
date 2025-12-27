@@ -2,6 +2,270 @@ html, body {
   height: 100%;
 }
 
+/* ==========================================================================
+   China Eastern Airlines Theme (CEA)
+
+   CSS variables and styles for China Eastern Airlines branding.
+   Primary color: #0091EA (China Eastern blue)
+   Background: #f5f5f5 (light gray)
+
+   All classes use the 'cea-' prefix to avoid conflicts with existing styles.
+   ========================================================================== */
+
+:root {
+  /* China Eastern Airlines Theme Variables */
+  --cea-primary: #0091EA;
+  --cea-primary-hover: #0077BE;
+  --cea-background: #f5f5f5;
+  --cea-card-bg: #ffffff;
+  --cea-header-text: #ffffff;
+  --cea-shadow: rgba(0, 0, 0, 0.1);
+}
+
+/* Header bar styles for China Eastern theme */
+.cea-header {
+  background: var(--cea-primary) !important;
+  background-color: #0091EA !important;
+  height: 60px;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 0 40px;
+  color: var(--cea-header-text);
+  width: 100%;
+  box-sizing: border-box;
+  position: relative;
+  z-index: 100;
+}
+
+.cea-header-title {
+  font-size: 24px;
+  font-weight: bold;
+  color: var(--cea-header-text);
+  color: #ffffff !important;
+}
+
+.cea-header-logo {
+  height: 20px;
+  width: auto;
+  max-height: 20px;
+  object-fit: contain;
+}
+
+/* Form card styles for China Eastern theme */
+.cea-form-card {
+  background: var(--cea-card-bg);
+  border-radius: 8px;
+  box-shadow: 0 2px 10px var(--cea-shadow);
+  padding: 2rem;
+}
+
+/* Primary button styles for China Eastern theme */
+.cea-primary-btn {
+  background: var(--cea-primary);
+  color: var(--cea-header-text);
+  border: none;
+  border-radius: 4px;
+  padding: 12px 24px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 150ms ease-out;
+}
+
+.cea-primary-btn:hover {
+  background: var(--cea-primary-hover);
+}
+
+/* China Eastern themed login page background */
+.cea-login-page {
+  background-color: var(--cea-background);
+  min-height: calc(100vh - 60px);
+  justify-content: center;
+}
+
+/* Hide left panel when China Eastern theme is active */
+.cea-login-page .left {
+  display: none;
+}
+
+/* Center the right panel when left is hidden */
+.cea-login-page .right {
+  flex: none;
+  width: auto;
+  padding: 60px 0;
+}
+
+/* Toggle styling for China Eastern theme (tab buttons with borders) */
+.cea-toggle {
+  width: 300px;
+  margin: 0 auto;
+  display: flex;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.cea-toggle > * {
+  flex: 1;
+  text-align: center;
+  padding: 12px 20px;
+  font-size: 1rem;
+  color: #666;
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  cursor: pointer;
+  transition: all 150ms ease-out;
+  position: relative;
+}
+
+.cea-toggle > *:first-child {
+  border-right: 1px solid #e0e0e0;
+}
+
+.cea-toggle > *:hover {
+  color: var(--cea-primary);
+  background: rgba(0, 145, 234, 0.05);
+}
+
+.cea-toggle > *.active {
+  color: var(--cea-primary);
+  border-bottom: 3px solid var(--cea-primary);
+  font-weight: 500;
+}
+
+.cea-toggle > * a {
+  color: inherit;
+  text-decoration: none;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* Override primary button for China Eastern theme */
+.cea-login-page form .lsf-button-ls.lsf-button-ls_look_primary,
+.cea-login-page .cea-primary-btn {
+  background: var(--cea-primary);
+  border-radius: 4px;
+}
+
+.cea-login-page form .lsf-button-ls.lsf-button-ls_look_primary:hover,
+.cea-login-page .cea-primary-btn:hover {
+  background: var(--cea-primary-hover);
+}
+
+/* Input field focus states for China Eastern theme */
+.cea-login-page input:focus,
+.cea-login-page select:focus {
+  outline: none;
+  border-color: var(--cea-primary);
+  box-shadow: 0 0 0 2px rgba(0, 145, 234, 0.2);
+}
+
+/* Checkbox styling for China Eastern theme */
+.cea-login-page .form-group input:checked + label:before {
+  background: var(--cea-primary);
+  border-color: var(--cea-primary);
+}
+
+.cea-login-page .form-group input:checked + label:after {
+  border-color: #ffffff;
+}
+
+/* Visually hidden class for accessibility (screen reader only) */
+.visually-hidden {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+/* ==========================================================================
+   Responsive Styles for China Eastern Theme
+   ========================================================================== */
+
+/* Tablet and smaller screens */
+@media (max-width: 768px) {
+  .cea-header {
+    padding: 0 20px;
+  }
+
+  .cea-header-title {
+    font-size: 18px;
+  }
+
+  .cea-header-logo {
+    height: 15px;
+    max-height: 15px;
+  }
+
+  .cea-login-page .right {
+    padding: 40px 20px;
+  }
+
+  .form-wrapper {
+    width: calc(100% - 2rem);
+    max-width: 22rem;
+    padding: 1.5rem;
+  }
+
+  .cea-toggle {
+    width: 100%;
+    max-width: 300px;
+  }
+
+  .cea-toggle > * {
+    padding: 10px 15px;
+  }
+}
+
+/* Mobile screens */
+@media (max-width: 480px) {
+  .cea-header {
+    padding: 0 15px;
+    height: 50px;
+  }
+
+  .cea-header-title {
+    font-size: 16px;
+  }
+
+  .cea-header-logo {
+    height: 12px;
+    max-height: 12px;
+  }
+
+  .cea-login-page {
+    min-height: calc(100vh - 50px);
+  }
+
+  .cea-login-page .right {
+    padding: 30px 15px;
+  }
+
+  .form-wrapper {
+    padding: 1.25rem;
+    border-radius: 0.75rem;
+  }
+
+  .cea-toggle > * {
+    font-size: 0.875rem;
+    padding: 8px 10px;
+  }
+
+  .text-wrapper {
+    flex-direction: column;
+    gap: 2px;
+  }
+}
+
+/* ==========================================================================
+   End China Eastern Airlines Theme
+   ========================================================================== */
+
 .login_page_new_ui {
   display: flex;
   font-weight: 400;

@@ -1,5 +1,5 @@
 ---
-allowed-tools: Bash(git log:*), Bash(git diff:*), Bash(ls:*), Bash(cat:*), Read, Write, Edit
+allowed-tools: Bash(git:*), Bash(ls:*), Bash(cat:*), Bash(date:*), Read, Write, Edit, Glob
 argument-hint: [version] or leave empty to auto-detect
 description: Generate release notes following semantic versioning
 ---
@@ -11,9 +11,11 @@ description: Generate release notes following semantic versioning
 - If no version provided, analyze commits to determine release type
 
 ## Current State
+- Current date: !`date "+%Y-%m-%d"`
 - Existing releases: !`ls -1 releases/release-v*.md 2>/dev/null | sort -V | tail -5 || echo "No releases found"`
 - Latest release: !`ls -1 releases/release-v*.md 2>/dev/null | sort -V | tail -1 || echo "None"`
-- Recent commits since last tag: !`git log $(git describe --tags --abbrev=0 2>/dev/null || echo "HEAD~10")..HEAD --oneline 2>/dev/null || git log --oneline -10`
+- Latest git tag: !`git describe --tags --abbrev=0 2>/dev/null || echo "No tags found"`
+- Recent commits (last 15): !`git log --oneline -15`
 
 ## Version Detection Rules (when no version specified)
 

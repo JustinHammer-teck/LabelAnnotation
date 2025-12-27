@@ -110,3 +110,11 @@ export const FF_MULTICHANNEL_TS =
  */
 export const FF_ENTERPRISE_EMAIL_NOTIFICATIONS =
   'fflag_feat_front_fit_183_email_notifications_short';
+
+/**
+ * Enables the aviation approval/rejection review workflow
+ * Allows Admin/Researcher to approve or reject annotator submissions
+ * with field-level feedback
+ */
+export const FF_AVIATION_REVIEW =
+  'fflag_feat_all_aviation_review_workflow_251225_long';

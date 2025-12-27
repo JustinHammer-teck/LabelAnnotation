@@ -1,0 +1,135 @@
+/**
+ * Label Component Color Tokens
+ *
+ * This file defines CSS custom properties for the Label component,
+ * enabling theme consistency with LabelStudio and dark mode support.
+ *
+ * Primary color: Ant Design blue (#1890ff) - aligns with Aviation module
+ * Module colors: Mapped to LabelStudio palettes (Grape, Kale, Canteloupe, Persimmon)
+ */
+
+:root {
+  /* ========================================
+   * PRIMARY COLORS (Ant Design Blue)
+   * Used for primary actions, buttons, links
+   * ======================================== */
+  --label-primary: #1890ff;
+  --label-primary-hover: #40a9ff;
+  --label-primary-active: #096dd9;
+  --label-primary-bg: #e6f7ff;
+  --label-primary-border: #91d5ff;
+
+  /* ========================================
+   * NEUTRAL COLORS
+   * Backgrounds, borders, text colors
+   * ======================================== */
+  --label-bg-base: #fff;
+  --label-bg-content: #f0f4f8;
+  --label-bg-hover: #f5f5f5;
+  --label-border-base: #e8e8e8;
+  --label-border-light: #d9d9d9;
+  --label-text-primary: #333;
+  --label-text-secondary: #666;
+  --label-text-muted: #999;
+
+  /* ========================================
+   * MODULE COLORS - Competency
+   * Maps to Primary/Blueberry palette
+   * Original: bg #e8f4fc, border #b3d4ea
+   * ======================================== */
+  --label-competency-bg: var(--color-accent-blueberry-subtlest, #e8f4fc);
+  --label-competency-border: var(--color-accent-blueberry-subtle, #b3d4ea);
+
+  /* ========================================
+   * MODULE COLORS - Training
+   * Maps to Positive/Kale palette (green)
+   * Original: bg #f0f7ed, border #c5ddb8
+   * ======================================== */
+  --label-training-bg: var(--color-positive-background, #f0f7ed);
+  --label-training-border: var(--color-positive-border-subtlest, #c5ddb8);
+
+  /* ========================================
+   * MODULE COLORS - Threat
+   * Maps to Warning/Canteloupe palette (orange)
+   * Original: bg #fef6f0, border #e8cfc0
+   * ======================================== */
+  --label-threat-bg: var(--color-warning-background, #fef6f0);
+  --label-threat-border: var(--color-warning-border-subtlest, #e8cfc0);
+
+  /* ========================================
+   * MODULE COLORS - Error
+   * Maps to Negative/Persimmon palette (red)
+   * Original: bg #fef4f3, border #e8c8c5
+   * ======================================== */
+  --label-error-bg: var(--color-negative-background, #fef4f3);
+  --label-error-border: var(--color-negative-border-subtlest, #e8c8c5);
+
+  /* ========================================
+   * MODULE COLORS - UAS (Undesired Aircraft State)
+   * Maps to Grape accent palette (purple)
+   * Original: bg #f7f3fc, border #d4c8e8
+   * ======================================== */
+  --label-uas-bg: var(--color-accent-grape-subtlest, #f7f3fc);
+  --label-uas-border: var(--color-accent-grape-subtle, #d4c8e8);
+
+  /* ========================================
+   * MODULE COLORS - Result
+   * Maps to Blueberry accent palette (blue)
+   * Original: bg #f0f7fa, border #b8d8e8
+   * ======================================== */
+  --label-result-bg: var(--color-accent-blueberry-subtlest, #f0f7fa);
+  --label-result-border: var(--color-accent-blueberry-subtle, #b8d8e8);
+
+  /* ========================================
+   * MODULE COLORS - Labeling
+   * Maps to Primary subtle palette (blue-gray)
+   * Original: bg #f5f8fc, border #ccd9e8
+   * ======================================== */
+  --label-labeling-bg: var(--color-primary-emphasis-subtle, #f5f8fc);
+  --label-labeling-border: var(--color-primary-border-subtlest, #ccd9e8);
+}
+
+/* ========================================
+ * DARK MODE OVERRIDES
+ * Activated via [data-color-scheme="dark"] attribute
+ * ======================================== */
+[data-color-scheme="dark"] {
+  /* Primary colors - slightly muted for dark mode */
+  --label-primary: #177ddc;
+  --label-primary-hover: #3c9ae8;
+  --label-primary-active: #1765ad;
+  --label-primary-bg: #111d2c;
+  --label-primary-border: #15395b;
+
+  /* Neutral colors - inverted for dark mode */
+  --label-bg-base: #1f1f1f;
+  --label-bg-content: #141414;
+  --label-bg-hover: #2a2a2a;
+  --label-border-base: #434343;
+  --label-border-light: #303030;
+  --label-text-primary: #f0f0f0;
+  --label-text-secondary: #a6a6a6;
+  --label-text-muted: #6b6b6b;
+
+  /* Module colors - darker backgrounds for dark mode */
+  --label-competency-bg: var(--color-accent-blueberry-subtlest, #112a45);
+  --label-competency-border: var(--color-accent-blueberry-subtle, #1c3a5f);
+
+  --label-training-bg: var(--color-positive-background, #162312);
+  --label-training-border: var(--color-positive-border-subtlest, #274916);
+
+  --label-threat-bg: var(--color-warning-background, #2b1d11);
+  --label-threat-border: var(--color-warning-border-subtlest, #4a3220);
+
+  --label-error-bg: var(--color-negative-background, #2a1215);
+  --label-error-border: var(--color-negative-border-subtlest, #48181c);
+
+  --label-uas-bg: var(--color-accent-grape-subtlest, #1a1325);
+  --label-uas-border: var(--color-accent-grape-subtle, #301c4d);
+
+  --label-result-bg: var(--color-accent-blueberry-subtlest, #111b26);
+  --label-result-border: var(--color-accent-blueberry-subtle, #164c7e);
+
+  --label-labeling-bg: var(--color-primary-emphasis-subtle, #141620);
+  --label-labeling-border: var(--color-primary-border-subtlest, #1d2436);
+}

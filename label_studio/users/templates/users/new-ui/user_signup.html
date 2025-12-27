@@ -1,6 +1,8 @@
 {% extends 'users/new-ui/user_base.html' %}
 {% load static %}
 
+{% block page_title %}1 注册界面{% endblock %}
+
 {% block content %}
   {{ block.super }}
   <script nonce="{{request.csp_nonce}}">
@@ -14,16 +16,19 @@
 {% endblock %}
 
 {% block user_content %}
+  <ul class="toggle cea-toggle">
+    <li class="active">注册</li>
+    <li><a href="{{ settings.HOSTNAME }}{% url 'user-login' %}{% querystring %}">登录</a></li>
+  </ul>
   <div class="form-wrapper">
-    <h2>Sign Up</h2>
     <form id="signup-form"
         action="{% url 'user-signup' %}?next={{ next }}{% if token %}&token={{ token }}{% endif %}"
         method="post"
     >
     {% csrf_token %}
       <div class="input-wrapper">
-        <label>Email Address</label>
-        <input type="text" class="lsf-input-ls" name="email" id="email" value="{{ user_form.data.email }}">
+        <label for="email" class="visually-hidden">邮箱</label>
+        <input type="text" class="lsf-input-ls" name="email" id="email" value="{{ user_form.data.email }}" placeholder="邮箱">
         {% if user_form.errors.email %}
           <ul class="field_errors">
             {% for error in user_form.errors.email %}
@@ -33,8 +38,8 @@
         {% endif %}
         </div>
       <div class="input-wrapper">
-        <label>Password</label>
-        <input type="password" class="lsf-input-ls" name="password" id="password">
+        <label for="password" class="visually-hidden">密码</label>
+        <input type="password" class="lsf-input-ls" name="password" id="password" placeholder="密码">
         {% if user_form.errors.password %}
           <ul class="field_errors">
             {% for error in user_form.errors.password %}
@@ -52,10 +57,9 @@
           {% endfor %}
         </select>
       </div>
-      <div class="input-wrapper" id="elaborateContainer" {% if user_form.data.how_find_us != elaborate %}style="display:none;"{% endif %}> 
+      <div class="input-wrapper" id="elaborateContainer" {% if user_form.data.how_find_us != elaborate %}style="display:none;"{% endif %}>
         <label>Please elaborate</label>
         <input class="lsf-input-ls" name="elaborate" id="elaborate" {% if user_form.data.how_find_us == elaborate %}value="{{ user_form.data.elaborate }}"{% endif %}>
-        </select>
       </div>
       <div class="form-group">
         <input name="allow_newsletters" id="allow_newsletters" type="hidden" value="{% if user_form.data.allow_newsletters == 'false' %}false{% else %}true{% endif %}">
@@ -76,14 +80,14 @@
           </p>
         {% endfor %}
       {% endif %}
-      <p><button type="submit" aria-label="Create Account" class="lsf-button-ls lsf-button-ls_look_primary">Create Account</button></p>
+      <p><button type="submit" aria-label="创建账户" class="lsf-button-ls lsf-button-ls_look_primary">创建账户</button></p>
     </form>
   </div>
   <div class="text-wrapper">
-    <p class="">Already have an account?</p>
-    <a href="{% url 'user-login' %}{% querystring %}">Log in</a>
+    <p class="">已有账户？</p>
+    <a href="{{ settings.HOSTNAME }}{% url 'user-login' %}{% querystring %}">登录</a>
   </div>
-  <script>
+  <script nonce="{{request.csp_nonce}}">
     document.querySelector("#how_find_us").addEventListener('change', function(e) {
       const isOther = e.target.value == '{{ elaborate }}';
       document.querySelector("#elaborateContainer").style.display = isOther ? 'block' : 'none';

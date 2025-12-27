@@ -107,7 +107,18 @@ const createMockItem = (overrides: Partial<LabelingItem> = {}): LabelingItem => 
 });
 
 const mockOptions: DropdownOption[] = [
-  { id: 1, code: 'UAS1', label: 'UAS类型1', children: [] },
+  {
+    id: 1,
+    category: 'uas',
+    level: 1,
+    parent_id: null,
+    code: 'UAS1',
+    label: 'UAS Type 1',
+    label_zh: 'UAS类型1',
+    training_topics: [],
+    is_active: true,
+    children: [],
+  },
 ];
 
 describe('RecognitionSection - Gap 2: UAS Auto-Enable Based on Impact', () => {

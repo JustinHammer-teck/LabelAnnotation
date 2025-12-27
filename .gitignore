@@ -88,4 +88,5 @@ docker-compose.override.yml
 # Local Netlify folder
 .netlify
 
-CLAUDE.local.mdcoverage/
+CLAUDE.local.md
+coverage/

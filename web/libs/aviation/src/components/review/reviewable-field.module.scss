@@ -1,0 +1,215 @@
+@use '../../assets/styles/variables' as *;
+
+// =============================================================================
+// Reviewable Field Wrapper
+// =============================================================================
+// Wraps form fields to add field-level review tooltip functionality.
+// Shows visual indicators for reviewed fields and tooltip on hover.
+
+.container {
+  position: relative;
+  display: block;
+  transition: background-color 0.2s;
+
+  // Hover state for pending fields
+  &:hover {
+    .statusIndicator {
+      opacity: 1;
+    }
+  }
+}
+
+// =============================================================================
+// Status Variants
+// =============================================================================
+
+.approved {
+  .fieldContent {
+    background-color: rgba($aviation-success-color, 0.04);
+    border-radius: $aviation-border-radius;
+  }
+
+  .statusIndicator {
+    background: linear-gradient(
+      90deg,
+      rgba($aviation-success-color, 0.3) 0%,
+      transparent 100%
+    );
+  }
+}
+
+.rejected {
+  .fieldContent {
+    background-color: rgba($aviation-error-color, 0.04);
+    border-radius: $aviation-border-radius;
+  }
+
+  .statusIndicator {
+    background: linear-gradient(
+      90deg,
+      rgba($aviation-error-color, 0.3) 0%,
+      transparent 100%
+    );
+  }
+}
+
+.revision {
+  .fieldContent {
+    background-color: rgba($aviation-warning-color, 0.04);
+    border-radius: $aviation-border-radius;
+  }
+
+  .statusIndicator {
+    background: linear-gradient(
+      90deg,
+      rgba($aviation-warning-color, 0.3) 0%,
+      transparent 100%
+    );
+  }
+}
+
+// =============================================================================
+// Status Indicator
+// =============================================================================
+// Left-side gradient bar indicating review status
+
+.statusIndicator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 4px;
+  border-radius: $aviation-border-radius 0 0 $aviation-border-radius;
+  pointer-events: none;
+  opacity: 0.8;
+  transition: opacity 0.2s;
+}
+
+// =============================================================================
+// Field Content
+// =============================================================================
+
+.fieldContent {
+  position: relative;
+  padding: 2px;
+  transition: background-color 0.2s;
+
+  // Ensure child inputs/selects maintain proper styling
+  > * {
+    width: 100%;
+  }
+}
+
+// =============================================================================
+// Persistent Badge
+// =============================================================================
+// Small badge shown in corner for reviewed fields (visible without hover)
+
+.persistentBadge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+.badgeApproved {
+  background-color: $aviation-success-color;
+  color: #fff;
+}
+
+.badgeRejected {
+  background-color: $aviation-error-color;
+  color: #fff;
+}
+
+.badgeRevision {
+  background-color: $aviation-warning-color;
+  color: #fff;
+}
+
+// =============================================================================
+// Hover Effects
+// =============================================================================
+// Subtle highlight on hover when in review mode
+
+.container {
+  &:not(.approved):not(.rejected):not(.revision) {
+    &:hover {
+      .fieldContent {
+        background-color: rgba($aviation-primary-color, 0.03);
+        border-radius: $aviation-border-radius;
+      }
+
+      // Show subtle left border hint on hover
+      &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 2px;
+        background-color: rgba($aviation-primary-color, 0.3);
+        border-radius: $aviation-border-radius 0 0 $aviation-border-radius;
+        animation: hintFadeIn 0.2s ease-out;
+      }
+    }
+  }
+}
+
+@keyframes hintFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+// =============================================================================
+// Accessibility
+// =============================================================================
+
+.container {
+  &:focus-within {
+    outline: none;
+
+    .fieldContent {
+      box-shadow: 0 0 0 2px rgba($aviation-primary-color, 0.15);
+      border-radius: $aviation-border-radius;
+    }
+  }
+}
+
+// =============================================================================
+// Integration with form components
+// =============================================================================
+// Ensure proper spacing and alignment when wrapping common form elements
+
+.container {
+  // Handle label + input combinations
+  &:has(label) {
+    .fieldContent {
+      padding: $aviation-spacing-unit / 2;
+    }
+  }
+
+  // Handle inline labels
+  &:has(.label) {
+    .statusIndicator {
+      top: 4px;
+      bottom: 4px;
+    }
+  }
+}

@@ -12,6 +12,10 @@ import type {
   LinkItemsData,
   ExcelUploadResult,
   ExportData,
+  ReviewDecision,
+  RejectRequest,
+  RevisionRequest,
+  ReviewHistoryResponse,
 } from '../types';
 
 export interface AviationApiClient {
@@ -49,4 +53,16 @@ export interface AviationApiClient {
 
   exportEvents(projectId: number, format: 'json' | 'xlsx'): Promise<Blob | ExportData>;
   downloadExport(projectId: number, format: 'json' | 'xlsx', filename?: string): Promise<void>;
+
+  // Review endpoints
+  /**
+   * Submit a labeling item for review.
+   * Changes status from 'draft' to 'submitted'.
+   */
+  submitItem(itemId: number): Promise<LabelingItem>;
+  approveItem(itemId: number, comment?: string): Promise<ReviewDecision>;
+  rejectItem(itemId: number, request: RejectRequest): Promise<ReviewDecision>;
+  requestRevision(itemId: number, request: RevisionRequest): Promise<ReviewDecision>;
+  resubmitItem(itemId: number, comment?: string): Promise<LabelingItem>;
+  getReviewHistory(itemId: number): Promise<ReviewHistoryResponse>;
 }

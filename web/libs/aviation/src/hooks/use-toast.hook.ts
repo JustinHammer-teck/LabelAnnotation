@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useToast as useLabelStudioToast, ToastType } from '@humansignal/ui';
 
 export interface UseAviationToastResult {
@@ -31,7 +31,9 @@ export const useAviationToast = (): UseAviationToastResult | null => {
     [toast]
   );
 
-  if (!toast) return null;
-
-  return { success, error, info };
+  // Memoize the return object to maintain stable reference
+  return useMemo(() => {
+    if (!toast) return null;
+    return { success, error, info };
+  }, [toast, success, error, info]);
 };

@@ -1,63 +1,99 @@
-## Usage
+---
+allowed-tools: Bash(git:*), Bash(date:*), Write(.claude/progress.md:*), Read, Glob, Grep, Task
+argument-hint: [description of what you want the report to cover]
+description: Generate a progress report with git context and semantic tags
+---
 
-After installation, restart Claude Code (or start a new session). Then use:
+# Progress Report Generator
 
+## CRITICAL: Overwrite Behavior
+
+**ALWAYS use the Write tool to completely replace `.claude/progress.md` with only the current progress.**
+- Do NOT append to existing content
+- Do NOT preserve previous report history
+- Each report is a fresh snapshot of current state only
+
+## Input
+- Report scope/focus: $ARGUMENTS
+- If no scope provided, generate a general project progress report
+
+## Current Context (Raw)
+- Current date: !`date "+%Y-%m-%d %H:%M:%S"`
+- Current branch: !`git branch --show-current`
+- Recent commits (last 10): !`git log --oneline -10`
+- Modified files: !`git status --short`
+- Uncommitted changes summary: !`git diff --stat HEAD 2>/dev/null || echo "No uncommitted changes"`
+
+## Workflow
+
+1. **Gather Context**
+   - Collect git information (branch, commits, modified files)
+   - Identify scope from `$ARGUMENTS` or use general project scope
+
+2. **Analyze Progress**
+   - Categorize commits by type (feat, fix, refactor, etc.)
+   - Identify completed work items
+   - Detect in-progress or blocked work
+   - Note any risks or issues
+
+3. **Generate Report**
+   - **Use Write tool to OVERWRITE `.claude/progress.md` completely**
+   - Use semantic tags for AI-optimized retrieval
+   - Keep content concise and actionable
+   - Only include current progress, no historical data
+
+## Output Template
+
+Write the following structure to `.claude/progress.md`:
+
+```markdown
+# Progress Report
+
+**Date:** {YYYY-MM-DD}
+**Branch:** {current branch}
+**Scope:** {from $ARGUMENTS or "General Project Progress"}
+**Author:** Claude Code
+
+## Summary
+
+{2-3 sentence executive summary of progress}
+
+## Status Overview
+
+| Area | Status | Notes |
+|------|--------|-------|
+| {area} | [STATUS] | {brief note} |
+
+## Key Accomplishments
+
+- [COMPLETE] {completed item with commit reference}
+- [COMPLETE] {completed item}
+
+## Current Work
+
+- [IN-PROGRESS] {active work item}
+- [TODO] {planned but not started}
+
+## Blockers & Risks
+
+- [BLOCKED] {blocked item and reason}
+- [RISK] {potential issue}
+
+## Next Steps
+
+- [ACTION] {prioritized next action}
+- [ACTION] {next action}
+
+## Metrics
+
+- Commits this session: {count}
+- Files modified: {count}
+- Lines changed: +{added} / -{removed}
 ```
-/progress-report [description of what you want the report to cover]
-```
 
-### Examples
+## Semantic Tags Reference
 
-```bash
-# Report on authentication feature
-/progress-report authentication module implementation status
-
-# Report on API development
-/progress-report REST API endpoints for user management
-
-# Report on testing progress
-/progress-report unit test coverage for payment processing
-
-# Report on a specific sprint
-/progress-report sprint 5 deliverables and remaining work
-
-# Report on bug fixes
-/progress-report critical bug fixes in the last week
-```
-
-## How It Works
-
-1. **User Input**: You provide a description of what the progress report should cover
-2. **Context Gathering**: The command automatically collects:
-   - Current date/time
-   - Git branch information
-   - Recent commits (last 5)
-   - Modified files
-3. **Agent Processing**: The `@agent-context-master` subagent optimizes the gathered information for:
-   - Conciseness (removes redundancy)
-   - AI retrieval (structured format with semantic tags)
-   - Clarity (unambiguous language)
-4. **Output**: Final report is written to `.claude/progress.md` 
-   - you MUST override existed project.md
-
-## Output Format
-
-Reports are generated with:
-
-- **Header**: Title, date, scope, author
-- **Summary**: Executive summary (2-3 sentences)
-- **Status Overview**: Table with status tags
-- **Key Accomplishments**: Completed items with `[COMPLETE]` tags
-- **Current Work**: Active tasks with `[IN-PROGRESS]` tags
-- **Blockers & Risks**: Issues with `[BLOCKER]` and `[RISK]` tags
-- **Next Steps**: Prioritized actions with `[ACTION]` tags
-- **Metrics**: Quantifiable progress indicators
-
-## Semantic Tags
-
-The agent uses these semantic tags for AI-optimized retrieval:
-
-| Tag | Meaning |
+| Tag | Use For |
 |-----|---------|
 | `[COMPLETE]` | Finished work items |
 | `[IN-PROGRESS]` | Currently active work |
@@ -65,48 +101,33 @@ The agent uses these semantic tags for AI-optimized retrieval:
 | `[BLOCKED]` | Blocked by external factors |
 | `[RISK]` | Potential issues |
 | `[ACTION]` | Required next steps |
-| `[STATUS]` | General status indicator |
+| `[STATUS]` | General status indicators |
 
-## Customization
+## Style Rules
 
-### Modify the Command
+- One line per item, start with semantic tag
+- Use action verbs: Add, Fix, Remove, Update, Implement
+- Include commit hashes where relevant (7 chars)
+- No fluff or redundancy
+- Quantify progress where possible
+- Be specific about blockers and their causes
 
-Edit `.claude/commands/progress-report.md` to:
-- Add more context gathering (additional bash commands)
-- Change the report template structure
-- Add project-specific sections
-- Modify allowed tools
+## Examples
 
-### Modify the Agent
-
-Edit `.claude/agents/agent-context-master.md` to:
-- Adjust optimization principles
-- Change formatting preferences
-- Add domain-specific knowledge
-- Modify the response style
-
-## File Structure
-
+**General progress report:**
 ```
-.claude/
-├── commands/
-│   └── progress-report.md    # The slash command
-├── agents/
-│   └── agent-context-master.md   # The optimization subagent
-└── progress.md               # Generated reports go here
+> /progress-report
+# Generates report covering all recent activity
 ```
 
-## Troubleshooting
+**Focused report:**
+```
+> /progress-report authentication module implementation
+# Generates report focused on auth-related work
+```
 
-### Command not appearing
-- Restart Claude Code after adding files
-- Verify files are in correct location
-- Check file has `.md` extension
-
-### Agent not being invoked
-- Ensure `agent-context-master.md` is in the agents directory
-- Check the agent file has proper frontmatter
-
-### Git context not working
-- Ensure you're in a git repository
-- The command gracefully handles non-git directories
+**Sprint report:**
+```
+> /progress-report sprint 5 deliverables
+# Generates report on sprint 5 items
+```

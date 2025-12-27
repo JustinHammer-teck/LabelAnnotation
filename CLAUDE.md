@@ -4,6 +4,8 @@
 > Instruction : always reach out to the memory file on the project that you're working on
 > example: if you are working on Backend/Django context reference @label_studio/CLAUDE.md.
 
+> Instruction:
+> NEVER update .claude/progress.md yourself but invoke /progress-report instead.
 ```
 .
 ├── CLAUDE.md

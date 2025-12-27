@@ -3,9 +3,11 @@ from rest_framework import serializers
 from .models import (
     AviationEvent,
     AviationProject,
+    FieldFeedback,
     LabelingItem,
     LabelingItemPerformance,
     ResultPerformance,
+    ReviewDecision,
     TypeHierarchy,
 )
 
@@ -313,3 +315,142 @@ class CreateAviationProjectSerializer(serializers.Serializer):
         if title and project_id:
             raise serializers.ValidationError('Provide either title or project_id, not both')
         return data
+
+
+# =============================================================================
+# Review System Serializers
+# =============================================================================
+
+
+class FieldFeedbackInputSerializer(serializers.Serializer):
+    """Input serializer for field feedback in review requests."""
+    field_name = serializers.CharField(
+        max_length=50,
+        help_text='Name of the field being reviewed (e.g., threat_type_l1, error_management)'
+    )
+    feedback_type = serializers.ChoiceField(
+        choices=['partial', 'full', 'revision'],
+        help_text='Type of feedback: partial, full, or revision'
+    )
+    feedback_comment = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        default='',
+        help_text='Detailed feedback explaining the issue with this field'
+    )
+
+
+class FieldFeedbackSerializer(serializers.ModelSerializer):
+    """Serializer for FieldFeedback model output."""
+    class Meta:
+        model = FieldFeedback
+        fields = [
+            'id',
+            'field_name',
+            'feedback_type',
+            'feedback_comment',
+            'reviewed_by',
+            'reviewed_at',
+        ]
+        read_only_fields = ['id', 'reviewed_by', 'reviewed_at']
+
+
+class ReviewDecisionSerializer(serializers.ModelSerializer):
+    """Serializer for ReviewDecision model output."""
+    field_feedbacks = FieldFeedbackSerializer(many=True, read_only=True)
+    reviewer_email = serializers.EmailField(source='reviewer.email', read_only=True)
+
+    class Meta:
+        model = ReviewDecision
+        fields = [
+            'id',
+            'labeling_item',
+            'status',
+            'reviewer',
+            'reviewer_email',
+            'reviewer_comment',
+            'field_feedbacks',
+            'created_at',
+        ]
+        read_only_fields = ['id', 'labeling_item', 'reviewer', 'created_at']
+
+
+class ApproveRequestSerializer(serializers.Serializer):
+    """Request serializer for approving a labeling item."""
+    comment = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        default='',
+        help_text='Optional comment from the reviewer'
+    )
+
+
+class RejectRequestSerializer(serializers.Serializer):
+    """Request serializer for rejecting a labeling item."""
+    status = serializers.ChoiceField(
+        choices=['rejected_partial', 'rejected_full'],
+        help_text='Rejection type: rejected_partial or rejected_full'
+    )
+    comment = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        default='',
+        help_text='Overall comment from the reviewer'
+    )
+    field_feedbacks = FieldFeedbackInputSerializer(
+        many=True,
+        help_text='List of field-specific feedback'
+    )
+
+    def validate_field_feedbacks(self, value):
+        if not value or len(value) == 0:
+            raise serializers.ValidationError(
+                'At least one field_feedback is required for rejection'
+            )
+        return value
+
+
+class RevisionRequestSerializer(serializers.Serializer):
+    """Request serializer for requesting revision of a labeling item."""
+    comment = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        default='',
+        help_text='Overall comment from the reviewer'
+    )
+    field_feedbacks = FieldFeedbackInputSerializer(
+        many=True,
+        help_text='List of field-specific revision requests'
+    )
+
+    def validate_field_feedbacks(self, value):
+        if not value or len(value) == 0:
+            raise serializers.ValidationError(
+                'At least one field_feedback is required for revision request'
+            )
+        return value
+
+
+class ResubmitRequestSerializer(serializers.Serializer):
+    """Request serializer for resubmitting a labeling item."""
+    comment = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        default='',
+        help_text='Optional comment explaining changes made'
+    )
+
+
+class ReviewHistoryResponseSerializer(serializers.Serializer):
+    """Response serializer for review history endpoint."""
+    current_status = serializers.CharField(
+        help_text='Current status of the labeling item'
+    )
+    pending_revision_fields = serializers.ListField(
+        child=serializers.CharField(),
+        help_text='List of field names with pending revision requests'
+    )
+    decisions = ReviewDecisionSerializer(
+        many=True,
+        help_text='List of all review decisions for this item'
+    )

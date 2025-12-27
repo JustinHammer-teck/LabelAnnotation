@@ -1,23 +1,33 @@
 from datetime import date, time
+from decimal import Decimal
 from django.test import TestCase
 from django.db import IntegrityError
 
 from organizations.tests.factories import OrganizationFactory
 from projects.tests.factories import ProjectFactory
-from tasks.tests.factories import TaskFactory, AnnotationFactory
+from tasks.tests.factories import TaskFactory
 
 from aviation.models import (
     AviationProject,
-    AviationIncident,
-    AviationAnnotation,
-    AviationDropdownOption
+    AviationEvent,
+    TypeHierarchy,
+    LabelingItem,
+    ResultPerformance,
+    LabelingItemPerformance,
+    ReviewDecision,
+    FieldFeedback,
 )
 from aviation.tests.factories import (
     AviationProjectFactory,
-    AviationIncidentFactory,
-    AviationAnnotationFactory,
-    AviationDropdownOptionFactory
+    AviationEventFactory,
+    TypeHierarchyFactory,
+    LabelingItemFactory,
+    ResultPerformanceFactory,
+    LabelingItemPerformanceFactory,
+    ReviewDecisionFactory,
+    FieldFeedbackFactory,
 )
+from users.tests.factories import UserFactory
 
 
 class AviationProjectModelTest(TestCase):
@@ -42,7 +52,7 @@ class AviationProjectModelTest(TestCase):
 
     def test_string_representation(self):
         aviation_project = AviationProjectFactory(project=self.project)
-        expected = f'Aviation Project for {self.project.title}'
+        expected = f'AviationProject({self.project.id})'
         self.assertEqual(str(aviation_project), expected)
 
     def test_default_mappings(self):
@@ -53,213 +63,80 @@ class AviationProjectModelTest(TestCase):
         self.assertEqual(aviation_project.error_mapping, {})
         self.assertEqual(aviation_project.uas_mapping, {})
 
-    def test_ordering(self):
-        project1 = ProjectFactory(organization=self.organization)
-        project2 = ProjectFactory(organization=self.organization)
+    def test_has_permission(self):
+        aviation_project = AviationProjectFactory(project=self.project)
+        user = self.organization.created_by
 
-        aviation_project1 = AviationProjectFactory(project=project1)
-        aviation_project2 = AviationProjectFactory(project=project2)
-
-        projects = AviationProject.objects.all()
-        self.assertEqual(projects[0], aviation_project2)
-        self.assertEqual(projects[1], aviation_project1)
+        self.assertTrue(aviation_project.has_permission(user))
 
 
-class AviationIncidentModelTest(TestCase):
+class AviationEventModelTest(TestCase):
     def setUp(self):
         self.organization = OrganizationFactory()
         self.project = ProjectFactory(organization=self.organization)
         self.task = TaskFactory(project=self.project)
 
-    def test_create_aviation_incident(self):
-        incident = AviationIncidentFactory(task=self.task)
+    def test_create_aviation_event(self):
+        event = AviationEventFactory(task=self.task)
 
-        self.assertIsNotNone(incident.id)
-        self.assertEqual(incident.task, self.task)
-        self.assertIsInstance(incident.event_number, str)
-        self.assertIsInstance(incident.date, date)
+        self.assertIsNotNone(event.id)
+        self.assertEqual(event.task, self.task)
+        self.assertIsInstance(event.event_number, str)
+        self.assertIsInstance(event.date, date)
 
     def test_string_representation(self):
-        incident = AviationIncidentFactory(
+        event = AviationEventFactory(
             task=self.task,
-            event_number='INC-12345',
-            date=date(2024, 1, 15)
+            event_number='EVT-12345'
         )
-        expected = 'Incident INC-12345 - 2024-01-15'
-        self.assertEqual(str(incident), expected)
-
-    def test_organization_property(self):
-        incident = AviationIncidentFactory(task=self.task)
-        self.assertEqual(incident.organization, self.organization)
+        expected = 'AviationEvent(EVT-12345)'
+        self.assertEqual(str(event), expected)
 
     def test_optional_fields(self):
-        incident = AviationIncident.objects.create(
+        event = AviationEvent.objects.create(
             task=self.task,
             event_number='TEST-001',
             event_description='Test description',
             date=date(2024, 1, 1)
         )
 
-        self.assertIsNone(incident.time)
-        self.assertEqual(incident.location, '')
-        self.assertEqual(incident.airport, '')
-        self.assertEqual(incident.flight_phase, '')
+        self.assertIsNone(event.time)
+        self.assertEqual(event.location, '')
+        self.assertEqual(event.airport, '')
+        self.assertEqual(event.flight_phase, '')
 
     def test_one_to_one_with_task(self):
-        incident = AviationIncidentFactory(task=self.task)
+        event = AviationEventFactory(task=self.task)
 
         with self.assertRaises(IntegrityError):
-            AviationIncidentFactory(task=self.task)
-
-    def test_ordering(self):
-        task1 = TaskFactory(project=self.project)
-        task2 = TaskFactory(project=self.project)
-
-        incident1 = AviationIncidentFactory(
-            task=task1,
-            date=date(2024, 1, 1)
-        )
-        incident2 = AviationIncidentFactory(
-            task=task2,
-            date=date(2024, 1, 2)
-        )
-
-        incidents = AviationIncident.objects.all()
-        self.assertEqual(incidents[0], incident2)
-        self.assertEqual(incidents[1], incident1)
+            AviationEventFactory(task=self.task)
 
 
-class AviationAnnotationModelTest(TestCase):
-    def setUp(self):
-        self.organization = OrganizationFactory()
-        self.project = ProjectFactory(organization=self.organization)
-        self.task = TaskFactory(project=self.project)
-        self.annotation = AnnotationFactory(task=self.task, project=self.project)
-
-    def test_create_aviation_annotation(self):
-        aviation_annotation = AviationAnnotationFactory(annotation=self.annotation)
-
-        self.assertIsNotNone(aviation_annotation.id)
-        self.assertEqual(aviation_annotation.annotation, self.annotation)
-
-    def test_all_threat_fields(self):
-        aviation_annotation = AviationAnnotationFactory(
-            annotation=self.annotation,
-            threat_type_l1='Environmental',
-            threat_type_l2='Weather',
-            threat_type_l3='Turbulence',
-            threat_management='Managed',
-            threat_outcome='No Effect',
-            threat_description='Encountered turbulence'
-        )
-
-        self.assertEqual(aviation_annotation.threat_type_l1, 'Environmental')
-        self.assertEqual(aviation_annotation.threat_type_l2, 'Weather')
-        self.assertEqual(aviation_annotation.threat_type_l3, 'Turbulence')
-        self.assertEqual(aviation_annotation.threat_management, 'Managed')
-        self.assertEqual(aviation_annotation.threat_outcome, 'No Effect')
-
-    def test_all_error_fields(self):
-        aviation_annotation = AviationAnnotationFactory(
-            annotation=self.annotation,
-            error_relevancy='Relevant',
-            error_type_l1='Procedural',
-            error_type_l2='Communication',
-            error_type_l3='Readback Error',
-            error_management='Corrected',
-            error_outcome='Minor Deviation'
-        )
-
-        self.assertEqual(aviation_annotation.error_relevancy, 'Relevant')
-        self.assertEqual(aviation_annotation.error_type_l1, 'Procedural')
-        self.assertEqual(aviation_annotation.error_type_l2, 'Communication')
-        self.assertEqual(aviation_annotation.error_type_l3, 'Readback Error')
-
-    def test_all_uas_fields(self):
-        aviation_annotation = AviationAnnotationFactory(
-            annotation=self.annotation,
-            uas_relevancy='Relevant',
-            uas_type_l1='Drone',
-            uas_type_l2='Commercial',
-            uas_type_l3='Quadcopter',
-            uas_management='Evasive Action',
-            uas_description='Drone sighted near approach'
-        )
-
-        self.assertEqual(aviation_annotation.uas_relevancy, 'Relevant')
-        self.assertEqual(aviation_annotation.uas_type_l1, 'Drone')
-        self.assertEqual(aviation_annotation.uas_type_l2, 'Commercial')
-        self.assertEqual(aviation_annotation.uas_type_l3, 'Quadcopter')
-
-    def test_json_fields_default_list(self):
-        annotation2 = AnnotationFactory(task=self.task, project=self.project)
-        aviation_annotation = AviationAnnotation.objects.create(
-            annotation=annotation2,
-            threat_type_l1='Test'
-        )
-
-        self.assertEqual(aviation_annotation.event_labels, [])
-        self.assertEqual(aviation_annotation.competency_indicators, [])
-        self.assertEqual(aviation_annotation.crm_training_topics, [])
-        self.assertEqual(aviation_annotation.threat_training_topics, [])
-        self.assertEqual(aviation_annotation.error_training_topics, [])
-        self.assertEqual(aviation_annotation.uas_training_topics, [])
-
-    def test_organization_cached_property(self):
-        aviation_annotation = AviationAnnotationFactory(annotation=self.annotation)
-        self.assertEqual(aviation_annotation.organization, self.organization)
-
-    def test_string_representation(self):
-        aviation_annotation = AviationAnnotationFactory(annotation=self.annotation)
-        expected = f'Aviation Annotation {aviation_annotation.id} for Task {self.task.id}'
-        self.assertEqual(str(aviation_annotation), expected)
-
-    def test_one_to_one_with_annotation(self):
-        aviation_annotation = AviationAnnotationFactory(annotation=self.annotation)
-
-        with self.assertRaises(IntegrityError):
-            AviationAnnotationFactory(annotation=self.annotation)
-
-    def test_training_topics_fields(self):
-        aviation_annotation = AviationAnnotationFactory(
-            annotation=self.annotation,
-            threat_training_topics=['Topic 1', 'Topic 2'],
-            error_training_topics=['Topic 3'],
-            uas_training_topics=['Topic 4', 'Topic 5'],
-            crm_training_topics=['Topic 6']
-        )
-
-        self.assertEqual(len(aviation_annotation.threat_training_topics), 2)
-        self.assertEqual(len(aviation_annotation.error_training_topics), 1)
-        self.assertEqual(len(aviation_annotation.uas_training_topics), 2)
-        self.assertEqual(len(aviation_annotation.crm_training_topics), 1)
-
-
-class AviationDropdownOptionModelTest(TestCase):
-    def test_create_dropdown_option(self):
-        option = AviationDropdownOptionFactory(
+class TypeHierarchyModelTest(TestCase):
+    def test_create_type_hierarchy(self):
+        th = TypeHierarchyFactory(
             category='threat',
             level=1,
             code='ENV',
             label='Environmental'
         )
 
-        self.assertIsNotNone(option.id)
-        self.assertEqual(option.category, 'threat')
-        self.assertEqual(option.level, 1)
-        self.assertEqual(option.code, 'ENV')
-        self.assertEqual(option.label, 'Environmental')
-        self.assertTrue(option.is_active)
+        self.assertIsNotNone(th.id)
+        self.assertEqual(th.category, 'threat')
+        self.assertEqual(th.level, 1)
+        self.assertEqual(th.code, 'ENV')
+        self.assertEqual(th.label, 'Environmental')
+        self.assertTrue(th.is_active)
 
     def test_hierarchical_relationship(self):
-        parent = AviationDropdownOptionFactory(
+        parent = TypeHierarchyFactory(
             category='threat',
             level=1,
             code='ENV',
             label='Environmental'
         )
 
-        child = AviationDropdownOptionFactory(
+        child = TypeHierarchyFactory(
             category='threat',
             level=2,
             parent=parent,
@@ -271,9 +148,9 @@ class AviationDropdownOptionModelTest(TestCase):
         self.assertIn(child, parent.children.all())
 
     def test_three_level_hierarchy(self):
-        l1 = AviationDropdownOptionFactory(category='threat', level=1, code='L1')
-        l2 = AviationDropdownOptionFactory(category='threat', level=2, code='L2', parent=l1)
-        l3 = AviationDropdownOptionFactory(category='threat', level=3, code='L3', parent=l2)
+        l1 = TypeHierarchyFactory(category='threat', level=1, code='L1')
+        l2 = TypeHierarchyFactory(category='threat', level=2, code='L2', parent=l1)
+        l3 = TypeHierarchyFactory(category='threat', level=3, code='L3', parent=l2)
 
         self.assertIsNone(l1.parent)
         self.assertEqual(l2.parent, l1)
@@ -284,101 +161,237 @@ class AviationDropdownOptionModelTest(TestCase):
         self.assertEqual(l3.children.count(), 0)
 
     def test_unique_together_constraint(self):
-        AviationDropdownOptionFactory(
+        TypeHierarchyFactory(
             category='threat',
             level=1,
             code='TEST'
         )
 
         with self.assertRaises(IntegrityError):
-            AviationDropdownOptionFactory(
+            TypeHierarchyFactory(
                 category='threat',
                 level=1,
                 code='TEST'
             )
 
-    def test_unique_code_different_category(self):
-        AviationDropdownOptionFactory(
-            category='threat',
-            level=1,
-            code='TEST'
-        )
-
-        option2 = AviationDropdownOptionFactory(
-            category='error',
-            level=1,
-            code='TEST'
-        )
-        self.assertIsNotNone(option2.id)
-
-    def test_unique_code_different_level(self):
-        AviationDropdownOptionFactory(
-            category='threat',
-            level=1,
-            code='TEST'
-        )
-
-        option2 = AviationDropdownOptionFactory(
-            category='threat',
-            level=2,
-            code='TEST'
-        )
-        self.assertIsNotNone(option2.id)
-
-    def test_ordering(self):
-        option3 = AviationDropdownOptionFactory(
-            category='threat',
-            level=1,
-            display_order=3
-        )
-        option1 = AviationDropdownOptionFactory(
-            category='threat',
-            level=1,
-            display_order=1
-        )
-        option2 = AviationDropdownOptionFactory(
-            category='error',
-            level=1,
-            display_order=2
-        )
-
-        options = AviationDropdownOption.objects.all()
-        self.assertEqual(options[0], option2)
-        self.assertEqual(options[1], option1)
-        self.assertEqual(options[2], option3)
-
     def test_string_representation(self):
-        option = AviationDropdownOptionFactory(
+        th = TypeHierarchyFactory(
             category='threat',
-            level=2,
-            label='Weather'
+            code='WX'
         )
-        expected = 'threat - Weather (L2)'
-        self.assertEqual(str(option), expected)
+        expected = 'threat:WX'
+        self.assertEqual(str(th), expected)
 
     def test_training_topics_json_field(self):
-        option = AviationDropdownOptionFactory(
+        th = TypeHierarchyFactory(
             training_topics=['Topic A', 'Topic B', 'Topic C']
         )
 
-        self.assertEqual(len(option.training_topics), 3)
-        self.assertIn('Topic A', option.training_topics)
+        self.assertEqual(len(th.training_topics), 3)
+        self.assertIn('Topic A', th.training_topics)
 
-    def test_is_active_default(self):
-        option = AviationDropdownOption.objects.create(
-            category='threat',
-            level=1,
-            code='TEST',
-            label='Test'
+
+class LabelingItemModelTest(TestCase):
+    def setUp(self):
+        self.organization = OrganizationFactory()
+        self.project = ProjectFactory(organization=self.organization)
+        self.task = TaskFactory(project=self.project)
+        self.event = AviationEventFactory(task=self.task)
+        self.user = UserFactory()
+
+    def test_create_labeling_item(self):
+        item = LabelingItemFactory(event=self.event, created_by=self.user)
+
+        self.assertIsNotNone(item.id)
+        self.assertEqual(item.event, self.event)
+        self.assertEqual(item.created_by, self.user)
+        self.assertEqual(item.status, 'draft')
+
+    def test_string_representation(self):
+        item = LabelingItemFactory(event=self.event, sequence_number=1)
+        expected = f'LabelingItem({self.event.event_number}:1)'
+        self.assertEqual(str(item), expected)
+
+    def test_unique_together_constraint(self):
+        LabelingItemFactory(event=self.event, sequence_number=1)
+
+        with self.assertRaises(IntegrityError):
+            LabelingItemFactory(event=self.event, sequence_number=1)
+
+    def test_type_hierarchy_relationships(self):
+        threat_l1 = TypeHierarchyFactory(category='threat', level=1, code='T1')
+        threat_l2 = TypeHierarchyFactory(category='threat', level=2, code='T2', parent=threat_l1)
+        threat_l3 = TypeHierarchyFactory(category='threat', level=3, code='T3', parent=threat_l2)
+
+        item = LabelingItemFactory(
+            event=self.event,
+            threat_type_l1=threat_l1,
+            threat_type_l2=threat_l2,
+            threat_type_l3=threat_l3,
         )
-        self.assertTrue(option.is_active)
 
-    def test_cascade_delete(self):
-        parent = AviationDropdownOptionFactory(category='threat', level=1)
-        child1 = AviationDropdownOptionFactory(category='threat', level=2, parent=parent)
-        child2 = AviationDropdownOptionFactory(category='threat', level=2, parent=parent)
+        self.assertEqual(item.threat_type_l1, threat_l1)
+        self.assertEqual(item.threat_type_l2, threat_l2)
+        self.assertEqual(item.threat_type_l3, threat_l3)
 
-        parent.delete()
 
-        self.assertFalse(AviationDropdownOption.objects.filter(id=child1.id).exists())
-        self.assertFalse(AviationDropdownOption.objects.filter(id=child2.id).exists())
+class ResultPerformanceModelTest(TestCase):
+    def setUp(self):
+        self.organization = OrganizationFactory()
+        self.project = ProjectFactory(organization=self.organization)
+        self.aviation_project = AviationProjectFactory(project=self.project)
+        self.task = TaskFactory(project=self.project)
+        self.event = AviationEventFactory(task=self.task)
+        self.user = UserFactory()
+
+    def test_create_result_performance(self):
+        rp = ResultPerformanceFactory(
+            aviation_project=self.aviation_project,
+            event=self.event,
+            created_by=self.user
+        )
+
+        self.assertIsNotNone(rp.id)
+        self.assertEqual(rp.aviation_project, self.aviation_project)
+        self.assertEqual(rp.event, self.event)
+        self.assertEqual(rp.created_by, self.user)
+        self.assertEqual(rp.status, 'draft')
+
+    def test_string_representation(self):
+        rp = ResultPerformanceFactory(
+            aviation_project=self.aviation_project,
+            event=self.event
+        )
+        expected = f'ResultPerformance({rp.id})'
+        self.assertEqual(str(rp), expected)
+
+
+class LabelingItemPerformanceModelTest(TestCase):
+    def setUp(self):
+        self.organization = OrganizationFactory()
+        self.project = ProjectFactory(organization=self.organization)
+        self.aviation_project = AviationProjectFactory(project=self.project)
+        self.task = TaskFactory(project=self.project)
+        self.event = AviationEventFactory(task=self.task)
+        self.labeling_item = LabelingItemFactory(event=self.event)
+        self.result_performance = ResultPerformanceFactory(
+            aviation_project=self.aviation_project,
+            event=self.event
+        )
+
+    def test_create_labeling_item_performance(self):
+        lip = LabelingItemPerformanceFactory(
+            labeling_item=self.labeling_item,
+            result_performance=self.result_performance
+        )
+
+        self.assertIsNotNone(lip.id)
+        self.assertEqual(lip.labeling_item, self.labeling_item)
+        self.assertEqual(lip.result_performance, self.result_performance)
+        self.assertEqual(lip.contribution_weight, Decimal('1.00'))
+
+    def test_string_representation(self):
+        lip = LabelingItemPerformanceFactory(
+            labeling_item=self.labeling_item,
+            result_performance=self.result_performance
+        )
+        expected = f'LabelingItemPerformance({self.labeling_item.id}:{self.result_performance.id})'
+        self.assertEqual(str(lip), expected)
+
+    def test_unique_together_constraint(self):
+        LabelingItemPerformanceFactory(
+            labeling_item=self.labeling_item,
+            result_performance=self.result_performance
+        )
+
+        with self.assertRaises(IntegrityError):
+            LabelingItemPerformanceFactory(
+                labeling_item=self.labeling_item,
+                result_performance=self.result_performance
+            )
+
+
+class ReviewDecisionModelTest(TestCase):
+    def setUp(self):
+        self.organization = OrganizationFactory()
+        self.project = ProjectFactory(organization=self.organization)
+        self.task = TaskFactory(project=self.project)
+        self.event = AviationEventFactory(task=self.task)
+        self.labeling_item = LabelingItemFactory(event=self.event)
+        self.reviewer = UserFactory()
+
+    def test_create_review_decision(self):
+        decision = ReviewDecisionFactory(
+            labeling_item=self.labeling_item,
+            status='approved',
+            reviewer=self.reviewer
+        )
+
+        self.assertIsNotNone(decision.id)
+        self.assertEqual(decision.labeling_item, self.labeling_item)
+        self.assertEqual(decision.status, 'approved')
+        self.assertEqual(decision.reviewer, self.reviewer)
+
+    def test_string_representation(self):
+        decision = ReviewDecisionFactory(
+            labeling_item=self.labeling_item,
+            status='approved'
+        )
+        expected = f'ReviewDecision({decision.id}:approved)'
+        self.assertEqual(str(decision), expected)
+
+    def test_status_choices(self):
+        valid_statuses = ['approved', 'rejected_partial', 'rejected_full', 'revision_requested']
+        for status in valid_statuses:
+            decision = ReviewDecisionFactory(
+                labeling_item=self.labeling_item,
+                status=status
+            )
+            self.assertEqual(decision.status, status)
+
+
+class FieldFeedbackModelTest(TestCase):
+    def setUp(self):
+        self.organization = OrganizationFactory()
+        self.project = ProjectFactory(organization=self.organization)
+        self.task = TaskFactory(project=self.project)
+        self.event = AviationEventFactory(task=self.task)
+        self.labeling_item = LabelingItemFactory(event=self.event)
+        self.review_decision = ReviewDecisionFactory(labeling_item=self.labeling_item)
+        self.reviewer = UserFactory()
+
+    def test_create_field_feedback(self):
+        feedback = FieldFeedbackFactory(
+            review_decision=self.review_decision,
+            labeling_item=self.labeling_item,
+            field_name='threat_type_l1',
+            feedback_type='partial',
+            reviewed_by=self.reviewer
+        )
+
+        self.assertIsNotNone(feedback.id)
+        self.assertEqual(feedback.review_decision, self.review_decision)
+        self.assertEqual(feedback.labeling_item, self.labeling_item)
+        self.assertEqual(feedback.field_name, 'threat_type_l1')
+        self.assertEqual(feedback.feedback_type, 'partial')
+        self.assertEqual(feedback.reviewed_by, self.reviewer)
+
+    def test_string_representation(self):
+        feedback = FieldFeedbackFactory(
+            review_decision=self.review_decision,
+            labeling_item=self.labeling_item,
+            field_name='threat_type_l1',
+            feedback_type='partial'
+        )
+        expected = 'FieldFeedback(threat_type_l1:partial)'
+        self.assertEqual(str(feedback), expected)
+
+    def test_feedback_type_choices(self):
+        valid_types = ['partial', 'full', 'revision']
+        for feedback_type in valid_types:
+            feedback = FieldFeedbackFactory(
+                review_decision=self.review_decision,
+                labeling_item=self.labeling_item,
+                feedback_type=feedback_type
+            )
+            self.assertEqual(feedback.feedback_type, feedback_type)

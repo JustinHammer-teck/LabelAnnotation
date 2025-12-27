@@ -12,6 +12,8 @@ from aviation.models import (
     LabelingItem,
     ResultPerformance,
     LabelingItemPerformance,
+    ReviewDecision,
+    FieldFeedback,
 )
 from tasks.tests.factories import TaskFactory
 
@@ -63,6 +65,7 @@ class TypeHierarchyFactory(factory.django.DjangoModelFactory):
 
 class LabelingItemFactory(factory.django.DjangoModelFactory):
     event = factory.SubFactory(AviationEventFactory)
+    created_by = None  # Allow setting created_by via kwarg
     sequence_number = factory.Sequence(lambda n: n + 1)
     status = 'draft'
 
@@ -73,6 +76,7 @@ class LabelingItemFactory(factory.django.DjangoModelFactory):
 class ResultPerformanceFactory(factory.django.DjangoModelFactory):
     aviation_project = factory.SubFactory(AviationProjectFactory)
     event = factory.SubFactory(AviationEventFactory)
+    created_by = None  # Allow setting created_by via kwarg
     status = 'draft'
 
     class Meta:
@@ -86,3 +90,27 @@ class LabelingItemPerformanceFactory(factory.django.DjangoModelFactory):
 
     class Meta:
         model = LabelingItemPerformance
+
+
+class ReviewDecisionFactory(factory.django.DjangoModelFactory):
+    """Factory for ReviewDecision model."""
+    labeling_item = factory.SubFactory(LabelingItemFactory)
+    status = 'approved'
+    reviewer = None  # Allow setting reviewer via kwarg
+    reviewer_comment = factory.Faker('sentence')
+
+    class Meta:
+        model = ReviewDecision
+
+
+class FieldFeedbackFactory(factory.django.DjangoModelFactory):
+    """Factory for FieldFeedback model."""
+    review_decision = factory.SubFactory(ReviewDecisionFactory)
+    labeling_item = factory.LazyAttribute(lambda obj: obj.review_decision.labeling_item)
+    field_name = 'threat_type_l1'
+    feedback_type = 'partial'
+    feedback_comment = factory.Faker('sentence')
+    reviewed_by = None  # Allow setting reviewed_by via kwarg
+
+    class Meta:
+        model = FieldFeedback

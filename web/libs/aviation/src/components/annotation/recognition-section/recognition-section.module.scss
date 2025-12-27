@@ -4,7 +4,8 @@
   background: #fff;
   border: 1px solid $aviation-border-color;
   border-radius: $aviation-border-radius;
-  overflow: hidden;
+  // Note: overflow: visible required for review tooltips to appear outside section bounds
+  overflow: visible;
 }
 
 .title {
@@ -40,6 +41,11 @@
   font-size: 13px;
   font-weight: 500;
   color: $aviation-text-color;
+}
+
+.fieldLabelWithBadge {
+  display: inline-flex;
+  align-items: center;
 }
 
 .topics {

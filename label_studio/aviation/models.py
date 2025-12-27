@@ -336,3 +336,113 @@ class LabelingItemPerformance(models.Model):
 
     def __str__(self):
         return f'LabelingItemPerformance({self.labeling_item_id}:{self.result_performance_id})'
+
+
+class ReviewDecision(models.Model):
+    """
+    Audit trail for review decisions on labeling items.
+
+    Captures each review action (approve, reject, revision request) with
+    associated reviewer comments. Multiple decisions can exist for the same
+    labeling item to maintain a complete review history.
+    """
+    STATUS_CHOICES = [
+        ('approved', 'Approved'),
+        ('rejected_partial', 'Rejected (Partial)'),
+        ('rejected_full', 'Rejected (Full)'),
+        ('revision_requested', 'Revision Requested'),
+    ]
+
+    labeling_item = models.ForeignKey(
+        LabelingItem,
+        on_delete=models.CASCADE,
+        related_name='review_decisions',
+        help_text='The labeling item being reviewed'
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        help_text='Review decision status: approved, rejected_partial, rejected_full, or revision_requested'
+    )
+    reviewer = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='aviation_review_decisions',
+        help_text='User who made this review decision'
+    )
+    reviewer_comment = models.TextField(
+        blank=True,
+        default='',
+        help_text='Optional comment from the reviewer explaining the decision'
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        help_text='Timestamp when this review decision was made'
+    )
+
+    class Meta:
+        db_table = 'aviation_review_decision'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'ReviewDecision({self.id}:{self.status})'
+
+
+class FieldFeedback(models.Model):
+    """
+    Field-level feedback for rejected or revision-requested items.
+
+    Allows reviewers to provide targeted feedback on specific annotation fields
+    within a labeling item. Each feedback is linked to a review decision.
+    """
+    FEEDBACK_TYPE_CHOICES = [
+        ('partial', 'Partial'),
+        ('full', 'Full'),
+        ('revision', 'Revision'),
+    ]
+
+    review_decision = models.ForeignKey(
+        ReviewDecision,
+        on_delete=models.CASCADE,
+        related_name='field_feedbacks',
+        help_text='The review decision this feedback belongs to'
+    )
+    labeling_item = models.ForeignKey(
+        LabelingItem,
+        on_delete=models.CASCADE,
+        related_name='field_feedbacks',
+        help_text='The labeling item this feedback refers to'
+    )
+    field_name = models.CharField(
+        max_length=50,
+        help_text='Name of the field being reviewed (e.g., threat_type_l1, error_management)'
+    )
+    feedback_type = models.CharField(
+        max_length=20,
+        choices=FEEDBACK_TYPE_CHOICES,
+        help_text='Type of feedback: partial (some issues), full (completely incorrect), or revision (needs clarification)'
+    )
+    feedback_comment = models.TextField(
+        blank=True,
+        default='',
+        help_text='Detailed feedback explaining the issue with this field'
+    )
+    reviewed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='aviation_field_feedbacks',
+        help_text='User who provided this field feedback'
+    )
+    reviewed_at = models.DateTimeField(
+        auto_now_add=True,
+        help_text='Timestamp when this feedback was created'
+    )
+
+    class Meta:
+        db_table = 'aviation_field_feedback'
+        ordering = ['field_name']
+
+    def __str__(self):
+        return f'FieldFeedback({self.field_name}:{self.feedback_type})'

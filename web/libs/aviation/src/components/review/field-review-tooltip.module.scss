@@ -1,0 +1,413 @@
+@use '../../assets/styles/variables' as *;
+
+// =============================================================================
+// Field Review Tooltip
+// =============================================================================
+// Hover-triggered tooltip with approve/reject/revision action buttons.
+// Appears when Manager/Researcher hovers over form fields during review.
+
+.tooltip {
+  // Default: position absolute for non-portal use (backward compatibility)
+  // When using portal, position: fixed is set via inline style
+  position: absolute;
+  z-index: 99999; // Highest z-index to ensure tooltip appears above all other elements
+  background: #fff;
+  border: 1px solid $aviation-border-color;
+  border-radius: $aviation-border-radius;
+  box-shadow: 0 3px 12px -4px rgba(0, 0, 0, 0.15),
+              0 4px 8px 0 rgba(0, 0, 0, 0.1);
+  animation: tooltipFadeIn 0.15s ease-out;
+
+  // Position variants
+  &.right {
+    left: calc(100% + 8px);
+    top: 50%;
+    transform: translateY(-50%);
+
+    &::before {
+      content: '';
+      position: absolute;
+      left: -6px;
+      top: 50%;
+      transform: translateY(-50%);
+      border: 5px solid transparent;
+      border-right-color: #fff;
+      filter: drop-shadow(-1px 0 1px rgba(0, 0, 0, 0.08));
+    }
+  }
+
+  &.top-right {
+    left: calc(100% - 20px);
+    bottom: calc(100% + 8px);
+
+    &::before {
+      content: '';
+      position: absolute;
+      left: 16px;
+      bottom: -6px;
+      border: 5px solid transparent;
+      border-top-color: #fff;
+      filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.08));
+    }
+  }
+
+  &.top {
+    left: 50%;
+    bottom: calc(100% + 8px);
+    transform: translateX(-50%);
+
+    &::before {
+      content: '';
+      position: absolute;
+      left: 50%;
+      bottom: -6px;
+      transform: translateX(-50%);
+      border: 5px solid transparent;
+      border-top-color: #fff;
+      filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.08));
+    }
+  }
+}
+
+// Status display variant (for already-reviewed fields)
+.statusDisplay {
+  padding: ($aviation-spacing-unit * 1.25) ($aviation-spacing-unit * 1.5);
+  padding-right: ($aviation-spacing-unit * 4); // Space for clear button
+  white-space: nowrap;
+}
+
+// =============================================================================
+// Action Buttons
+// =============================================================================
+
+.actionButtons {
+  display: flex;
+  gap: 4px;
+  padding: 6px;
+}
+
+.actionButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: none;
+  border-radius: $aviation-border-radius;
+  background: transparent;
+  cursor: pointer;
+  transition: background-color 0.15s, transform 0.1s;
+
+  svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  &:hover {
+    transform: scale(1.1);
+  }
+
+  &:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba($aviation-primary-color, 0.3);
+  }
+
+  &:focus-visible {
+    outline: 2px solid $aviation-primary-color;
+    outline-offset: 1px;
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+}
+
+.approveButton {
+  color: $aviation-success-color;
+
+  &:hover {
+    background-color: rgba($aviation-success-color, 0.12);
+  }
+}
+
+.rejectButton {
+  color: $aviation-error-color;
+
+  &:hover {
+    background-color: rgba($aviation-error-color, 0.12);
+  }
+}
+
+.revisionButton {
+  color: $aviation-warning-color;
+
+  &:hover {
+    background-color: rgba($aviation-warning-color, 0.12);
+  }
+}
+
+// =============================================================================
+// Status Badge (for reviewed fields)
+// =============================================================================
+
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: $aviation-spacing-unit;
+}
+
+.statusIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  &.approved {
+    color: $aviation-success-color;
+  }
+
+  &.rejected {
+    color: $aviation-error-color;
+  }
+
+  &.revision {
+    color: $aviation-warning-color;
+  }
+}
+
+.statusText {
+  font-size: 13px;
+  font-weight: 500;
+  color: $aviation-text-color;
+}
+
+.feedbackComment {
+  margin-top: $aviation-spacing-unit;
+  padding-top: $aviation-spacing-unit;
+  border-top: 1px solid lighten($aviation-border-color, 5%);
+  font-size: 12px;
+  color: $aviation-text-secondary;
+  max-width: 280px;
+  white-space: normal;
+  word-wrap: break-word;
+  line-height: 1.4;
+}
+
+.clearButton {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid $aviation-border-color;
+  border-radius: 50%;
+  background: #fff;
+  color: $aviation-text-secondary;
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s, transform 0.1s;
+
+  svg {
+    width: 12px;
+    height: 12px;
+  }
+
+  &:hover {
+    background-color: rgba($aviation-error-color, 0.12);
+    border-color: $aviation-error-color;
+    color: $aviation-error-color;
+    transform: scale(1.1);
+  }
+
+  &:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba($aviation-error-color, 0.3);
+    border-color: $aviation-error-color;
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+}
+
+// =============================================================================
+// Reject/Revision Input Container
+// =============================================================================
+
+.rejectInputContainer {
+  padding: ($aviation-spacing-unit * 1.5);
+  min-width: 220px;
+  max-width: 280px;
+}
+
+.inputHeader {
+  display: flex;
+  align-items: baseline;
+  gap: $aviation-spacing-unit / 2;
+  margin-bottom: $aviation-spacing-unit;
+}
+
+.inputLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: $aviation-text-color;
+}
+
+.inputHint {
+  font-size: 11px;
+  color: $aviation-text-muted;
+}
+
+.commentInput {
+  width: 100%;
+  padding: $aviation-spacing-unit;
+  border: 1px solid $aviation-border-color;
+  border-radius: $aviation-border-radius;
+  font-size: 12px;
+  line-height: 1.5;
+  resize: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+
+  &::placeholder {
+    color: $aviation-text-muted;
+  }
+
+  &:focus {
+    outline: none;
+    border-color: $aviation-primary-color;
+    box-shadow: 0 0 0 2px rgba($aviation-primary-color, 0.15);
+  }
+}
+
+.inputActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: $aviation-spacing-unit;
+  margin-top: $aviation-spacing-unit;
+}
+
+.cancelButton {
+  padding: 4px 10px;
+  border: 1px solid $aviation-border-color;
+  border-radius: $aviation-border-radius;
+  background: #fff;
+  font-size: 12px;
+  color: $aviation-text-secondary;
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s;
+
+  &:hover {
+    background-color: $aviation-bg-hover;
+    border-color: darken($aviation-border-color, 5%);
+  }
+
+  &:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba($aviation-primary-color, 0.2);
+  }
+}
+
+.confirmButton {
+  padding: 4px 12px;
+  border: none;
+  border-radius: $aviation-border-radius;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s, transform 0.1s;
+
+  &:hover {
+    transform: translateY(-1px);
+  }
+
+  &:focus {
+    outline: none;
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+.confirmReject {
+  background-color: $aviation-error-color;
+  color: #fff;
+
+  &:hover {
+    background-color: darken($aviation-error-color, 8%);
+  }
+
+  &:focus {
+    box-shadow: 0 0 0 2px rgba($aviation-error-color, 0.3);
+  }
+}
+
+.confirmRevision {
+  background-color: $aviation-warning-color;
+  color: #fff;
+
+  &:hover {
+    background-color: darken($aviation-warning-color, 8%);
+  }
+
+  &:focus {
+    box-shadow: 0 0 0 2px rgba($aviation-warning-color, 0.3);
+  }
+}
+
+// =============================================================================
+// Animations
+// =============================================================================
+
+@keyframes tooltipFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-50%) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(-50%) scale(1);
+  }
+}
+
+// Animation adjustment for top-positioned tooltips
+.top,
+.top-right {
+  &.tooltip {
+    animation-name: tooltipFadeInTop;
+  }
+}
+
+@keyframes tooltipFadeInTop {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) scale(1);
+  }
+}
+
+.top-right.tooltip {
+  animation-name: tooltipFadeInTopRight;
+}
+
+@keyframes tooltipFadeInTopRight {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
