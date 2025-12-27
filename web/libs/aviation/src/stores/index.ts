@@ -5,3 +5,4 @@ export * from './projects.store';
 export * from './save-status.store';
 export * from './performances.store';
 export * from './language.store';
+export * from './review.store';

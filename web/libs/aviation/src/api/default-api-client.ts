@@ -13,6 +13,10 @@ import type {
   LinkItemsData,
   ExcelUploadResult,
   ExportData,
+  ReviewDecision,
+  RejectRequest,
+  RevisionRequest,
+  ReviewHistoryResponse,
 } from '../types';
 
 const BASE_URL = '/api/aviation';
@@ -532,5 +536,44 @@ export const createDefaultApiClient = (): AviationApiClient => ({
     anchor.download = downloadFilename;
     anchor.click();
     URL.revokeObjectURL(url);
+  },
+
+  // Review endpoints
+  async submitItem(itemId: number): Promise<LabelingItem> {
+    return request<LabelingItem>(`${BASE_URL}/items/${itemId}/submit/`, {
+      method: 'POST',
+    });
+  },
+
+  async approveItem(itemId: number, comment?: string): Promise<ReviewDecision> {
+    return request<ReviewDecision>(`${BASE_URL}/items/${itemId}/approve/`, {
+      method: 'POST',
+      body: JSON.stringify({ comment }),
+    });
+  },
+
+  async rejectItem(itemId: number, reqBody: RejectRequest): Promise<ReviewDecision> {
+    return request<ReviewDecision>(`${BASE_URL}/items/${itemId}/reject/`, {
+      method: 'POST',
+      body: JSON.stringify(reqBody),
+    });
+  },
+
+  async requestRevision(itemId: number, reqBody: RevisionRequest): Promise<ReviewDecision> {
+    return request<ReviewDecision>(`${BASE_URL}/items/${itemId}/revision/`, {
+      method: 'POST',
+      body: JSON.stringify(reqBody),
+    });
+  },
+
+  async resubmitItem(itemId: number, comment?: string): Promise<LabelingItem> {
+    return request<LabelingItem>(`${BASE_URL}/items/${itemId}/resubmit/`, {
+      method: 'POST',
+      body: JSON.stringify({ comment }),
+    });
+  },
+
+  async getReviewHistory(itemId: number): Promise<ReviewHistoryResponse> {
+    return request<ReviewHistoryResponse>(`${BASE_URL}/items/${itemId}/review-history/`);
   },
 });
