@@ -46,10 +46,10 @@
 
       & > span,
       & > a {
-        color: var(--color-neutral-content-subtler);
+        color: var(--color-primary-surface-content-subtle);
 
         &:hover {
-          color: var(--color-primary-content-hover);
+          color: var(--color-primary-surface-content);
         }
       }
     }
@@ -72,10 +72,10 @@
   &__item > span,
   &__item > a {
     text-decoration: none;
-    color: var(--color-neutral-content);
+    color: var(--color-primary-surface-content);
 
     a {
-      color: var(--color-primary-content);
+      color: var(--color-primary-surface-content);
     }
   }
 
@@ -90,7 +90,7 @@
     content: "/";
     height: 16px;
     display: block;
-    color: var(--color-neutral-content-subtlest);
+    color: var(--color-primary-surface-content-subtle);
     position: absolute;
     transform: translate3d(0, -50%, 0);
     text-align: center;

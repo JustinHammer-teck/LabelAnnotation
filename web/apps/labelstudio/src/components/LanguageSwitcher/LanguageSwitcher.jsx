@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import './LanguageSwitcher.scss';
 
 export const LanguageSwitcher = () => {
   const { i18n } = useTranslation();
@@ -7,8 +8,20 @@ export const LanguageSwitcher = () => {
     i18n.changeLanguage(e.target.value);
   };
 
+  const selectStyle = {
+    backgroundColor: '#ffffff',
+    color: '#333333',
+    border: '1px solid #cccccc',
+    colorScheme: 'light',
+  };
+
   return (
-    <select onChange={handleLanguageChange} defaultValue={i18n.language}>
+    <select
+      className="language-switcher"
+      onChange={handleLanguageChange}
+      defaultValue={i18n.language}
+      style={selectStyle}
+    >
       <option value="en">English</option>
       <option value="cn">Chinese</option>
     </select>

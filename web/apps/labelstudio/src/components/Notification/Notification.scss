@@ -8,7 +8,7 @@
   border: none;
   cursor: pointer;
   padding: 0 8px;
-  color: #5A5A5A;
+  color: var(--color-primary-surface-content);
   position: relative;
 
   &:hover {

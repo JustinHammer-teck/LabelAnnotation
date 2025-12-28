@@ -7,10 +7,10 @@
   list-style-type: none;
   max-width: 100%;
   box-sizing: border-box;
-  background: var(--color-neutral-background);
+  background: var(--color-primary-surface);
   border-radius: 0;
   transition: background-color 400ms ease-out;
-  border-right: 1px solid var(--color-neutral-border);
+  border-right: 1px solid var(--color-primary-border);
   gap: 2px;
 
   &__item {
@@ -20,7 +20,7 @@
     border-radius: var(--corner-radius-smaller);
     align-items: center;
     box-sizing: border-box;
-    color: var(--color-neutral-content-subtler);
+    color: var(--color-primary-surface-content-subtle);
     font-size: 1rem;
     white-space: nowrap;
     text-decoration: none;
@@ -30,11 +30,12 @@
     &-icon {
       margin-right: 10px;
       object-fit: contain;
-      opacity: 0.5;
+      opacity: 0.7;
       display: flex;
       align-items: center;
       justify-content: center;
       width: 24px;
+      color: var(--color-primary-surface-icon);
     }
 
     &-beta {
@@ -51,28 +52,28 @@
 
     &_look {
       &_danger {
-        color: var(--color-negative-content);
+        color: var(--color-negative-surface);
       }
     }
 
     &:not(.main-menu__item_look_danger):hover {
-      color: var(--color-neutral-content);
-      background: var(--color-primary-emphasis-subtle);
+      color: var(--color-primary-surface-content);
+      background: var(--color-primary-surface-hover);
     }
 
     &:not(.main-menu__item_active):hover {
-      color: var(--color-neutral-content);
-      background: var(--color-primary-emphasis-subtle);
+      color: var(--color-primary-surface-content);
+      background: var(--color-primary-surface-hover);
     }
 
     &_active {
-      color: var(--color-neutral-content);
+      color: var(--color-primary-surface-content);
       font-weight: 500;
     }
 
     &_active:not(.sidebar__pin) {
       pointer-events: none;
-      background: var(--color-neutral-emphasis);
+      background: var(--color-primary-surface-active);
     }
 
     &:hover &-icon,
@@ -81,11 +82,11 @@
     }
 
     &_dangerous {
-      color: var(--color-negative-content);
+      color: var(--color-negative-surface);
 
       &:hover {
-        color: var(--color-neutral-content) !important;
-        background-color: var(--color-negative-emphasis-subtle) !important;
+        color: var(--color-primary-surface-content) !important;
+        background-color: var(--color-negative-surface) !important;
       }
     }
   }
@@ -97,12 +98,13 @@
   &__divider {
     height: 1px;
     margin: 8px 0;
-    background-color: var(--color-neutral-border);
+    background-color: var(--color-primary-border);
+    opacity: 0.5;
     transition: background-color 150ms ease-out;
   }
 
   &_size_compact {
-    background: var(--color-neutral-background);
+    background: var(--color-primary-surface);
   }
 
   &_size_compact &__item,
@@ -140,15 +142,15 @@
     cursor: pointer;
 
     &:hover {
-      background-color: var(--color-primary-emphasis-subtle);
+      background-color: var(--color-primary-surface-hover);
     }
 
     &_dangerous {
-      color: var(--color-negative-content);
+      color: var(--color-negative-surface);
 
       &:hover {
-        color: var(--color-neutral-content);
-        background-color: var(--color-negative-emphasis-subtle);
+        color: var(--color-primary-surface-content);
+        background-color: var(--color-negative-surface);
       }
     }
   }
@@ -166,7 +168,7 @@
   &__title {
     padding: 4px 10px;
     font-size: 14px;
-    color: var(--color-neutral-content-subtler);
+    color: var(--color-primary-surface-content-subtle);
   }
 
   &__list {
