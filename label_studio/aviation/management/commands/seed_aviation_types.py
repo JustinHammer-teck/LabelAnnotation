@@ -58,11 +58,13 @@ class Command(BaseCommand):
     def _seed_basic_options(self):
         self.stdout.write('Seeding basic options...')
 
-        event_types = ['失速', '鸟击', '机械故障', '天气影响', '人为因素']
+        # Only 2 event types per Label component (labHieStru.json)
+        event_types = ['失速', '鸟击']
         for i, label in enumerate(event_types):
             self._create_type('event_type', 1, f'ET{i+1:02d}', label, label, display_order=i)
 
-        flight_phases = ['起飞', '降落', '巡航', '爬升', '下降', '滑行']
+        # Only 2 flight phases per Label component (labHieStru.json)
+        flight_phases = ['起飞', '降落']
         for i, label in enumerate(flight_phases):
             self._create_type('flight_phase', 1, f'FP{i+1:02d}', label, label, display_order=i)
 
@@ -218,6 +220,8 @@ class Command(BaseCommand):
     def _seed_management_options(self):
         self.stdout.write('Seeding management options...')
 
+        # Threat/Error management: 4 options (NO 无关紧要)
+        # Per Label component (effectAndManage.json)
         management_options = [
             ('M1', '管理的', 'Managed'),
             ('M2', '未管理', 'Not Managed'),
@@ -226,6 +230,18 @@ class Command(BaseCommand):
         ]
         for i, (code, zh, en) in enumerate(management_options):
             self._create_type('management', 1, code, en, zh, display_order=i)
+
+        # UAS management: 5 options (HAS 无关紧要)
+        # Per Label component (effectAndManage.json): ["无关紧要", "管理的", "未管理", "无效管理", "未观察到"]
+        uas_management_options = [
+            ('UM0', '无关紧要', 'Not Applicable'),
+            ('UM1', '管理的', 'Managed'),
+            ('UM2', '未管理', 'Not Managed'),
+            ('UM3', '无效管理', 'Ineffective'),
+            ('UM4', '未观察到', 'Not Observed'),
+        ]
+        for i, (code, zh, en) in enumerate(uas_management_options):
+            self._create_type('uas_management', 1, code, en, zh, display_order=i)
 
         impact_options = [
             ('I1', '无关紧要', 'Negligible'),
@@ -239,16 +255,11 @@ class Command(BaseCommand):
     def _seed_coping_abilities(self):
         self.stdout.write('Seeding coping abilities...')
 
+        # Only KNO and PRO per Label component (labHieStru.json)
+        # The other 7 categories (FPA, FPM, COM, LTW, SAW, WLM, PSD) are only for competency module
         coping_categories = {
             'KNO': 'Knowledge',
             'PRO': 'Procedures',
-            'FPA': 'Flight Path Awareness',
-            'FPM': 'Flight Path Management',
-            'COM': 'Communication',
-            'LTW': 'Leadership & Teamwork',
-            'SAW': 'Situational Awareness',
-            'WLM': 'Workload Management',
-            'PSD': 'Problem Solving & Decision Making',
         }
 
         for i, (code, label) in enumerate(coping_categories.items()):

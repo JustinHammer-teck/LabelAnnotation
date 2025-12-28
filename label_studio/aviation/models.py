@@ -19,12 +19,89 @@ class AviationProject(models.Model):
 
     class Meta:
         db_table = 'aviation_project'
+        permissions = [
+            ('assign_aviation_project', 'Can Assign Aviation Project to other People'),
+            ('assigned_to_aviation_project', 'User is assigned to Aviation Project'),
+        ]
 
     def __str__(self):
         return f'AviationProject({self.project_id})'
 
     def has_permission(self, user):
         return self.project.has_permission(user)
+
+    def add_assignee(self, user: 'settings.AUTH_USER_MODEL') -> None:
+        """
+        Assign a user to this aviation project.
+
+        Grants the 'assigned_to_aviation_project' object-level permission to the
+        specified user for this AviationProject instance using Django Guardian.
+
+        Args:
+            user: The User instance to assign to this project.
+
+        Raises:
+            ValueError: If user is not active.
+
+        Returns:
+            None
+        """
+        from guardian.shortcuts import assign_perm
+
+        if not user.is_active:
+            raise ValueError(f"Cannot assign inactive user {user.email}")
+
+        assign_perm('aviation.assigned_to_aviation_project', user, self)
+
+    def remove_assignee(self, user: 'settings.AUTH_USER_MODEL') -> None:
+        """
+        Remove a user's assignment from this aviation project.
+
+        Revokes the 'assigned_to_aviation_project' object-level permission from
+        the specified user for this AviationProject instance.
+
+        Args:
+            user: The User instance to remove from this project.
+
+        Returns:
+            None
+        """
+        from guardian.shortcuts import remove_perm
+
+        remove_perm('aviation.assigned_to_aviation_project', user, self)
+
+    def has_assignee(self, user: 'settings.AUTH_USER_MODEL') -> bool:
+        """
+        Check if a user is assigned to this aviation project.
+
+        Args:
+            user: The User instance to check.
+
+        Returns:
+            True if the user has the 'assigned_to_aviation_project' permission
+            for this project, False otherwise.
+        """
+        return user.has_perm('aviation.assigned_to_aviation_project', self)
+
+    def get_assignees(self):
+        """
+        Get all users assigned to this aviation project.
+
+        Uses Django Guardian to retrieve all users who have the
+        'assigned_to_aviation_project' permission for this specific
+        AviationProject instance.
+
+        Returns:
+            QuerySet of User objects with the assigned_to_aviation_project
+            permission for this project.
+        """
+        from guardian.shortcuts import get_users_with_perms
+
+        return get_users_with_perms(
+            self,
+            only_with_perms_in=['assigned_to_aviation_project'],
+            with_group_users=False
+        )
 
 
 class AviationEvent(models.Model):

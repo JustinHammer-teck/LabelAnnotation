@@ -1,0 +1,126 @@
+.container {
+  padding: 24px;
+  max-width: 800px;
+  position: relative;
+}
+
+.title {
+  font-size: 24px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--text-primary, #000);
+}
+
+.description {
+  font-size: 14px;
+  color: var(--text-secondary, #666);
+  margin-bottom: 24px;
+}
+
+.assignmentTable {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--surface, #fff);
+  border: 1px solid var(--border-color, #ddd);
+  border-radius: 4px;
+
+  thead {
+    background: var(--surface-secondary, #f5f5f5);
+
+    th {
+      padding: 12px 16px;
+      text-align: left;
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--text-primary, #000);
+      border-bottom: 1px solid var(--border-color, #ddd);
+    }
+  }
+
+  tbody {
+    tr {
+      border-bottom: 1px solid var(--border-color, #eee);
+      transition: background-color 0.2s;
+
+      &:hover {
+        background: var(--hover-background, #f9f9f9);
+      }
+
+      &.assigned {
+        background: var(--success-background, #e6f7ed);
+
+        &:hover {
+          background: var(--success-background-hover, #d4f0dd);
+        }
+      }
+
+      &:last-child {
+        border-bottom: none;
+      }
+    }
+
+    td {
+      padding: 12px 16px;
+      font-size: 14px;
+
+      &:first-child {
+        color: var(--text-primary, #000);
+      }
+
+      &:last-child {
+        text-align: center;
+        width: 100px;
+      }
+    }
+  }
+}
+
+.loading,
+.error,
+.empty {
+  padding: 48px 24px;
+  text-align: center;
+  color: var(--text-secondary, #666);
+  font-size: 14px;
+}
+
+.error {
+  color: var(--error-color, #d32f2f);
+
+  p {
+    margin-bottom: 16px;
+  }
+}
+
+.retryButton {
+  padding: 8px 16px;
+  background: var(--primary-color, #1976d2);
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+
+  &:hover {
+    background: var(--primary-color-hover, #1565c0);
+  }
+
+  &:active {
+    background: var(--primary-color-active, #0d47a1);
+  }
+}
+
+.togglingOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: var(--text-secondary, #666);
+}

@@ -17,6 +17,8 @@ import type {
   RejectRequest,
   RevisionRequest,
   ReviewHistoryResponse,
+  AviationProjectAssignment,
+  ToggleAssignmentPayload,
 } from '../types';
 
 const BASE_URL = '/api/aviation';
@@ -575,5 +577,28 @@ export const createDefaultApiClient = (): AviationApiClient => ({
 
   async getReviewHistory(itemId: number): Promise<ReviewHistoryResponse> {
     return request<ReviewHistoryResponse>(`${BASE_URL}/items/${itemId}/review-history/`);
+  },
+
+  // Assignment endpoints
+  async getProjectAssignments(projectId: number): Promise<AviationProjectAssignment[]> {
+    if (projectId <= 0) {
+      throw new Error('Invalid project ID');
+    }
+    return request<AviationProjectAssignment[]>(
+      `${BASE_URL}/projects/${projectId}/assignment/`
+    );
+  },
+
+  async toggleProjectAssignment(
+    projectId: number,
+    payload: ToggleAssignmentPayload
+  ): Promise<void> {
+    if (projectId <= 0) {
+      throw new Error('Invalid project ID');
+    }
+    return request<void>(`${BASE_URL}/projects/${projectId}/assignment/`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
   },
 });

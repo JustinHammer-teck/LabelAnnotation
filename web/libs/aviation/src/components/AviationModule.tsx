@@ -1,9 +1,10 @@
 import { type FC, useCallback, useEffect, useState } from 'react';
 import { Switch, Route, Redirect, useHistory, useParams, useRouteMatch } from 'react-router-dom';
+import { useCurrentUserAtom } from '@humansignal/core/lib/hooks/useCurrentUser';
 import { AviationShell } from './layout';
-import { ProjectListView, TaskListView, AnnotationView, CreateProjectModal } from './views';
+import { ProjectListView, TaskListView, AnnotationView, CreateProjectModal, ProjectAssignmentSettings } from './views';
 import { ConfirmDialog } from './common';
-import { useProjects } from '../hooks';
+import { useProjects, useAviationToast } from '../hooks';
 import type { AviationProject } from '../types';
 import { initAviationI18n } from '../i18n';
 
@@ -121,6 +122,34 @@ const AnnotationPage: FC = () => {
   return <AnnotationView eventId={numericEventId} projectId={numericProjectId} />;
 };
 
+const ProjectAssignmentPage: FC = () => {
+  const { projectId } = useParams<{ projectId: string }>();
+  const numericProjectId = Number(projectId);
+  const { user } = useCurrentUserAtom();
+  const toast = useAviationToast();
+
+  if (!projectId || Number.isNaN(numericProjectId)) {
+    return <Redirect to="/aviation/projects" />;
+  }
+
+  const handleShowToast = (options: { message: string; type: 'success' | 'error' }) => {
+    if (!toast) return;
+    if (options.type === 'success') {
+      toast.success(options.message);
+    } else {
+      toast.error(options.message);
+    }
+  };
+
+  return (
+    <ProjectAssignmentSettings
+      projectId={numericProjectId}
+      currentUserId={user?.id ?? 0}
+      showToast={handleShowToast}
+    />
+  );
+};
+
 export const AviationModule: FC = () => {
   const { path } = useRouteMatch();
 
@@ -138,6 +167,9 @@ export const AviationModule: FC = () => {
         </Route>
         <Route exact path={`${path}/projects/:projectId/events/:eventId`}>
           <AnnotationPage />
+        </Route>
+        <Route exact path={`${path}/projects/:projectId/settings/assignment`}>
+          <ProjectAssignmentPage />
         </Route>
         <Route path={`${path}/tasks`}>
           <Redirect to={`${path}/projects`} />

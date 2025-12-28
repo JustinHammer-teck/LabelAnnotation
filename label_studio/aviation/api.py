@@ -19,7 +19,15 @@ from rest_framework.views import APIView
 from projects.models import Project
 from tasks.models import Task
 
+from asgiref.sync import async_to_sync
+from guardian.shortcuts import assign_perm, get_objects_for_user, remove_perm
+
+from core.services.audit_log_service import AuditLogService
+from notifications.models import NotificationChannel, NotificationEventType
+from notifications.services import NotificationService
+
 from .permissions import (
+    CanAssignAviationProject,
     CanCreateLabelingItem,
     CanDeleteLabelingItem,
     CanEditLabelingItem,
@@ -53,14 +61,85 @@ from .serializers import (
 )
 
 
+# Constants for role-based filtering
+ELEVATED_ROLES = {'Manager', 'Researcher', 'Admin'}
+ANNOTATOR_ROLE = 'Annotator'
+
+
 class AviationProjectViewSet(viewsets.ModelViewSet):
+    """ViewSet for aviation projects with role-based filtering."""
+
     serializer_class = AviationProjectSerializer
     permission_classes = (IsAuthenticated,)
 
     def get_queryset(self):
-        return AviationProject.objects.filter(
-            project__organization=self.request.user.active_organization
-        ).select_related('project')
+        """
+        Filter projects based on user role.
+
+        Role-based access:
+        - Admins (superusers): All organization projects
+        - Managers/Researchers: All organization projects
+        - Annotators (only): Only assigned projects via Guardian permissions
+        - Users with no groups: Only assigned projects (no elevated role)
+
+        Returns:
+            QuerySet: Filtered aviation projects
+        """
+        user = self.request.user
+        queryset = AviationProject.objects.all()
+
+        # Filter by organization first
+        if hasattr(user, 'active_organization') and user.active_organization:
+            queryset = queryset.filter(project__organization=user.active_organization)
+        else:
+            # User has no active organization - return empty
+            return queryset.none()
+
+        # Apply role-based filtering for annotator-only users
+        if self._is_annotator_only(user):
+            # Get only projects user is assigned to via Guardian permissions
+            queryset = get_objects_for_user(
+                user,
+                'aviation.assigned_to_aviation_project',
+                klass=queryset,
+                accept_global_perms=False
+            )
+
+        # Optimize queries with select_related
+        queryset = queryset.select_related(
+            'project',
+            'project__organization',
+        )
+
+        return queryset.distinct()
+
+    def _is_annotator_only(self, user):
+        """
+        Check if user has ONLY Annotator role (no Manager/Researcher/Admin).
+
+        A user is considered "annotator-only" if:
+        - They are NOT a superuser
+        - They do NOT have any elevated role (Manager, Researcher, Admin)
+
+        Users with no groups are also treated as needing assignment filtering.
+
+        Args:
+            user: User instance
+
+        Returns:
+            bool: True if user should only see assigned projects, False otherwise
+        """
+        if user.is_superuser:
+            return False
+
+        user_groups = set(user.groups.values_list('name', flat=True))
+
+        # Check if user has any elevated role
+        has_elevated_role = bool(user_groups & ELEVATED_ROLES)
+
+        # If user has elevated role, they see all projects
+        # If no elevated role (including no groups), they need assignment filtering
+        return not has_elevated_role
 
     def get_serializer_class(self):
         if self.action == 'create':
@@ -987,3 +1066,160 @@ class ReviewHistoryAPI(generics.GenericAPIView):
         }
 
         return Response(response_data, status=status.HTTP_200_OK)
+
+
+# =============================================================================
+# Assignment API Views
+# =============================================================================
+
+
+class AviationProjectAssignmentAPI(APIView):
+    """
+    API endpoint for managing aviation project assignments.
+
+    GET: Returns all organization users with their assignment status
+    POST: Toggles user assignments using Guardian permissions
+
+    Follows the pattern from Label Studio's ProjectAssignmentAPI.
+    """
+    permission_classes = (IsAuthenticated, CanAssignAviationProject)
+
+    def get_object(self, pk):
+        """Get aviation project (permissions enforced by DRF)."""
+        return get_object_or_404(AviationProject, pk=pk)
+
+    @swagger_auto_schema(
+        tags=['Aviation Projects'],
+        operation_summary='Get user assignment status',
+        operation_description='Returns all organization users with their assignment status for this aviation project.',
+        responses={200: 'List of users with assignment status'}
+    )
+    def get(self, request, pk, *args, **kwargs):
+        """Get all users in organization with their assignment status."""
+        from django.contrib.auth import get_user_model
+
+        from .serializers import AviationProjectUserPermissionSerializer
+
+        aviation_project = self.get_object(pk)
+
+        # Check object-level permissions (DRF calls this automatically for generic views,
+        # but for APIView we need to call it manually)
+        self.check_object_permissions(request, aviation_project)
+
+        # Get all users from organization
+        if hasattr(aviation_project.project, 'organization') and aviation_project.project.organization:
+            all_users = aviation_project.project.organization.users.all().order_by('email')
+        else:
+            User = get_user_model()
+            all_users = User.objects.filter(is_active=True).order_by('email')
+
+        serializer_context = {
+            'aviation_project': aviation_project,
+        }
+
+        serializer = AviationProjectUserPermissionSerializer(
+            all_users,
+            many=True,
+            context=serializer_context
+        )
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @swagger_auto_schema(
+        tags=['Aviation Projects'],
+        operation_summary='Toggle user assignments',
+        operation_description='Assign or revoke user assignments to this aviation project.',
+        responses={200: 'Success', 400: 'Bad Request', 403: 'Forbidden', 404: 'Not Found'}
+    )
+    def post(self, request, pk, *args, **kwargs):
+        """Toggle user assignments based on payload."""
+        from django.contrib.auth import get_user_model
+
+        from .serializers import AviationAssignmentToggleSerializer
+
+        aviation_project = self.get_object(pk)
+
+        # Check object-level permissions (DRF calls this automatically for generic views,
+        # but for APIView we need to call it manually)
+        self.check_object_permissions(request, aviation_project)
+
+        # Validate request payload
+        serializer = AviationAssignmentToggleSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        User = get_user_model()
+        request_data = serializer.validated_data.get('users', [])
+        request_user = request.user
+
+        for user_data in request_data:
+            new_perm = user_data.get('has_permission')
+            assign_user_id = user_data.get('user_id')
+
+            try:
+                assign_user = User.objects.get(pk=assign_user_id)
+            except User.DoesNotExist:
+                return Response(
+                    {'error': f'User with id {assign_user_id} not found'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            if new_perm:
+                self._assign_permission(request_user, aviation_project, assign_user)
+            else:
+                self._revoke_permission(request_user, aviation_project, assign_user)
+
+        return Response(status=status.HTTP_200_OK)
+
+    def _assign_permission(self, request_user, aviation_project, assign_user):
+        """Assign permission and create audit log + notification."""
+        # Assign permission using guardian
+        assign_perm('aviation.assigned_to_aviation_project', assign_user, aviation_project)
+
+        # Audit log
+        AuditLogService.create(
+            user=request_user,
+            action=f'User #{request_user.id} "{request_user.email}" assign '
+                   f'AviationProject #{aviation_project.id} to User #{assign_user.id} "{assign_user.email}"'
+        )
+
+        # Notification
+        project_url = f'/aviation/{aviation_project.id}/'
+
+        async_to_sync(NotificationService().send_notification)(
+            channel_name=NotificationChannel.NOTIFICATION,
+            event_type=NotificationEventType.PROJECT_ASSIGNED,
+            subject='Aviation Project Assigned',
+            message=f'User {request_user.email} has assigned you to Aviation Project: {aviation_project.project.title}',
+            ts=timezone.now(),
+            receive_user=assign_user,
+            path=project_url,
+            action_type='assign',
+            source=f'aviation_project:{aviation_project.id}'
+        )
+
+    def _revoke_permission(self, request_user, aviation_project, assign_user):
+        """Revoke permission and create audit log + notification."""
+        # Revoke permission using guardian
+        remove_perm('aviation.assigned_to_aviation_project', assign_user, aviation_project)
+
+        # Audit log
+        AuditLogService.create(
+            user=request_user,
+            action=f'User #{request_user.id} "{request_user.email}" revoke assign '
+                   f'AviationProject #{aviation_project.id} from User #{assign_user.id} "{assign_user.email}"'
+        )
+
+        # Notification
+        project_url = f'/aviation/{aviation_project.id}/'
+
+        async_to_sync(NotificationService().send_notification)(
+            channel_name=NotificationChannel.NOTIFICATION,
+            event_type=NotificationEventType.PROJECT_ASSIGNED,
+            subject='Aviation Project Assignment Revoked',
+            message=f'User {request_user.email} has revoked your assignment from Aviation Project: {aviation_project.project.title}',
+            ts=timezone.now(),
+            receive_user=assign_user,
+            path=project_url,
+            action_type='revoke',
+            source=f'aviation_project:{aviation_project.id}'
+        )

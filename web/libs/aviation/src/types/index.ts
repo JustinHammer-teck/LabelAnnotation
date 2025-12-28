@@ -4,3 +4,4 @@ export * from './dropdown.types';
 export * from './project.types';
 export * from './ui.types';
 export * from './review.types';
+export * from './assignment.types';
