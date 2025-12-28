@@ -2,18 +2,17 @@ import { render, screen, fireEvent, waitFor, within } from '@testing-library/rea
 import userEvent from '@testing-library/user-event';
 import { Provider, createStore } from 'jotai';
 import type { ReactNode } from 'react';
+
+// Mock feature flags - must be before component imports
+jest.mock('@humansignal/core/lib/utils/feature-flags', () => ({
+  isActive: jest.fn(() => true),
+  FF_AVIATION_REVIEW: 'fflag_feat_all_aviation_review_workflow_251225_long',
+}));
+
 import { ReviewPanel } from '../ReviewPanel';
 import { ReviewHistory } from '../ReviewHistory';
 import { AviationApiContext } from '../../../api/context';
 import type { AviationApiClient } from '../../../api/api-client';
-import {
-  reviewDecisionsAtom,
-  reviewLoadingAtom,
-  reviewErrorAtom,
-  pendingFieldFeedbacksAtom,
-  pendingRevisionFieldsAtom,
-  currentReviewItemIdAtom,
-} from '../../../stores/review.store';
 import type {
   ReviewDecision,
   RejectRequest,
@@ -340,6 +339,7 @@ describe('ReviewPanel Integration', () => {
             labelingItemId={123}
             currentStatus="submitted"
             userRole="admin"
+            pendingFeedbacksCount={1}
             onApprove={jest.fn()}
             onReject={onReject}
             onRequestRevision={jest.fn()}
@@ -368,6 +368,7 @@ describe('ReviewPanel Integration', () => {
             labelingItemId={123}
             currentStatus="submitted"
             userRole="admin"
+            pendingFeedbacksCount={1}
             onApprove={jest.fn()}
             onReject={onReject}
             onRequestRevision={jest.fn()}
@@ -479,6 +480,7 @@ describe('ReviewPanel Integration', () => {
             labelingItemId={123}
             currentStatus="submitted"
             userRole="admin"
+            pendingFeedbacksCount={1}
             onApprove={jest.fn()}
             onReject={jest.fn()}
             onRequestRevision={onRequestRevision}
@@ -507,6 +509,7 @@ describe('ReviewPanel Integration', () => {
             labelingItemId={123}
             currentStatus="submitted"
             userRole="admin"
+            pendingFeedbacksCount={1}
             onApprove={jest.fn()}
             onReject={jest.fn()}
             onRequestRevision={onRequestRevision}

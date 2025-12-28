@@ -1129,7 +1129,7 @@ class AviationProjectAssignmentAPI(APIView):
         tags=['Aviation Projects'],
         operation_summary='Toggle user assignments',
         operation_description='Assign or revoke user assignments to this aviation project.',
-        responses={200: 'Success', 400: 'Bad Request', 403: 'Forbidden', 404: 'Not Found'}
+        responses={204: 'No Content - Success', 400: 'Bad Request', 403: 'Forbidden', 404: 'Not Found'}
     )
     def post(self, request, pk, *args, **kwargs):
         """Toggle user assignments based on payload."""
@@ -1168,7 +1168,7 @@ class AviationProjectAssignmentAPI(APIView):
             else:
                 self._revoke_permission(request_user, aviation_project, assign_user)
 
-        return Response(status=status.HTTP_200_OK)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     def _assign_permission(self, request_user, aviation_project, assign_user):
         """Assign permission and create audit log + notification."""
