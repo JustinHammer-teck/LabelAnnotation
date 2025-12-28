@@ -27,8 +27,22 @@ export const useDashboardAnalytics = () => {
 
   return useQuery({
     queryKey: ["dashboard-analytics"],
-    queryFn: async () => {
-      return api.callApi<DashboardAnalytics>("dashboardAnalytics");
+    queryFn: async (): Promise<DashboardAnalytics> => {
+      const result = await api.callApi<DashboardAnalytics>("dashboardAnalytics");
+
+      if (!result || result.error) {
+        throw new Error(result?.error || 'Failed to fetch dashboard analytics');
+      }
+
+      // Extract the data from the wrapped response
+      return {
+        totalProjects: result.totalProjects ?? 0,
+        totalUsers: result.totalUsers ?? 0,
+        dailyAnnotations: result.dailyAnnotations ?? 0,
+        dailyAnnotationHistory: result.dailyAnnotationHistory ?? [],
+        projectAnnotations: result.projectAnnotations ?? [],
+        projectProgress: result.projectProgress ?? [],
+      };
     },
     refetchInterval: 10000,
     refetchOnWindowFocus: true,

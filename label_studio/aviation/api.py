@@ -43,9 +43,11 @@ from .models import (
     ReviewDecision,
     TypeHierarchy,
 )
+from .analytics import get_aviation_project_analytics
 from .serializers import (
     ApproveRequestSerializer,
     AviationEventSerializer,
+    AviationProjectAnalyticsSerializer,
     AviationProjectSerializer,
     CreateAviationProjectSerializer,
     LabelingItemPerformanceSerializer,
@@ -1223,3 +1225,88 @@ class AviationProjectAssignmentAPI(APIView):
             action_type='revoke',
             source=f'aviation_project:{aviation_project.id}'
         )
+
+
+# =============================================================================
+# Analytics API Views
+# =============================================================================
+
+
+class AviationProjectAnalyticsAPI(generics.GenericAPIView):
+    """
+    GET /api/aviation/projects/<pk>/analytics/
+
+    Retrieve analytics and metrics for an aviation project.
+
+    Returns event completion statistics, labeling item status breakdown,
+    and overall project progress metrics.
+
+    Authentication:
+        Requires authenticated user with access to the project's organization.
+
+    Response:
+        - project_id: Aviation project ID (AviationProject.id)
+        - project_type: "aviation"
+        - total_events: Total number of events
+        - events_by_status: Breakdown of in_progress vs completed events
+        - labeling_items: Total count and status breakdown
+
+    Event Status Logic:
+        - "completed": ALL labeling items are approved
+        - "in_progress": Has ANY non-approved labeling item
+        - Events without labeling items are not counted as in_progress or completed
+    """
+    permission_classes = (IsAuthenticated,)
+    serializer_class = AviationProjectAnalyticsSerializer
+
+    def get_object(self):
+        """Get aviation project with organization access check."""
+        aviation_project = get_object_or_404(
+            AviationProject.objects.select_related('project', 'project__organization'),
+            pk=self.kwargs['pk']
+        )
+
+        # Verify organization access
+        if aviation_project.project.organization != self.request.user.active_organization:
+            from django.http import Http404
+            raise Http404("Aviation project not found")
+
+        return aviation_project
+
+    @swagger_auto_schema(
+        tags=['Aviation Analytics'],
+        operation_summary='Get aviation project analytics',
+        operation_description="""
+        Retrieve comprehensive analytics for an aviation project.
+
+        Returns:
+        - Total event count
+        - Event status breakdown (in_progress vs completed)
+        - Labeling item status breakdown (draft, submitted, reviewed, approved)
+
+        Event Status Logic:
+        - "completed": ALL labeling items are approved
+        - "in_progress": Has ANY non-approved labeling item
+
+        Requires authentication and organization membership.
+        """,
+        responses={
+            200: AviationProjectAnalyticsSerializer,
+            401: 'Unauthorized - Authentication required',
+            404: 'Aviation project not found or not accessible'
+        }
+    )
+    def get(self, request, pk):
+        """Retrieve analytics for the aviation project."""
+        aviation_project = self.get_object()
+
+        # Get analytics data from Phase 1 function
+        analytics_data = get_aviation_project_analytics(aviation_project.id)
+
+        if analytics_data is None:
+            from django.http import Http404
+            raise Http404("Analytics data not available")
+
+        # Serialize and return
+        serializer = self.get_serializer(analytics_data)
+        return Response(serializer.data, status=status.HTTP_200_OK)

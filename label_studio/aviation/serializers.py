@@ -501,3 +501,77 @@ class AviationAssignmentToggleSerializer(serializers.Serializer):
         child=serializers.DictField(),
         help_text='List of user assignment changes with user_id and has_permission'
     )
+
+
+# =============================================================================
+# Analytics Serializers
+# =============================================================================
+
+
+class EventsByStatusSerializer(serializers.Serializer):
+    """Serializer for events by status breakdown."""
+    in_progress = serializers.IntegerField(read_only=True)
+    completed = serializers.IntegerField(read_only=True)
+
+
+class LabelingItemsByStatusSerializer(serializers.Serializer):
+    """Serializer for labeling items by status breakdown."""
+    draft = serializers.IntegerField(read_only=True)
+    submitted = serializers.IntegerField(read_only=True)
+    reviewed = serializers.IntegerField(read_only=True)
+    approved = serializers.IntegerField(read_only=True)
+
+
+class LabelingItemsAnalyticsSerializer(serializers.Serializer):
+    """Serializer for labeling items analytics."""
+    total = serializers.IntegerField(read_only=True)
+    by_status = LabelingItemsByStatusSerializer(read_only=True)
+
+
+class AviationProjectAnalyticsSerializer(serializers.Serializer):
+    """
+    Serializer for aviation project analytics response.
+
+    Read-only serializer that formats analytics data for API responses.
+    Does not create or update any models.
+
+    Response structure:
+    {
+        "project_id": 1,
+        "project_type": "aviation",
+        "total_events": 10,
+        "events_by_status": {
+            "in_progress": 3,
+            "completed": 7
+        },
+        "labeling_items": {
+            "total": 25,
+            "by_status": {
+                "draft": 5,
+                "submitted": 3,
+                "reviewed": 2,
+                "approved": 15
+            }
+        }
+    }
+    """
+    project_id = serializers.IntegerField(
+        read_only=True,
+        help_text='Aviation project ID'
+    )
+    project_type = serializers.CharField(
+        read_only=True,
+        help_text='Project type (always "aviation" for this endpoint)'
+    )
+    total_events = serializers.IntegerField(
+        read_only=True,
+        help_text='Total number of events in the project'
+    )
+    events_by_status = EventsByStatusSerializer(
+        read_only=True,
+        help_text='Event completion status breakdown'
+    )
+    labeling_items = LabelingItemsAnalyticsSerializer(
+        read_only=True,
+        help_text='Labeling items analytics with status breakdown'
+    )

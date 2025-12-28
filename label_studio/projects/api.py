@@ -1050,8 +1050,43 @@ class ProjectDashboardAnalyticsAPI(APIView):
     GET /api/dashboard/analytics/
     Returns real-time analytics data for dashboard
     Optimized for frequent polling (every 10 seconds)
+
+    For aviation projects, uses aviation-specific status calculation:
+    - A task is "completed" when ALL labeling items are 'approved'
+    - A task is "in_progress" when it has ANY non-approved labeling item
     """
     permission_required = ViewClassPermission(GET=all_permissions.projects_view)
+
+    def _get_aviation_project_stats(self, project):
+        """
+        Calculate task stats for an aviation project using aviation-specific logic.
+
+        Args:
+            project: Project instance with aviation_project relation
+
+        Returns:
+            tuple: (total_tasks, completed_tasks, in_progress_tasks, pending_tasks)
+        """
+        from aviation.analytics import get_aviation_project_analytics
+
+        aviation_analytics = get_aviation_project_analytics(project.aviation_project.id)
+
+        if aviation_analytics is None:
+            # Fallback to default logic if analytics fails
+            return (
+                project.task_number or 0,
+                project.finished_task_number or 0,
+                max(0, (project.num_tasks_with_annotations or 0) - (project.finished_task_number or 0)),
+                max(0, (project.task_number or 0) - (project.num_tasks_with_annotations or 0)),
+            )
+
+        total_events = aviation_analytics['total_events']
+        completed = aviation_analytics['events_by_status']['completed']
+        in_progress = aviation_analytics['events_by_status']['in_progress']
+        # pending = events without any labeling items
+        pending = max(0, total_events - completed - in_progress)
+
+        return (total_events, completed, in_progress, pending)
 
     def get(self, request):
         from datetime import timedelta
@@ -1073,6 +1108,9 @@ class ProjectDashboardAnalyticsAPI(APIView):
         else:
             projects = Project.objects.with_counts().filter(organization=organization)
 
+        # Prefetch aviation_project relation to detect aviation projects efficiently
+        projects = projects.select_related('aviation_project')
+
         members_count = organization.users.filter(
             om_through__deleted_at__isnull=True
         ).count()
@@ -1082,10 +1120,21 @@ class ProjectDashboardAnalyticsAPI(APIView):
 
         project_ids = list(projects.values_list('id', flat=True))
 
-        daily_stats = (
+        # Check if any projects are aviation projects
+        aviation_project_ids = []
+        non_aviation_project_ids = []
+        for project in projects:
+            is_aviation = hasattr(project, 'aviation_project') and project.aviation_project is not None
+            if is_aviation:
+                aviation_project_ids.append(project.id)
+            else:
+                non_aviation_project_ids.append(project.id)
+
+        # Get daily stats from standard annotations (non-aviation projects)
+        daily_stats = list(
             Annotation.objects
             .filter(
-                project_id__in=project_ids,
+                project_id__in=non_aviation_project_ids,
                 created_at__date__gte=week_ago,
                 was_cancelled=False
             )
@@ -1094,6 +1143,28 @@ class ProjectDashboardAnalyticsAPI(APIView):
             .annotate(count=Count('id'))
             .order_by('date')
         )
+
+        # Get daily stats from LabelingItems (aviation projects)
+        if aviation_project_ids:
+            from aviation.models import LabelingItem
+            aviation_daily_stats = list(
+                LabelingItem.objects
+                .filter(
+                    event__task__project_id__in=aviation_project_ids,
+                    created_at__date__gte=week_ago,
+                )
+                .annotate(date=TruncDate('created_at'))
+                .values('date')
+                .annotate(count=Count('id'))
+                .order_by('date')
+            )
+            # Merge aviation stats into daily_stats
+            for aviation_stat in aviation_daily_stats:
+                existing = next((s for s in daily_stats if s['date'] == aviation_stat['date']), None)
+                if existing:
+                    existing['count'] += aviation_stat['count']
+                else:
+                    daily_stats.append(aviation_stat)
 
         daily_annotation_history = []
         for i in range(7):
@@ -1111,16 +1182,32 @@ class ProjectDashboardAnalyticsAPI(APIView):
 
         project_data = []
         for project in projects:
-            in_progress = max(0, (project.num_tasks_with_annotations or 0) - (project.finished_task_number or 0))
-            pending = max(0, (project.task_number or 0) - (project.num_tasks_with_annotations or 0))
+            # Check if this is an aviation project
+            is_aviation = hasattr(project, 'aviation_project') and project.aviation_project is not None
+
+            if is_aviation:
+                # Use aviation-specific status calculation
+                total_tasks, completed, in_progress, pending = self._get_aviation_project_stats(project)
+                # For aviation projects, use LabelingItem count as "annotations"
+                from aviation.models import LabelingItem
+                annotations_count = LabelingItem.objects.filter(
+                    event__task__project=project
+                ).count()
+            else:
+                # Use default Label Studio logic
+                total_tasks = project.task_number or 0
+                completed = project.finished_task_number or 0
+                in_progress = max(0, (project.num_tasks_with_annotations or 0) - completed)
+                pending = max(0, total_tasks - (project.num_tasks_with_annotations or 0))
+                annotations_count = project.total_annotations_number or 0
 
             project_data.append({
                 'id': project.id,
                 'name': project.title,
-                'annotations': project.total_annotations_number or 0,
+                'annotations': annotations_count,
                 'color': project.color or '#E1DED5',
-                'totalTasks': project.task_number or 0,
-                'completedTasks': project.finished_task_number or 0,
+                'totalTasks': total_tasks,
+                'completedTasks': completed,
                 'inProgressTasks': in_progress,
                 'pendingTasks': pending,
             })

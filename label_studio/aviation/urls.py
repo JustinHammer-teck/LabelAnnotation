@@ -19,6 +19,9 @@ urlpatterns = [
     path('api/aviation/projects/<int:pk>/export/', api.AviationExportView.as_view(), name='aviation-export'),
     path('api/aviation/projects/<int:pk>/assignment/', api.AviationProjectAssignmentAPI.as_view(), name='aviation-project-assignment'),
 
+    # Analytics Endpoints
+    path('api/aviation/projects/<int:pk>/analytics/', api.AviationProjectAnalyticsAPI.as_view(), name='project-analytics'),
+
     # Review System Endpoints
     path('api/aviation/items/<int:pk>/submit/', api.ItemSubmitAPI.as_view(), name='item-submit'),
     path('api/aviation/items/<int:pk>/approve/', api.ReviewApproveAPI.as_view(), name='item-approve'),

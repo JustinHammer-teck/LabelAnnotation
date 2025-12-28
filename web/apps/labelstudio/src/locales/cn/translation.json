@@ -51,6 +51,7 @@
       "pending": "待处理",
       "summary": "概要",
       "no_projects": "未找到项目。创建您的第一个项目开始吧！",
+      "no_annotations_yet": "暂无标注数据",
       "summary_text": "您的组织有{{totalProjects}}个活跃项目和{{totalUsers}}名团队成员。今天完成了{{dailyAnnotations}}个标注。所有项目共完成了{{totalAnnotations}}个标注，其中\"{{topProjectName}}\"以{{topProjectAnnotations}}个标注领先。"
     }
   },

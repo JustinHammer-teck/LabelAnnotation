@@ -51,6 +51,7 @@
       "pending": "Pending",
       "summary": "Summary",
       "no_projects": "No projects found. Create your first project to get started!",
+      "no_annotations_yet": "No annotations yet",
       "summary_text": "Your organization has {{totalProjects}} active projects with {{totalUsers}} team members. Today, {{dailyAnnotations}} annotations were completed. Across all projects, a total of {{totalAnnotations}} annotations have been made, with \"{{topProjectName}}\" leading with {{topProjectAnnotations}} annotations."
     }
   },
