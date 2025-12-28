@@ -1,8 +1,9 @@
-import { type FC, useState, useCallback, useId } from 'react';
+import { type FC, useState, useCallback, useId, useMemo } from 'react';
 import type { FeedbackType } from '../../types';
 import { Button } from '../common/button';
 import { Select } from '../common/select';
 import { TextArea } from '../common/text-area';
+import { useAviationTranslation } from '../../i18n';
 import styles from './inline-field-rejection.module.scss';
 
 export interface InlineFieldRejectionProps {
@@ -11,12 +12,6 @@ export interface InlineFieldRejectionProps {
   onAddFeedback: (feedback: { feedback_type: FeedbackType; feedback_comment: string }) => void;
   onCancel: () => void;
 }
-
-const FEEDBACK_TYPE_OPTIONS = [
-  { value: 'partial', label: 'Partial Issue - Field has some issues but is partially correct' },
-  { value: 'full', label: 'Rejected - Field is completely incorrect' },
-  { value: 'revision', label: 'Needs Revision - Field needs clarification or changes' },
-];
 
 /**
  * Inline UI for reviewer to add feedback on a specific field.
@@ -28,6 +23,7 @@ export const InlineFieldRejection: FC<InlineFieldRejectionProps> = ({
   onAddFeedback,
   onCancel,
 }) => {
+  const { t } = useAviationTranslation();
   const [feedbackType, setFeedbackType] = useState<FeedbackType | null>(null);
   const [feedbackComment, setFeedbackComment] = useState('');
   const [errors, setErrors] = useState<{ type?: string; comment?: string }>({});
@@ -36,22 +32,29 @@ export const InlineFieldRejection: FC<InlineFieldRejectionProps> = ({
   const typeSelectId = `${formId}-type`;
   const commentId = `${formId}-comment`;
 
+  // Build feedback type options with translations
+  const feedbackTypeOptions = useMemo(() => [
+    { value: 'partial', label: `${t('feedback.type.partial')} - ${t('feedback.type.partial_desc')}` },
+    { value: 'full', label: `${t('feedback.type.full')} - ${t('feedback.type.full_desc')}` },
+    { value: 'revision', label: `${t('feedback.type.revision')} - ${t('feedback.type.revision_desc')}` },
+  ], [t]);
+
   const validateForm = useCallback((): boolean => {
     const newErrors: { type?: string; comment?: string } = {};
 
     if (!feedbackType) {
-      newErrors.type = 'Please select a feedback type';
+      newErrors.type = t('feedback.form.required_type');
     }
 
     if (!feedbackComment.trim()) {
-      newErrors.comment = 'Please provide a comment explaining the issue';
+      newErrors.comment = t('feedback.form.required_comment');
     } else if (feedbackComment.trim().length < 10) {
-      newErrors.comment = 'Comment must be at least 10 characters';
+      newErrors.comment = t('feedback.form.min_length_comment');
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  }, [feedbackType, feedbackComment]);
+  }, [feedbackType, feedbackComment, t]);
 
   const handleSubmit = useCallback(
     (event: React.FormEvent) => {
@@ -96,40 +99,40 @@ export const InlineFieldRejection: FC<InlineFieldRejectionProps> = ({
       onKeyDown={handleKeyDown}
     >
       <div className={styles.header}>
-        <h5 className={styles.title}>Add Feedback for Field</h5>
+        <h5 className={styles.title}>{t('feedback.form.title')}</h5>
         <span className={styles.fieldLabel}>{fieldLabel}</span>
       </div>
 
       <form className={styles.form} onSubmit={handleSubmit}>
         <div className={styles.formGroup}>
           <label htmlFor={typeSelectId} className={styles.label}>
-            Feedback Type <span className={styles.required}>*</span>
+            {t('feedback.form.type_label')} <span className={styles.required}>*</span>
           </label>
           <Select
             id={typeSelectId}
             value={feedbackType}
             onChange={handleTypeChange}
-            options={FEEDBACK_TYPE_OPTIONS}
-            placeholder="Select feedback type..."
+            options={feedbackTypeOptions}
+            placeholder={t('feedback.form.type_placeholder')}
             error={errors.type}
-            aria-label="Feedback type"
+            aria-label={t('feedback.form.type_label')}
           />
         </div>
 
         <div className={styles.formGroup}>
           <label htmlFor={commentId} className={styles.label}>
-            Comment <span className={styles.required}>*</span>
+            {t('feedback.form.comment_label')} <span className={styles.required}>*</span>
           </label>
           <TextArea
             id={commentId}
             value={feedbackComment}
             onChange={handleCommentChange}
-            placeholder="Explain the issue with this field..."
+            placeholder={t('feedback.form.comment_placeholder')}
             rows={3}
             error={errors.comment}
-            aria-label="Feedback comment"
+            aria-label={t('feedback.form.comment_label')}
           />
-          <span className={styles.hint}>Minimum 10 characters</span>
+          <span className={styles.hint}>{t('feedback.form.comment_hint')}</span>
         </div>
 
         <div className={styles.actions}>
@@ -139,14 +142,14 @@ export const InlineFieldRejection: FC<InlineFieldRejectionProps> = ({
             size="small"
             onClick={onCancel}
           >
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button
             type="submit"
             variant="primary"
             size="small"
           >
-            Add Feedback
+            {t('feedback.form.submit')}
           </Button>
         </div>
       </form>

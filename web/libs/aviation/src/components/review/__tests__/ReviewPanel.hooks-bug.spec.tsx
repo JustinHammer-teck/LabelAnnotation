@@ -60,22 +60,24 @@ describe('ReviewPanel - Hooks Compliance', () => {
     }).not.toThrow();
 
     expect(screen.getByTestId('review-panel')).toBeInTheDocument();
-    expect(screen.getByLabelText('Approve submission')).toBeInTheDocument();
-    expect(screen.getByLabelText('Reject submission')).toBeInTheDocument();
-    expect(screen.getByLabelText('Request revision')).toBeInTheDocument();
+    // aria-labels now match translated button text: "Approve", "Reject", "Request Revision"
+    expect(screen.getByLabelText('Approve')).toBeInTheDocument();
+    expect(screen.getByLabelText('Reject')).toBeInTheDocument();
+    expect(screen.getByLabelText('Request Revision')).toBeInTheDocument();
   });
 
   it('should maintain stable references for callbacks across re-renders', () => {
     // Test that useCallback memoization works correctly
     const { rerender } = render(<ReviewPanel {...defaultProps} />);
 
-    const approveButton = screen.getByLabelText('Approve submission');
+    // aria-labels now match translated button text: "Approve"
+    const approveButton = screen.getByLabelText('Approve');
     const initialOnClick = (approveButton as any).onclick;
 
     // Re-render with same props
     rerender(<ReviewPanel {...defaultProps} />);
 
-    const approveButtonAfterRerender = screen.getByLabelText('Approve submission');
+    const approveButtonAfterRerender = screen.getByLabelText('Approve');
     const onClickAfterRerender = (approveButtonAfterRerender as any).onclick;
 
     // onClick should be the same reference (memoized)
@@ -177,8 +179,9 @@ describe('ReviewPanel - Hooks Compliance', () => {
     expect(screen.getByTestId('review-panel')).toBeInTheDocument();
 
     // Buttons should be disabled when callbacks are missing
-    expect(screen.getByLabelText('Approve submission')).toBeDisabled();
-    expect(screen.getByLabelText('Reject submission')).toBeDisabled();
-    expect(screen.getByLabelText('Request revision')).toBeDisabled();
+    // aria-labels now match translated button text: "Approve", "Reject", "Request Revision"
+    expect(screen.getByLabelText('Approve')).toBeDisabled();
+    expect(screen.getByLabelText('Reject')).toBeDisabled();
+    expect(screen.getByLabelText('Request Revision')).toBeDisabled();
   });
 });

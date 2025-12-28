@@ -780,6 +780,7 @@ export const AnnotationView: FC<AnnotationViewProps> = ({ eventId, projectId }) 
               labelingItemId={selectedItemId}
               currentStatus={selectedItem.status}
               userRole={userRole}
+              pendingFeedbacksCount={pendingFeedbacks.length}
               onApprove={handleApprove}
               onReject={handleReject}
               onRequestRevision={handleRequestRevision}

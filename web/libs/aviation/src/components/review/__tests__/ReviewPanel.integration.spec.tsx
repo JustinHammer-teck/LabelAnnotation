@@ -595,7 +595,7 @@ describe('ReviewPanel Integration', () => {
       );
 
       // Check all decisions are displayed
-      expect(screen.getByText('3 decisions')).toBeInTheDocument();
+      expect(screen.getByText('3 decision(s)')).toBeInTheDocument();
       // Use getAllBy since "approved" text appears in both status badge and comment
       expect(screen.getAllByText(/approved/i).length).toBeGreaterThanOrEqual(1);
       expect(screen.getByText(/revision requested/i)).toBeInTheDocument();
@@ -732,7 +732,7 @@ describe('ReviewPanel Integration', () => {
       );
 
       // Check all three decisions are displayed
-      expect(screen.getByText('3 decisions')).toBeInTheDocument();
+      expect(screen.getByText('3 decision(s)')).toBeInTheDocument();
 
       // Check the progression is visible
       expect(screen.getByText(/approved/i)).toBeInTheDocument();
@@ -910,8 +910,9 @@ describe('ReviewPanel Integration', () => {
         </Wrapper>
       );
 
-      expect(screen.getByLabelText(/approve submission/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/reject submission/i)).toBeInTheDocument();
+      // aria-labels now match translated button text: "Approve", "Reject", "Request Revision"
+      expect(screen.getByLabelText(/^approve$/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/^reject$/i)).toBeInTheDocument();
       expect(screen.getByLabelText(/request revision/i)).toBeInTheDocument();
     });
 
@@ -1152,7 +1153,8 @@ describe('ReviewPanel Integration', () => {
         </Wrapper>
       );
 
-      expect(screen.getByText('1 decision')).toBeInTheDocument();
+      // Translation uses "{{count}} decision(s)" format
+      expect(screen.getByText('1 decision(s)')).toBeInTheDocument();
     });
 
     it('should show plural "decisions" for multiple decisions', () => {
@@ -1170,7 +1172,8 @@ describe('ReviewPanel Integration', () => {
         </Wrapper>
       );
 
-      expect(screen.getByText('3 decisions')).toBeInTheDocument();
+      // Translation uses "{{count}} decision(s)" format
+      expect(screen.getByText('3 decision(s)')).toBeInTheDocument();
     });
   });
 });

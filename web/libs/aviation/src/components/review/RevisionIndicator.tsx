@@ -1,5 +1,6 @@
 import { type FC, useState, useCallback, useId } from 'react';
 import type { FieldFeedback } from '../../types';
+import { useAviationTranslation } from '../../i18n';
 import styles from './revision-indicator.module.scss';
 
 export interface RevisionIndicatorProps {
@@ -18,6 +19,7 @@ export const RevisionIndicator: FC<RevisionIndicatorProps> = ({
   feedbacks,
   onMarkResolved,
 }) => {
+  const { t } = useAviationTranslation();
   const [isResolved, setIsResolved] = useState(false);
   const [isExpanded, setIsExpanded] = useState(true);
 
@@ -56,13 +58,13 @@ export const RevisionIndicator: FC<RevisionIndicatorProps> = ({
   const getFeedbackTypeLabel = (type: string): string => {
     switch (type) {
       case 'partial':
-        return 'Partial Issue';
+        return t('feedback.type.partial');
       case 'full':
-        return 'Rejected';
+        return t('feedback.type.full');
       case 'revision':
-        return 'Needs Revision';
+        return t('feedback.type.revision');
       default:
-        return 'Feedback';
+        return t('feedback.type.revision');
     }
   };
 
@@ -92,7 +94,7 @@ export const RevisionIndicator: FC<RevisionIndicatorProps> = ({
             </svg>
           </span>
           <span className={styles.titleText}>
-            Revision Required
+            {t('review.revision.title')}
             {hasMultipleFeedbacks && (
               <span className={styles.count}>({feedbackCount} issues)</span>
             )}
@@ -129,10 +131,10 @@ export const RevisionIndicator: FC<RevisionIndicatorProps> = ({
                   className={styles.checkbox}
                   aria-describedby={`resolve-hint-${fieldName}`}
                 />
-                <span className={styles.checkboxText}>Mark as resolved</span>
+                <span className={styles.checkboxText}>{t('review.revision.mark_resolved')}</span>
               </label>
               <span id={`resolve-hint-${fieldName}`} className={styles.resolveHint}>
-                Check this after addressing all feedback for this field
+                {t('review.revision.resolve_hint')}
               </span>
             </div>
           )}

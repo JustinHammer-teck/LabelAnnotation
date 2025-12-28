@@ -1,6 +1,7 @@
 import { type FC, useState, useCallback, useMemo } from 'react';
 import { isActive, FF_AVIATION_REVIEW } from '@humansignal/core/lib/utils/feature-flags';
 import type { ReviewDecision, ReviewStatus, FieldFeedback } from '../../types/review.types';
+import { useAviationTranslation } from '../../i18n';
 import styles from './review-history.module.scss';
 
 export interface ReviewHistoryProps {
@@ -53,16 +54,16 @@ const formatFullDateTime = (dateString: string): string => {
 };
 
 /**
- * Get display label for review status
+ * Get translation key for review status
  */
-const getStatusLabel = (status: ReviewStatus): string => {
-  const labels: Record<ReviewStatus, string> = {
-    approved: 'Approved',
-    rejected_partial: 'Partially Rejected',
-    rejected_full: 'Fully Rejected',
-    revision_requested: 'Revision Requested',
+const getStatusTranslationKey = (status: ReviewStatus): string => {
+  const keys: Record<ReviewStatus, string> = {
+    approved: 'review.approved_status',
+    rejected_partial: 'review.history.partially_rejected',
+    rejected_full: 'review.history.fully_rejected',
+    revision_requested: 'review.revision_requested',
   };
-  return labels[status];
+  return keys[status];
 };
 
 /**
@@ -112,6 +113,7 @@ interface TimelineItemProps {
 }
 
 const TimelineItem: FC<TimelineItemProps> = ({ decision, isFirst, isLast }) => {
+  const { t } = useAviationTranslation();
   const [isExpanded, setIsExpanded] = useState(isFirst);
   const hasFeedbacks = decision.field_feedbacks.length > 0;
 
@@ -149,7 +151,7 @@ const TimelineItem: FC<TimelineItemProps> = ({ decision, isFirst, isLast }) => {
           aria-expanded={hasFeedbacks ? isExpanded : undefined}
         >
           <span className={`${styles.statusBadge} ${getStatusClassName(decision.status)}`}>
-            {getStatusLabel(decision.status)}
+            {t(getStatusTranslationKey(decision.status))}
           </span>
           <span className={styles.reviewer}>{decision.reviewer_name ?? `User #${decision.reviewer}`}</span>
           <span className={styles.timestamp} title={formatFullDateTime(decision.created_at)}>
@@ -175,6 +177,8 @@ export const ReviewHistory: FC<ReviewHistoryProps> = ({
   decisions,
   loading = false,
 }) => {
+  const { t } = useAviationTranslation();
+
   // Feature flag check - temporarily bypassed for development
   // TODO: Uncomment before production
   // if (!isActive(FF_AVIATION_REVIEW)) {
@@ -197,12 +201,12 @@ export const ReviewHistory: FC<ReviewHistoryProps> = ({
         data-item-id={labelingItemId}
       >
         <div className={styles.header}>
-          <h4 className={styles.title}>Review History</h4>
+          <h4 className={styles.title}>{t('review.history.title')}</h4>
         </div>
         <div className={styles.body}>
           <div className={styles.loading} role="status" aria-live="polite">
             <span className={styles.loadingSpinner} aria-hidden="true" />
-            <span>Loading review history...</span>
+            <span>{t('review.history.loading')}</span>
           </div>
         </div>
       </div>
@@ -218,10 +222,10 @@ export const ReviewHistory: FC<ReviewHistoryProps> = ({
         data-item-id={labelingItemId}
       >
         <div className={styles.header}>
-          <h4 className={styles.title}>Review History</h4>
+          <h4 className={styles.title}>{t('review.history.title')}</h4>
         </div>
         <div className={styles.body}>
-          <p className={styles.emptyState}>No review history available for this item.</p>
+          <p className={styles.emptyState}>{t('review.history.no_history')}</p>
         </div>
       </div>
     );
@@ -234,8 +238,8 @@ export const ReviewHistory: FC<ReviewHistoryProps> = ({
       data-item-id={labelingItemId}
     >
       <div className={styles.header}>
-        <h4 className={styles.title}>Review History</h4>
-        <span className={styles.count}>{sortedDecisions.length} decision{sortedDecisions.length !== 1 ? 's' : ''}</span>
+        <h4 className={styles.title}>{t('review.history.title')}</h4>
+        <span className={styles.count}>{t('review.history.decision_count', { count: sortedDecisions.length })}</span>
       </div>
       <div className={styles.body}>
         <ul className={styles.timeline} role="list" aria-label="Review decisions timeline">

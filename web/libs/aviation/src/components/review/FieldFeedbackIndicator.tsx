@@ -1,5 +1,6 @@
 import { type FC, useCallback, useState, useRef, useEffect } from 'react';
 import type { FieldFeedback, FeedbackType } from '../../types';
+import { useAviationTranslation } from '../../i18n';
 import styles from './field-feedback-indicator.module.scss';
 
 export interface FieldFeedbackIndicatorProps {
@@ -18,6 +19,7 @@ export const FieldFeedbackIndicator: FC<FieldFeedbackIndicatorProps> = ({
   feedback,
   onClick,
 }) => {
+  const { t } = useAviationTranslation();
   const [showTooltip, setShowTooltip] = useState(false);
   const indicatorRef = useRef<HTMLButtonElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
@@ -70,13 +72,13 @@ export const FieldFeedbackIndicator: FC<FieldFeedbackIndicatorProps> = ({
   const getFeedbackTypeLabel = (type: FeedbackType): string => {
     switch (type) {
       case 'partial':
-        return 'Partial Issue';
+        return t('feedback.type.partial');
       case 'full':
-        return 'Rejected';
+        return t('feedback.type.full');
       case 'revision':
-        return 'Needs Revision';
+        return t('feedback.type.revision');
       default:
-        return 'Feedback';
+        return t('feedback.type.revision');
     }
   };
 
