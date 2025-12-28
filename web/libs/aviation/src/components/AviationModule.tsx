@@ -46,6 +46,13 @@ const ProjectListPage: FC = () => {
     setDeleteConfirmOpen(true);
   }, []);
 
+  const handleSettings = useCallback(
+    (id: number) => {
+      history.push(`/aviation/projects/${id}/settings/assignment`);
+    },
+    [history]
+  );
+
   const handleDeleteConfirm = useCallback(async () => {
     if (projectToDelete !== null) {
       await deleteProject(projectToDelete);
@@ -66,6 +73,7 @@ const ProjectListPage: FC = () => {
         onSelect={handleSelect}
         onCreate={handleCreate}
         onDelete={handleDeleteRequest}
+        onSettings={handleSettings}
         onRetry={fetchProjects}
       />
       <CreateProjectModal
