@@ -1,6 +1,7 @@
 import { type FC, useCallback, useId, useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import type { ReviewableFieldName, FeedbackType } from '../../types';
+import { useAviationTranslation } from '../../i18n';
 import styles from './field-review-tooltip.module.scss';
 
 /**
@@ -68,6 +69,7 @@ export const FieldReviewTooltip: FC<FieldReviewTooltipProps> = ({
   position = 'right',
   anchorRef,
 }) => {
+  const { t } = useAviationTranslation();
   const tooltipId = useId();
   const tooltipRef = useRef<HTMLDivElement>(null);
   const [showRejectInput, setShowRejectInput] = useState(false);
@@ -210,7 +212,7 @@ export const FieldReviewTooltip: FC<FieldReviewTooltipProps> = ({
                   <path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z" />
                 </svg>
               </span>
-              <span className={styles.statusText}>Approved</span>
+              <span className={styles.statusText}>{t('review.approved_status')}</span>
             </>
           )}
           {currentStatus === 'rejected' && (
@@ -220,7 +222,7 @@ export const FieldReviewTooltip: FC<FieldReviewTooltipProps> = ({
                   <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z" />
                 </svg>
               </span>
-              <span className={styles.statusText}>Rejected</span>
+              <span className={styles.statusText}>{t('review.rejected_status')}</span>
             </>
           )}
           {currentStatus === 'revision' && (
@@ -231,7 +233,7 @@ export const FieldReviewTooltip: FC<FieldReviewTooltipProps> = ({
                   <path d="M7.002 11a1 1 0 1 1 2 0 1 1 0 0 1-2 0zM7.1 4.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 4.995z" />
                 </svg>
               </span>
-              <span className={styles.statusText}>Needs Revision</span>
+              <span className={styles.statusText}>{t('review.revision_requested')}</span>
             </>
           )}
         </div>
@@ -245,8 +247,8 @@ export const FieldReviewTooltip: FC<FieldReviewTooltipProps> = ({
             type="button"
             className={styles.clearButton}
             onClick={handleClearStatus}
-            aria-label="Clear review status"
-            title="Remove status"
+            aria-label={t('review.tooltip.remove_status')}
+            title={t('review.tooltip.remove_status')}
           >
             <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
               <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z" />
@@ -279,8 +281,8 @@ export const FieldReviewTooltip: FC<FieldReviewTooltipProps> = ({
             type="button"
             className={`${styles.actionButton} ${styles.approveButton}`}
             onClick={handleApprove}
-            aria-label={`Approve ${fieldLabel}`}
-            title="Approve"
+            aria-label={`${t('review.tooltip.approve_title')} ${fieldLabel}`}
+            title={t('review.tooltip.approve_title')}
           >
             <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
               <path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z" />
@@ -292,8 +294,8 @@ export const FieldReviewTooltip: FC<FieldReviewTooltipProps> = ({
             type="button"
             className={`${styles.actionButton} ${styles.rejectButton}`}
             onClick={handleRejectClick}
-            aria-label={`Reject ${fieldLabel}`}
-            title="Reject"
+            aria-label={`${t('review.tooltip.reject_title')} ${fieldLabel}`}
+            title={t('review.tooltip.reject_title')}
           >
             <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
               <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z" />
@@ -305,8 +307,8 @@ export const FieldReviewTooltip: FC<FieldReviewTooltipProps> = ({
             type="button"
             className={`${styles.actionButton} ${styles.revisionButton}`}
             onClick={handleRevisionClick}
-            aria-label={`Request revision for ${fieldLabel}`}
-            title="Request Revision"
+            aria-label={`${t('review.tooltip.revision_title')} ${fieldLabel}`}
+            title={t('review.tooltip.revision_title')}
           >
             <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
               <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z" />
@@ -318,9 +320,9 @@ export const FieldReviewTooltip: FC<FieldReviewTooltipProps> = ({
         <div className={styles.rejectInputContainer}>
           <div className={styles.inputHeader}>
             <span className={styles.inputLabel}>
-              {rejectMode === 'reject' ? 'Rejection Comment' : 'Revision Comment'}
+              {rejectMode === 'reject' ? t('review.tooltip.rejection_comment') : t('review.tooltip.revision_comment')}
             </span>
-            <span className={styles.inputHint}>(optional)</span>
+            <span className={styles.inputHint}>{t('review.tooltip.optional')}</span>
           </div>
           <textarea
             className={styles.commentInput}
@@ -328,12 +330,12 @@ export const FieldReviewTooltip: FC<FieldReviewTooltipProps> = ({
             onChange={(e) => setRejectComment(e.target.value)}
             placeholder={
               rejectMode === 'reject'
-                ? 'Explain why this field is incorrect...'
-                : 'What changes are needed...'
+                ? t('review.tooltip.explain_rejection')
+                : t('review.tooltip.explain_revision')
             }
             rows={2}
             autoFocus
-            aria-label={rejectMode === 'reject' ? 'Rejection comment' : 'Revision comment'}
+            aria-label={rejectMode === 'reject' ? t('review.tooltip.rejection_comment') : t('review.tooltip.revision_comment')}
           />
           <div className={styles.inputActions}>
             <button
@@ -341,14 +343,14 @@ export const FieldReviewTooltip: FC<FieldReviewTooltipProps> = ({
               className={styles.cancelButton}
               onClick={handleCancelReject}
             >
-              Cancel
+              {t('common.cancel')}
             </button>
             <button
               type="button"
               className={`${styles.confirmButton} ${rejectMode === 'reject' ? styles.confirmReject : styles.confirmRevision}`}
               onClick={handleConfirmReject}
             >
-              {rejectMode === 'reject' ? 'Reject' : 'Request Revision'}
+              {rejectMode === 'reject' ? t('review.tooltip.reject_title') : t('review.tooltip.revision_title')}
             </button>
           </div>
         </div>

@@ -22,6 +22,9 @@ import { useReview } from '../use-review.hook';
 import {
   pendingRevisionFieldsAtom,
   resolvedFieldsAtom,
+  failedItemIdsAtom,
+  currentReviewItemIdAtom,
+  EMPTY_FAILED_ITEM_IDS,
 } from '../../stores/review.store';
 import { AviationApiContext } from '../../api/context';
 import type { AviationApiClient } from '../../api/api-client';
@@ -41,16 +44,29 @@ const createMockApiClient = (): jest.Mocked<Pick<AviationApiClient, 'approveItem
 /**
  * Helper to create a Jotai provider wrapper for testing with API client.
  * Takes optional initialState to set atoms before rendering.
+ *
+ * IMPORTANT: When setting pendingRevisionFields or resolvedFields, you must also
+ * set currentReviewItemId to match the labelingItemId passed to useReview().
+ * Otherwise, the hook's useEffect will reset these atoms on first render.
  */
 const createWrapper = (
   mockApiClient?: Partial<AviationApiClient>,
   initialState?: {
     pendingRevisionFields?: ReviewableFieldName[];
     resolvedFields?: Set<ReviewableFieldName>;
+    currentReviewItemId?: number | null;
   }
 ) => {
   const store = createStore();
   const apiClient = mockApiClient ?? createMockApiClient();
+
+  // Initialize failedItemIdsAtom with empty Set (required for hook to function)
+  store.set(failedItemIdsAtom, EMPTY_FAILED_ITEM_IDS);
+
+  // Set currentReviewItemId FIRST to prevent useEffect from resetting other atoms
+  if (initialState?.currentReviewItemId !== undefined) {
+    store.set(currentReviewItemIdAtom, initialState.currentReviewItemId);
+  }
 
   // Set initial atom state before any rendering
   if (initialState?.pendingRevisionFields !== undefined) {
@@ -82,6 +98,7 @@ describe('useReview - Submission Logic', () => {
     const { Wrapper } = createWrapper(undefined, {
       pendingRevisionFields: [],
       resolvedFields: new Set(),
+      currentReviewItemId: 123,
     });
 
     const { result } = renderHook(() => useReview(123), { wrapper: Wrapper });
@@ -95,6 +112,7 @@ describe('useReview - Submission Logic', () => {
     const { Wrapper } = createWrapper(undefined, {
       pendingRevisionFields: ['threat_type', 'error_type'] as ReviewableFieldName[],
       resolvedFields: new Set(),
+      currentReviewItemId: 123,
     });
 
     const { result } = renderHook(() => useReview(123), { wrapper: Wrapper });
@@ -108,6 +126,7 @@ describe('useReview - Submission Logic', () => {
     const { Wrapper } = createWrapper(undefined, {
       pendingRevisionFields: ['threat_type', 'error_type', 'uas_type'] as ReviewableFieldName[],
       resolvedFields: new Set(['threat_type'] as ReviewableFieldName[]),
+      currentReviewItemId: 123,
     });
 
     const { result } = renderHook(() => useReview(123), { wrapper: Wrapper });
@@ -121,6 +140,7 @@ describe('useReview - Submission Logic', () => {
     const { Wrapper } = createWrapper(undefined, {
       pendingRevisionFields: ['threat_type', 'error_type'] as ReviewableFieldName[],
       resolvedFields: new Set(['threat_type', 'error_type'] as ReviewableFieldName[]),
+      currentReviewItemId: 123,
     });
 
     const { result } = renderHook(() => useReview(123), { wrapper: Wrapper });
@@ -139,6 +159,7 @@ describe('useReview - Submission Logic', () => {
         'threat_management'
       ] as ReviewableFieldName[],
       resolvedFields: new Set(['threat_type', 'uas_type'] as ReviewableFieldName[]),
+      currentReviewItemId: 123,
     });
 
     const { result } = renderHook(() => useReview(123), { wrapper: Wrapper });

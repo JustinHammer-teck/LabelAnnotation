@@ -2,18 +2,17 @@ import { render, screen, fireEvent, waitFor, within } from '@testing-library/rea
 import userEvent from '@testing-library/user-event';
 import { Provider, createStore } from 'jotai';
 import type { ReactNode } from 'react';
+
+// Mock feature flags - must be before component imports
+jest.mock('@humansignal/core/lib/utils/feature-flags', () => ({
+  isActive: jest.fn(() => true),
+  FF_AVIATION_REVIEW: 'fflag_feat_all_aviation_review_workflow_251225_long',
+}));
+
 import { ReviewPanel } from '../ReviewPanel';
 import { ReviewHistory } from '../ReviewHistory';
 import { AviationApiContext } from '../../../api/context';
 import type { AviationApiClient } from '../../../api/api-client';
-import {
-  reviewDecisionsAtom,
-  reviewLoadingAtom,
-  reviewErrorAtom,
-  pendingFieldFeedbacksAtom,
-  pendingRevisionFieldsAtom,
-  currentReviewItemIdAtom,
-} from '../../../stores/review.store';
 import type {
   ReviewDecision,
   RejectRequest,
@@ -340,6 +339,7 @@ describe('ReviewPanel Integration', () => {
             labelingItemId={123}
             currentStatus="submitted"
             userRole="admin"
+            pendingFeedbacksCount={1}
             onApprove={jest.fn()}
             onReject={onReject}
             onRequestRevision={jest.fn()}
@@ -368,6 +368,7 @@ describe('ReviewPanel Integration', () => {
             labelingItemId={123}
             currentStatus="submitted"
             userRole="admin"
+            pendingFeedbacksCount={1}
             onApprove={jest.fn()}
             onReject={onReject}
             onRequestRevision={jest.fn()}
@@ -479,6 +480,7 @@ describe('ReviewPanel Integration', () => {
             labelingItemId={123}
             currentStatus="submitted"
             userRole="admin"
+            pendingFeedbacksCount={1}
             onApprove={jest.fn()}
             onReject={jest.fn()}
             onRequestRevision={onRequestRevision}
@@ -507,6 +509,7 @@ describe('ReviewPanel Integration', () => {
             labelingItemId={123}
             currentStatus="submitted"
             userRole="admin"
+            pendingFeedbacksCount={1}
             onApprove={jest.fn()}
             onReject={jest.fn()}
             onRequestRevision={onRequestRevision}
@@ -595,7 +598,7 @@ describe('ReviewPanel Integration', () => {
       );
 
       // Check all decisions are displayed
-      expect(screen.getByText('3 decisions')).toBeInTheDocument();
+      expect(screen.getByText('3 decision(s)')).toBeInTheDocument();
       // Use getAllBy since "approved" text appears in both status badge and comment
       expect(screen.getAllByText(/approved/i).length).toBeGreaterThanOrEqual(1);
       expect(screen.getByText(/revision requested/i)).toBeInTheDocument();
@@ -732,7 +735,7 @@ describe('ReviewPanel Integration', () => {
       );
 
       // Check all three decisions are displayed
-      expect(screen.getByText('3 decisions')).toBeInTheDocument();
+      expect(screen.getByText('3 decision(s)')).toBeInTheDocument();
 
       // Check the progression is visible
       expect(screen.getByText(/approved/i)).toBeInTheDocument();
@@ -910,8 +913,9 @@ describe('ReviewPanel Integration', () => {
         </Wrapper>
       );
 
-      expect(screen.getByLabelText(/approve submission/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/reject submission/i)).toBeInTheDocument();
+      // aria-labels now match translated button text: "Approve", "Reject", "Request Revision"
+      expect(screen.getByLabelText(/^approve$/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/^reject$/i)).toBeInTheDocument();
       expect(screen.getByLabelText(/request revision/i)).toBeInTheDocument();
     });
 
@@ -1152,7 +1156,8 @@ describe('ReviewPanel Integration', () => {
         </Wrapper>
       );
 
-      expect(screen.getByText('1 decision')).toBeInTheDocument();
+      // Translation uses "{{count}} decision(s)" format
+      expect(screen.getByText('1 decision(s)')).toBeInTheDocument();
     });
 
     it('should show plural "decisions" for multiple decisions', () => {
@@ -1170,7 +1175,8 @@ describe('ReviewPanel Integration', () => {
         </Wrapper>
       );
 
-      expect(screen.getByText('3 decisions')).toBeInTheDocument();
+      // Translation uses "{{count}} decision(s)" format
+      expect(screen.getByText('3 decision(s)')).toBeInTheDocument();
     });
   });
 });

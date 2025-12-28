@@ -48,6 +48,22 @@ jest.mock('../../../../i18n', () => ({
         'training_topics.title': 'Training Topics',
         // Error
         'error.load_failed': 'Load failed: {{message}}',
+        // Common
+        'common.cancel': 'Cancel',
+        // Review tooltip translations
+        'review.tooltip.approve_title': 'Approve',
+        'review.tooltip.reject_title': 'Reject',
+        'review.tooltip.revision_title': 'Request Revision',
+        'review.tooltip.remove_status': 'Remove status',
+        'review.tooltip.rejection_comment': 'Rejection Comment',
+        'review.tooltip.revision_comment': 'Revision Comment',
+        'review.tooltip.optional': '(optional)',
+        'review.tooltip.explain_rejection': 'Explain why this field is incorrect...',
+        'review.tooltip.explain_revision': 'What changes are needed...',
+        'review.approved_status': 'Approved',
+        'review.rejected_status': 'Rejected',
+        'review.revision_requested': 'Revision Requested',
+        'review.badge.needs_revision': 'Needs Revision',
       };
       return translations[key] || key;
     },
@@ -555,7 +571,8 @@ describe('RecognitionSection - Review Integration', () => {
         expect(screen.getByTestId('field-review-tooltip-status')).toBeInTheDocument();
       });
 
-      const clearButton = screen.getByRole('button', { name: /clear review status/i });
+      // Button uses title="Remove status" from translation review.tooltip.remove_status
+      const clearButton = screen.getByTitle('Remove status');
       await user.click(clearButton);
 
       expect(mockOnClear).toHaveBeenCalledWith('threat_management');

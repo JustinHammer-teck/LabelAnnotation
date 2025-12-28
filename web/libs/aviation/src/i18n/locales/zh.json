@@ -160,7 +160,21 @@
     },
     "error": {
       "load_failed": "加载事件失败：{{message}}",
-      "retry": "重试"
+      "retry": "重试",
+      "save_failed": "保存更改失败：{{message}}",
+      "network_error": "发生网络错误。请检查您的连接。",
+      "validation_failed": "验证失败：{{details}}",
+      "permission_denied": "您没有执行此操作的权限。",
+      "item_not_found": "找不到请求的项。",
+      "concurrent_edit": "此项已被另一个用户修改。请刷新后重试。",
+      "server_error": "发生服务器错误。请稍后再试。"
+    },
+    "read_only": {
+      "mode_enabled": "只读模式",
+      "cannot_edit": "此项无法在只读模式下编辑。",
+      "view_only": "仅查看",
+      "changes_disabled": "此项已禁用更改。",
+      "contact_admin": "请联系管理员请求编辑权限。"
     },
     "coping": {
       "knowledge": "知识",
@@ -241,6 +255,103 @@
       "select_level1_first": "请先选择一级",
       "select_level2_first": "请先选择二级",
       "clear_selection": "清除选择"
+    },
+    "review": {
+      "title": "审核操作",
+      "description": "审核此提交并在下方采取操作。",
+      "approve_button": "批准",
+      "approve_loading": "批准中...",
+      "reject_button": "拒绝",
+      "reject_loading": "拒绝中...",
+      "revision_button": "请求修订",
+      "revision_loading": "请求中...",
+      "approved_status": "已批准",
+      "rejected_status": "已拒绝",
+      "revision_requested": "已请求修订",
+      "pending_feedback_count": "{{count}} 个待处理反馈",
+      "pending_feedback_count_plural": "{{count}} 个待处理反馈",
+      "no_pending_feedback": "无待处理反馈",
+      "approve_confirm": "您确定要批准此项吗？",
+      "reject_confirm": "您确定要拒绝此项吗？",
+      "revision_confirm": "您确定要请求修订吗？",
+      "action_success": "操作成功完成",
+      "tooltip": {
+        "approve_title": "批准",
+        "reject_title": "拒绝",
+        "revision_title": "请求修订",
+        "remove_status": "移除状态",
+        "rejection_comment": "拒绝原因",
+        "revision_comment": "修订原因",
+        "optional": "（可选）",
+        "explain_rejection": "说明为什么此字段不正确...",
+        "explain_revision": "需要哪些更改..."
+      },
+      "history": {
+        "title": "审核历史",
+        "no_history": "此项目没有审核历史记录。",
+        "loading": "正在加载审核历史...",
+        "decision_count": "{{count}} 个决定",
+        "partially_rejected": "部分拒绝",
+        "fully_rejected": "完全拒绝",
+        "reviewer": "审核人",
+        "requested": "请求时间"
+      },
+      "badge": {
+        "needs_revision": "需要修订",
+        "reviewer": "审核人：",
+        "requested": "请求时间：",
+        "mark_resolved": "标记为已解决"
+      },
+      "revision": {
+        "title": "需要修订",
+        "mark_resolved": "标记为已解决",
+        "resolve_hint": "处理完此字段的所有反馈后勾选此项"
+      }
+    },
+    "feedback": {
+      "type": {
+        "partial": "部分问题",
+        "full": "已拒绝",
+        "revision": "需要修订",
+        "partial_desc": "字段存在部分问题但部分正确",
+        "full_desc": "字段完全错误",
+        "revision_desc": "字段需要澄清或更改"
+      },
+      "form": {
+        "title": "添加字段反馈",
+        "type_label": "反馈类型",
+        "type_placeholder": "选择反馈类型...",
+        "comment_label": "评论",
+        "comment_placeholder": "说明此字段的问题...",
+        "comment_hint": "最少10个字符",
+        "required_type": "请选择反馈类型",
+        "required_comment": "请提供说明问题的评论",
+        "min_length_comment": "评论至少需要10个字符",
+        "submit": "添加反馈"
+      }
+    },
+    "feedback_modal": {
+      "title": "需要字段反馈",
+      "message": "要{{action}}此项，您必须首先对至少一个字段添加反馈。",
+      "hint": "将鼠标悬停在任何字段上，并使用审核工具提示在继续之前添加反馈。",
+      "action_reject": "拒绝",
+      "action_revision": "请求修订"
+    },
+    "assignment": {
+      "title": "分配设置",
+      "mode": "分配模式",
+      "mode_manual": "手动分配",
+      "mode_auto": "自动分配",
+      "mode_description": "选择任务如何分配给标注员",
+      "assign_to": "分配给",
+      "assigned_users": "已分配用户",
+      "no_users_assigned": "未分配用户",
+      "assign_user": "分配用户",
+      "remove_assignment": "移除分配",
+      "assignment_rules": "分配规则",
+      "max_assignments": "最大分配数",
+      "overlap_count": "重叠计数",
+      "overlap_description": "每个任务的标注员数量"
     }
   }
 }

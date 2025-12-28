@@ -160,7 +160,21 @@
     },
     "error": {
       "load_failed": "Failed to load event: {{message}}",
-      "retry": "Retry"
+      "retry": "Retry",
+      "save_failed": "Failed to save changes: {{message}}",
+      "network_error": "Network error occurred. Please check your connection.",
+      "validation_failed": "Validation failed: {{details}}",
+      "permission_denied": "You do not have permission to perform this action.",
+      "item_not_found": "The requested item could not be found.",
+      "concurrent_edit": "This item was modified by another user. Please refresh and try again.",
+      "server_error": "A server error occurred. Please try again later."
+    },
+    "read_only": {
+      "mode_enabled": "Read-Only Mode",
+      "cannot_edit": "This item cannot be edited in read-only mode.",
+      "view_only": "View Only",
+      "changes_disabled": "Changes are disabled for this item.",
+      "contact_admin": "Contact your administrator to request edit access."
     },
     "coping": {
       "knowledge": "Knowledge",
@@ -241,6 +255,103 @@
       "select_level1_first": "Select Level 1 first",
       "select_level2_first": "Select Level 2 first",
       "clear_selection": "Clear selection"
+    },
+    "review": {
+      "title": "Review Actions",
+      "description": "Review this submission and take an action below.",
+      "approve_button": "Approve",
+      "approve_loading": "Approving...",
+      "reject_button": "Reject",
+      "reject_loading": "Rejecting...",
+      "revision_button": "Request Revision",
+      "revision_loading": "Requesting...",
+      "approved_status": "Approved",
+      "rejected_status": "Rejected",
+      "revision_requested": "Revision Requested",
+      "pending_feedback_count": "{{count}} pending feedback",
+      "pending_feedback_count_plural": "{{count}} pending feedbacks",
+      "no_pending_feedback": "No pending feedback",
+      "approve_confirm": "Are you sure you want to approve this item?",
+      "reject_confirm": "Are you sure you want to reject this item?",
+      "revision_confirm": "Are you sure you want to request revision?",
+      "action_success": "Action completed successfully",
+      "tooltip": {
+        "approve_title": "Approve",
+        "reject_title": "Reject",
+        "revision_title": "Request Revision",
+        "remove_status": "Remove status",
+        "rejection_comment": "Rejection Comment",
+        "revision_comment": "Revision Comment",
+        "optional": "(optional)",
+        "explain_rejection": "Explain why this field is incorrect...",
+        "explain_revision": "What changes are needed..."
+      },
+      "history": {
+        "title": "Review History",
+        "no_history": "No review history available for this item.",
+        "loading": "Loading review history...",
+        "decision_count": "{{count}} decision(s)",
+        "partially_rejected": "Partially Rejected",
+        "fully_rejected": "Fully Rejected",
+        "reviewer": "Reviewer",
+        "requested": "Requested"
+      },
+      "badge": {
+        "needs_revision": "Needs Revision",
+        "reviewer": "Reviewer:",
+        "requested": "Requested:",
+        "mark_resolved": "Mark as Resolved"
+      },
+      "revision": {
+        "title": "Revision Required",
+        "mark_resolved": "Mark as resolved",
+        "resolve_hint": "Check this after addressing all feedback for this field"
+      }
+    },
+    "feedback": {
+      "type": {
+        "partial": "Partial Issue",
+        "full": "Rejected",
+        "revision": "Needs Revision",
+        "partial_desc": "Field has some issues but is partially correct",
+        "full_desc": "Field is completely incorrect",
+        "revision_desc": "Field needs clarification or changes"
+      },
+      "form": {
+        "title": "Add Feedback for Field",
+        "type_label": "Feedback Type",
+        "type_placeholder": "Select feedback type...",
+        "comment_label": "Comment",
+        "comment_placeholder": "Explain the issue with this field...",
+        "comment_hint": "Minimum 10 characters",
+        "required_type": "Please select a feedback type",
+        "required_comment": "Please provide a comment explaining the issue",
+        "min_length_comment": "Comment must be at least 10 characters",
+        "submit": "Add Feedback"
+      }
+    },
+    "feedback_modal": {
+      "title": "Field Feedback Required",
+      "message": "To {{action}} this item, you must first add feedback on at least one field.",
+      "hint": "Hover over any field and use the review tooltip to add feedback before proceeding.",
+      "action_reject": "reject",
+      "action_revision": "request revision on"
+    },
+    "assignment": {
+      "title": "Assignment Settings",
+      "mode": "Assignment Mode",
+      "mode_manual": "Manual Assignment",
+      "mode_auto": "Auto Assignment",
+      "mode_description": "Choose how tasks are assigned to annotators",
+      "assign_to": "Assign To",
+      "assigned_users": "Assigned Users",
+      "no_users_assigned": "No users assigned",
+      "assign_user": "Assign User",
+      "remove_assignment": "Remove Assignment",
+      "assignment_rules": "Assignment Rules",
+      "max_assignments": "Maximum Assignments",
+      "overlap_count": "Overlap Count",
+      "overlap_description": "Number of annotators per task"
     }
   }
 }

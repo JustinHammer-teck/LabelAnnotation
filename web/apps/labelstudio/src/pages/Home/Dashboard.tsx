@@ -164,7 +164,17 @@ export const Dashboard = () => {
         <SimpleCard title={t("home_page.dashboard.daily_annotations_history")}>
           <div className="p-4">
             <div className="h-64">
-              <Bar data={barChartData} options={barChartOptions} />
+              {analyticsData.dailyAnnotationHistory.some(d => d.count > 0) ? (
+                <Bar
+                  key={`bar-${analyticsData.dailyAnnotationHistory.length}-${analyticsData.dailyAnnotations}`}
+                  data={barChartData}
+                  options={barChartOptions}
+                />
+              ) : (
+                <div className="h-full flex items-center justify-center text-neutral-content-subtler">
+                  {t("home_page.dashboard.no_annotations_yet")}
+                </div>
+              )}
             </div>
           </div>
         </SimpleCard>
@@ -172,7 +182,17 @@ export const Dashboard = () => {
         <SimpleCard title={t("home_page.dashboard.annotations_by_project")}>
           <div className="p-4">
             <div className="h-64 flex items-center justify-center">
-              <Pie data={pieChartData} options={pieChartOptions} />
+              {totalAnnotations > 0 ? (
+                <Pie
+                  key={`pie-${analyticsData.projectAnnotations.length}-${totalAnnotations}`}
+                  data={pieChartData}
+                  options={pieChartOptions}
+                />
+              ) : (
+                <div className="text-neutral-content-subtler">
+                  {t("home_page.dashboard.no_annotations_yet")}
+                </div>
+              )}
             </div>
           </div>
         </SimpleCard>
