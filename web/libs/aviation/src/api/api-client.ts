@@ -16,6 +16,8 @@ import type {
   RejectRequest,
   RevisionRequest,
   ReviewHistoryResponse,
+  AviationProjectAssignment,
+  ToggleAssignmentPayload,
 } from '../types';
 
 export interface AviationApiClient {
@@ -65,4 +67,27 @@ export interface AviationApiClient {
   requestRevision(itemId: number, request: RevisionRequest): Promise<ReviewDecision>;
   resubmitItem(itemId: number, comment?: string): Promise<LabelingItem>;
   getReviewHistory(itemId: number): Promise<ReviewHistoryResponse>;
+
+  // Assignment endpoints
+  /**
+   * Get user assignments for an aviation project.
+   * Returns all users with their assignment status for the project.
+   *
+   * @param projectId - Aviation project ID
+   * @returns Array of user assignments with permission status
+   */
+  getProjectAssignments(projectId: number): Promise<AviationProjectAssignment[]>;
+
+  /**
+   * Toggle user assignments for an aviation project.
+   * Assigns or unassigns users based on the payload.
+   *
+   * @param projectId - Aviation project ID
+   * @param payload - Assignment changes to apply
+   * @returns Promise that resolves when assignments are updated
+   */
+  toggleProjectAssignment(
+    projectId: number,
+    payload: ToggleAssignmentPayload
+  ): Promise<void>;
 }

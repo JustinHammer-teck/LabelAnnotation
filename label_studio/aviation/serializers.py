@@ -454,3 +454,50 @@ class ReviewHistoryResponseSerializer(serializers.Serializer):
         many=True,
         help_text='List of all review decisions for this item'
     )
+
+
+# =============================================================================
+# Assignment Serializers
+# =============================================================================
+
+
+class AviationProjectUserPermissionSerializer(serializers.Serializer):
+    """
+    Serializes a User with a dynamic 'has_permission' field for assignment status.
+
+    Requires 'aviation_project' to be passed in the serializer context.
+    Example:
+    context = {
+        'aviation_project': aviation_project_instance,
+    }
+    """
+    user_id = serializers.IntegerField(source='id', read_only=True)
+    user_email = serializers.EmailField(source='email', read_only=True)
+    has_permission = serializers.SerializerMethodField()
+
+    def get_has_permission(self, user_obj):
+        """
+        Checks if the user has the assigned_to_aviation_project permission.
+        """
+        aviation_project = self.context.get('aviation_project')
+        if not aviation_project:
+            return False
+        return user_obj.has_perm('aviation.assigned_to_aviation_project', aviation_project)
+
+
+class AviationAssignmentToggleSerializer(serializers.Serializer):
+    """
+    Serializer for toggling user assignments to an AviationProject.
+
+    Expects a list of user assignment changes:
+    {
+        "users": [
+            {"user_id": 1, "has_permission": true},
+            {"user_id": 2, "has_permission": false}
+        ]
+    }
+    """
+    users = serializers.ListField(
+        child=serializers.DictField(),
+        help_text='List of user assignment changes with user_id and has_permission'
+    )

@@ -11,6 +11,16 @@ Permission Matrix:
 | Manager    | Read-only | Read-only  | Read-only  | Read-only  |
 | Researcher | Read-only | Read-only  | Read-only  | Read-only  |
 | Admin      | Full      | Full       | Full       | Full       |
+
+Assignment Permission Matrix:
+| Role       | Can Assign | Can View Assignments |
+|------------|------------|---------------------|
+| Annotator  | No         | No                  |
+| Manager    | Yes*       | Yes                 |
+| Researcher | Yes*       | Yes                 |
+| Admin      | Yes        | Yes                 |
+
+* Requires object-level assign_aviation_project permission
 """
 import logging
 
@@ -299,3 +309,76 @@ class CanCreateLabelingItem(permissions.BasePermission):
 
         # Fallback: deny access
         return False
+
+
+# Roles that can assign users to aviation projects
+ASSIGNMENT_ROLES = ('admin', 'manager', 'researcher')
+
+
+class CanAssignAviationProject(permissions.BasePermission):
+    """
+    Permission class for assigning users to aviation projects.
+
+    Managers, Researchers, and Admins can assign users to projects.
+    Annotators cannot assign users.
+
+    For POST requests, also checks object-level assign_aviation_project permission.
+    GET requests are allowed for users in ASSIGNMENT_ROLES.
+    """
+
+    message = "You do not have permission to manage project assignments."
+
+    def has_permission(self, request, view):
+        """
+        Check if user has general permission to access the view.
+
+        GET requests allowed for assignment roles.
+        POST requests require further object-level permission check.
+        """
+        if not request.user or not request.user.is_authenticated:
+            return False
+
+        # Admin always has access
+        if request.user.is_superuser:
+            return True
+
+        # Check if user is in assignment roles
+        user_groups = set(request.user.groups.values_list('name', flat=True))
+        is_assignment_role = any(
+            role.title() in user_groups for role in ASSIGNMENT_ROLES
+        )
+
+        if not is_assignment_role:
+            self.message = (
+                "Only managers, researchers, and admins can manage project assignments."
+            )
+            return False
+
+        return True
+
+    def has_object_permission(self, request, view, obj):
+        """
+        Check if user has object-level permission on the specific AviationProject.
+
+        For POST requests, verifies assign_aviation_project permission.
+        GET requests are allowed if has_permission passed.
+        """
+        # GET requests don't require object-level permission
+        if request.method in permissions.SAFE_METHODS:
+            return True
+
+        # Admin always has access
+        if request.user.is_superuser:
+            return True
+
+        # Check object-level permission for POST
+        has_assign_perm = request.user.has_perm(
+            'aviation.assign_aviation_project', obj
+        )
+
+        if not has_assign_perm:
+            self.message = (
+                "You do not have permission to assign users to this project."
+            )
+
+        return has_assign_perm

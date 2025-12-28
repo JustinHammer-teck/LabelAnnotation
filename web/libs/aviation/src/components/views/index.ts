@@ -9,3 +9,6 @@ export type { AnnotationViewProps } from './AnnotationView';
 
 export { CreateProjectModal } from './CreateProjectModal';
 export type { CreateProjectModalProps } from './CreateProjectModal';
+
+export { ProjectAssignmentSettings } from './ProjectAssignmentSettings';
+export type { ProjectAssignmentSettingsProps } from './ProjectAssignmentSettings';
