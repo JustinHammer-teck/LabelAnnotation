@@ -8,6 +8,7 @@ export interface ProjectListViewProps {
   onSelect: (id: number) => void;
   onCreate: () => void;
   onDelete?: (id: number) => void;
+  onSettings?: (id: number) => void;
   onRetry?: () => void;
   loading?: boolean;
   error?: string | null;
@@ -18,6 +19,7 @@ export const ProjectListView: FC<ProjectListViewProps> = ({
   onSelect,
   onCreate,
   onDelete,
+  onSettings,
   onRetry,
   loading = false,
   error = null,
@@ -28,6 +30,14 @@ export const ProjectListView: FC<ProjectListViewProps> = ({
       onDelete?.(id);
     },
     [onDelete]
+  );
+
+  const handleSettingsClick = useCallback(
+    (e: MouseEvent, id: number) => {
+      e.stopPropagation();
+      onSettings?.(id);
+    },
+    [onSettings]
   );
 
   const columns: TableColumn<AviationProject>[] = useMemo(
@@ -60,34 +70,51 @@ export const ProjectListView: FC<ProjectListViewProps> = ({
           return date.toLocaleDateString();
         },
       },
-      ...(onDelete
+      ...(onDelete || onSettings
         ? [
             {
               key: 'actions',
               title: 'Actions',
-              width: 100,
+              width: 140,
               render: (_: unknown, record: AviationProject) => (
-                <button
-                  type="button"
-                  className={styles.deleteButton}
-                  onClick={(e) => handleDeleteClick(e, record.id)}
-                  aria-label="Delete project"
-                >
-                  <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
-                    <path
-                      d="M3 4h8M5.5 4V3a1 1 0 011-1h1a1 1 0 011 1v1M10 4v7a1 1 0 01-1 1H5a1 1 0 01-1-1V4"
-                      stroke="currentColor"
-                      strokeWidth="1.2"
-                      fill="none"
-                    />
-                  </svg>
-                </button>
+                <div className={styles.actionsCell}>
+                  {onSettings && (
+                    <button
+                      type="button"
+                      className={styles.settingsButton}
+                      onClick={(e) => handleSettingsClick(e, record.id)}
+                      aria-label="Project settings"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                        <path d="M7 9a2 2 0 100-4 2 2 0 000 4z" stroke="currentColor" strokeWidth="1.2"/>
+                        <path d="M11.4 8.6l.9.5c.2.1.3.4.2.6l-.9 1.5c-.1.2-.4.3-.6.2l-.9-.5c-.4.3-.8.5-1.3.6l-.1 1c0 .3-.2.5-.5.5H6.8c-.3 0-.5-.2-.5-.5l-.1-1c-.5-.1-.9-.3-1.3-.6l-.9.5c-.2.1-.5 0-.6-.2l-.9-1.5c-.1-.2 0-.5.2-.6l.9-.5c0-.2-.1-.4-.1-.6s0-.4.1-.6l-.9-.5c-.2-.1-.3-.4-.2-.6l.9-1.5c.1-.2.4-.3.6-.2l.9.5c.4-.3.8-.5 1.3-.6l.1-1c0-.3.2-.5.5-.5h1.4c.3 0 .5.2.5.5l.1 1c.5.1.9.3 1.3.6l.9-.5c.2-.1.5 0 .6.2l.9 1.5c.1.2 0 .5-.2.6l-.9.5c0 .2.1.4.1.6s0 .4-.1.6z" stroke="currentColor" strokeWidth="1.2"/>
+                      </svg>
+                    </button>
+                  )}
+                  {onDelete && (
+                    <button
+                      type="button"
+                      className={styles.deleteButton}
+                      onClick={(e) => handleDeleteClick(e, record.id)}
+                      aria-label="Delete project"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
+                        <path
+                          d="M3 4h8M5.5 4V3a1 1 0 011-1h1a1 1 0 011 1v1M10 4v7a1 1 0 01-1 1H5a1 1 0 01-1-1V4"
+                          stroke="currentColor"
+                          strokeWidth="1.2"
+                          fill="none"
+                        />
+                      </svg>
+                    </button>
+                  )}
+                </div>
               ),
             },
           ]
         : []),
     ],
-    [onDelete, handleDeleteClick]
+    [onDelete, onSettings, handleDeleteClick, handleSettingsClick]
   );
 
   const emptyContent: ReactNode = (

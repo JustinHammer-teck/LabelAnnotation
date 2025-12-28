@@ -72,6 +72,37 @@
   color: $aviation-text-muted;
 }
 
+.actionsCell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.settingsButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: $aviation-border-radius;
+  color: $aviation-text-muted;
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s;
+
+  &:hover {
+    background-color: rgba(59, 130, 246, 0.1);
+    color: #3b82f6;
+  }
+
+  &:focus {
+    outline: 2px solid rgba(59, 130, 246, 0.3);
+    outline-offset: 2px;
+  }
+}
+
 .deleteButton {
   display: flex;
   align-items: center;
