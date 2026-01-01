@@ -134,7 +134,7 @@ const EventList = ({ filteredEvents, hasMore, loadMore, loading }) => {
             <Table
                 dataSource={filteredEvents}
                 columns={columns}
-                rowKey={(record, index) => record.id || `${record.eventId}-${index}`}
+                rowKey={(record) => record.id || record.eventId || record.基本信息?.事件编号}
                 size="small"
                 pagination={isServerSideMode ? false : { pageSize: 10 }}
             />
