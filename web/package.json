@@ -70,7 +70,10 @@
     "d3": "^5.16.0",
     "d3-color": "3.1.0",
     "date-fns": "^2.20.1",
+    "dayjs": "^1.11.10",
     "deep-equal": "^2.0.5",
+    "echarts": "^6.0.0",
+    "echarts-for-react": "^3.0.5",
     "emoji-regex": "^7.0.3",
     "fft.js": "^4.0.4",
     "history": "^4.10.1",
@@ -118,6 +121,7 @@
     "tailwind-merge": "^2.6.0",
     "wavesurfer.js": "^6.0.1",
     "webfft": "^1.0.3",
+    "xlsx": "^0.18.5",
     "xpath-range": "^1.1.1",
     "zod": "^3.22.4"
   },
