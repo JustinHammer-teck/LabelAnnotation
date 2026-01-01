@@ -1,87 +1,74 @@
 # Progress Report
 
-**Date:** 2025-12-28
-**Branch:** feature/color-theme-migration
-**Scope:** aviation-project-assignment - Phase 8 Complete (FEATURE COMPLETE)
+**Date:** 2026-01-01
+**Branch:** feature/aviation-settings-nav
+**Scope:** General Project Progress
 **Author:** Claude Code
 
 ## Summary
 
-The aviation-project-assignment feature is now FULLY COMPLETE. Phase 8 (Integration Testing) has been successfully implemented with 12 end-to-end integration tests covering the complete assignment workflow, multi-project scenarios, performance benchmarks, and edge cases. All 8 phases are now complete with 155 total tests passing (72 backend + 83 frontend).
+Aviation analytics module significantly expanded with new dashboard features, organization-wide analytics endpoints, and full i18n support. Session focused on debugging and fixing critical runtime errors in the DataAnalysis/EventList components and Django URL routing issues. All blocking errors resolved - analytics page now functional.
 
 ## Status Overview
 
 | Area | Status | Notes |
 |------|--------|-------|
-| Phase 1: Backend Permissions | [COMPLETE] | 19 tests passing |
-| Phase 2: Backend API Endpoint | [COMPLETE] | 23 tests passing |
-| Phase 3: Backend Filtering | [COMPLETE] | 18 tests passing |
-| Phase 4: Frontend Types | [COMPLETE] | 29 tests passing |
-| Phase 5: Frontend API Client | [COMPLETE] | 19 tests passing |
-| Phase 6: Frontend Store/Hook | [COMPLETE] | 17 tests passing |
-| Phase 7: Frontend UI | [COMPLETE] | 18 tests passing |
-| Phase 8: Integration Tests | [COMPLETE] | 12 tests passing |
+| Aviation Analytics API | [COMPLETE] | Organization-wide endpoints functional |
+| LabelPage Integration | [COMPLETE] | AviationApiProvider wired correctly |
+| URL Routing | [COMPLETE] | Analytics routes fixed |
+| EventList Component | [COMPLETE] | All runtime errors resolved |
+| i18n Support | [COMPLETE] | Full aviation review workflow translated |
+| Dashboard Charts | [COMPLETE] | Aviation-specific analytics added |
 
 ## Key Accomplishments
 
-- [COMPLETE] Created integration test file `test_assignment_integration.py` (12 tests)
-- [COMPLETE] End-to-end assignment lifecycle test (assign, verify, revoke, verify)
-- [COMPLETE] Bulk assignment test (multiple users in one request)
-- [COMPLETE] Permission enforcement test (annotators cannot modify assignments)
-- [COMPLETE] Multi-project filtering test (annotators see only assigned projects)
-- [COMPLETE] Manager visibility test (managers see all projects)
-- [COMPLETE] Performance benchmarks (100 users < 2s, 50 bulk assigns < 5s)
-- [COMPLETE] Edge case tests (idempotent operations, mixed assign/revoke)
-- [COMPLETE] Auto-mock for Redis notifications in test environment
+- [COMPLETE] Add aviation-specific dashboard analytics for charts (1e7b688)
+- [COMPLETE] Add full i18n support for aviation review workflow (d904ecf)
+- [COMPLETE] Add project settings navigation to aviation project list (300614f)
+- [COMPLETE] Fix AviationApiContext not provided error in LabelPage.tsx
+- [COMPLETE] Fix Django URL routing - analytics endpoints now matched before router ViewSet patterns
+- [COMPLETE] Fix EventList Modal deprecation (`visible` → `open`)
+- [COMPLETE] Fix EventList duplicate React key warning with index fallback
+- [COMPLETE] Fix EventList TypeError - added `safeValue()` helper for object/array/string handling
 
 ## Current Work
 
-- [COMPLETE] All 8 phases of aviation-project-assignment feature
+- [IN-PROGRESS] Aviation analytics integration testing
+- [TODO] Clean up uncommitted test files
+- [TODO] Review analytics filter functionality
 
 ## Blockers & Risks
 
-- [INFO] No blockers - Feature is complete
-- [INFO] 32 unrelated test failures in RevisionBadge/use-review tests (pre-existing, not caused by this feature)
-- [INFO] All 155 assignment-related tests pass across backend and frontend
+- [RISK] Multiple untracked test files in aviation module need organization
+- [RISK] Data format inconsistency (fields returned as `{value: "x"}` objects vs strings)
 
 ## Next Steps
 
-- [ACTION] Commit all assignment feature changes
-- [ACTION] Create pull request for feature review
-- [ACTION] Prepare deployment documentation
-- [ACTION] Consider addressing pre-existing RevisionBadge test failures
-
-## Files Created (Phase 8)
-
-| File | Changes |
-|------|---------|
-| `label_studio/aviation/tests/test_assignment_integration.py` | New file (~330 lines, 12 tests) |
+- [ACTION] Commit current fixes to LabelPage.tsx, urls.py, and EventList.js
+- [ACTION] Verify analytics data loading correctly in production-like environment
+- [ACTION] Review and commit new test files or add to .gitignore
+- [ACTION] Address remaining console warnings if any
 
 ## Metrics
 
-- Phases completed: 8/8 (100%)
-- Backend assignment tests: 72 passing
-- Frontend assignment tests: 83 passing
-- Total assignment tests: 155 passing
-- Integration test categories: 4 (Workflow, Multi-Project, Performance, Edge Cases)
-- Performance benchmarks: All targets met
+- Commits this session: 0 (uncommitted fixes)
+- Files modified: 19 tracked + 17 untracked
+- Lines changed: +1,504 / -68
 
-## Test Coverage Summary
+## Session Details
 
-| Test Category | Count | Status |
-|---------------|-------|--------|
-| End-to-End Workflow | 3 | PASS |
-| Multi-Project Scenarios | 2 | PASS |
-| Performance Benchmarks | 3 | PASS |
-| Edge Cases | 4 | PASS |
-| **Total Integration** | **12** | **PASS** |
+### Files Modified This Session
 
-## Feature Summary
+| File | Change |
+|------|--------|
+| `web/apps/labelstudio/src/pages/Label/LabelPage.tsx` | Added AviationApiProvider wrapper |
+| `label_studio/aviation/urls.py` | Reordered URL patterns for correct matching |
+| `web/libs/label/src/features/data-analysis/components/EventList.js` | Fixed Modal, keys, object rendering |
 
-The aviation-project-assignment feature enables:
-1. Managers/Researchers to assign Annotators to specific Aviation projects
-2. Annotators see ONLY assigned projects in project list
-3. Assignment management UI in project settings
-4. Audit logs and notifications for assignments
-5. Django Guardian object-level permissions
-6. Full test coverage with TDD approach
+### Technical Fixes Applied
+
+1. **AviationApiContext Error**: LabelPage now wraps DataAnalysis with `AviationApiProvider` and creates API client via `useMemo(() => createDefaultApiClient(), [])`
+
+2. **URL Routing 404**: Moved `/api/aviation/events/analytics/` before `include(router.urls)` to prevent "analytics" being captured as `<pk>`
+
+3. **EventList Robustness**: Added `safeValue()` helper to handle mixed data formats (objects with `{value}` key, arrays, strings, null)
