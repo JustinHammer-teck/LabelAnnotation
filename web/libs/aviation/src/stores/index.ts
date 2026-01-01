@@ -7,3 +7,4 @@ export * from './performances.store';
 export * from './language.store';
 export * from './review.store';
 export * from './assignment.store';
+export * from './analytics.store';

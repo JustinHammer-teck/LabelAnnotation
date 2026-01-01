@@ -17,3 +17,4 @@ export * from './use-can-review-items.hook';
 export * from './use-can-edit-item.hook';
 export * from './use-api-error-toast.hook';
 export * from './use-project-assignments.hook';
+export * from './use-analytics.hook';
