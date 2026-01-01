@@ -15,13 +15,21 @@ Usage:
 
     # Get core project analytics using Project.id
     analytics = get_core_project_analytics(project_id=42)
+
+    # Get filtered events queryset for analytics
+    from aviation.analytics import get_filtered_analytics_queryset
+    queryset = get_filtered_analytics_queryset(aviation_project_id=1, filters={
+        'date_start': date(2023, 1, 1),
+        'aircraft': ['A320'],
+    })
 """
 import logging
 from typing import Any, Dict, Optional, TypedDict
 
-from django.db.models import Case, Count, Exists, IntegerField, OuterRef, Q, When
+from django.db.models import Case, Count, Exists, IntegerField, OuterRef, Q, QuerySet, When
 
 from aviation.models import AviationProject, AviationEvent, LabelingItem
+from aviation.filters import apply_all_filters
 from projects.models import Project
 from tasks.models import Task, Annotation
 
@@ -233,3 +241,72 @@ def get_core_project_analytics(project_id: int) -> Optional[CoreAnalytics]:
         'finished_task_number': finished_task_number,
         'in_progress_tasks': in_progress_tasks,
     }
+
+
+def get_filtered_analytics_queryset(
+    aviation_project_id: int,
+    filters: Optional[Dict[str, Any]] = None,
+) -> Optional[QuerySet[AviationEvent]]:
+    """
+    Get filtered events queryset for analytics calculations.
+
+    Returns a queryset of AviationEvent objects filtered by the provided
+    filter parameters. This is the foundation for filtered analytics
+    calculations in Phase 2 API.
+
+    Args:
+        aviation_project_id: The AviationProject.id (not Project.id).
+            Important: This is the aviation wrapper ID, not the Label Studio
+            Project.id. See aviation/CLAUDE.md for ID conventions.
+        filters: Dictionary containing filter parameters. See apply_all_filters
+            for supported filter types:
+            - date_start, date_end: Date range
+            - aircraft: List of aircraft types
+            - airport: Single airport code
+            - event_types: List of event types
+            - flight_phases: List of flight phases
+            - threat_l1/l2/l3: Threat hierarchy codes
+            - error_l1/l2/l3: Error hierarchy codes
+            - uas_l1/l2/l3: UAS hierarchy codes
+            - training_topics: List of training topics
+            - competencies: List of competency codes
+
+    Returns:
+        Filtered QuerySet of AviationEvent objects, or None if the
+        aviation project is not found.
+
+    Example:
+        >>> queryset = get_filtered_analytics_queryset(1, {
+        ...     'date_start': date(2023, 1, 1),
+        ...     'aircraft': ['A320'],
+        ...     'airport': 'KJFK',
+        ... })
+        >>> queryset.count()
+        42
+
+    Note:
+        This function optimizes queries with select_related and prefetch_related
+        for common access patterns in analytics calculations.
+    """
+    try:
+        aviation_project = AviationProject.objects.get(pk=aviation_project_id)
+    except AviationProject.DoesNotExist:
+        logger.debug(f'Aviation project not found: {aviation_project_id}')
+        return None
+
+    # Base queryset: all events for this project
+    queryset = AviationEvent.objects.filter(
+        task__project=aviation_project.project
+    )
+
+    # Optimize with prefetch for common analytics access patterns
+    queryset = queryset.select_related('task').prefetch_related(
+        'labeling_items',
+        'result_performances',
+    )
+
+    # Apply filters if provided
+    if filters:
+        queryset = apply_all_filters(queryset, filters)
+
+    return queryset

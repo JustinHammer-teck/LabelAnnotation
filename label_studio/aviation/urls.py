@@ -14,13 +14,23 @@ router.register(r'performances', api.ResultPerformanceViewSet, basename='aviatio
 router.register(r'item-performances', api.LabelingItemPerformanceViewSet, basename='aviation-item-performance')
 
 urlpatterns = [
+    # Analytics Endpoints (organization-wide, all projects)
+    # NOTE: These must come BEFORE router.urls to prevent 'analytics' being captured as <pk>
+    path('api/aviation/events/analytics/', api.AllEventsAnalyticsAPI.as_view(), name='all-events-analytics'),
+    path('api/aviation/filter-options/', api.AllFilterOptionsAPI.as_view(), name='all-filter-options'),
+
+    # Router URLs (ViewSets)
     path('api/aviation/', include(router.urls)),
+
+    # Project-specific endpoints
     path('api/aviation/projects/<int:pk>/import-excel/', api.AviationExcelUploadView.as_view(), name='aviation-excel-upload'),
     path('api/aviation/projects/<int:pk>/export/', api.AviationExportView.as_view(), name='aviation-export'),
     path('api/aviation/projects/<int:pk>/assignment/', api.AviationProjectAssignmentAPI.as_view(), name='aviation-project-assignment'),
 
-    # Analytics Endpoints
+    # Analytics Endpoints (per-project)
     path('api/aviation/projects/<int:pk>/analytics/', api.AviationProjectAnalyticsAPI.as_view(), name='project-analytics'),
+    path('api/aviation/projects/<int:pk>/events/analytics/', api.AviationProjectEventsAnalyticsAPI.as_view(), name='project-events-analytics'),
+    path('api/aviation/projects/<int:pk>/filter-options/', api.FilterOptionsAPI.as_view(), name='project-filter-options'),
 
     # Review System Endpoints
     path('api/aviation/items/<int:pk>/submit/', api.ItemSubmitAPI.as_view(), name='item-submit'),
