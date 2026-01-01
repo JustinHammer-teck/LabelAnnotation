@@ -18,6 +18,12 @@
  * import { EventList, FilterPanel, VisualizationDashboard } from '@heartex/label';
  */
 
+// Import antd CSS for component styling
+import 'antd/dist/antd.css';
+
+// Import label-specific styles
+import './index.css';
+
 // Re-export main components from data-analysis feature
 export { DataAnalysis } from './features/data-analysis';
 
