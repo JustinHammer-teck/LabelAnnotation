@@ -1,0 +1,167 @@
+Label_Component,Label_Chinese,Label_English,Label_Type,Aviation_Status,Aviation_Location,Aviation_i18n_Key,Gap_Notes
+App.js,首页,Home,Menu Item,NOT_IN_AVIATION,N/A,N/A,Navigation menu not in aviation scope
+App.js,文档管理,Document Management,Menu Item,NOT_IN_AVIATION,N/A,N/A,Navigation menu not in aviation scope
+App.js,文档分析管理,Document Analysis Management,Menu Item,NOT_IN_AVIATION,N/A,N/A,Navigation menu not in aviation scope
+App.js,任务管理,Task Management,Menu Item,NOT_IN_AVIATION,N/A,N/A,Navigation menu not in aviation scope
+App.js,数据分析及可视化展示,Data Analysis & Visualization,Menu Item,NOT_IN_AVIATION,N/A,N/A,Navigation menu not in aviation scope
+App.js,标签管理,Label Management,Menu Item,NOT_IN_AVIATION,N/A,N/A,Navigation menu not in aviation scope
+App.js,系统管理,System Management,Menu Item,NOT_IN_AVIATION,N/A,N/A,Navigation menu not in aviation scope
+App.js,此功能仅为展示,This function is for demonstration only,Info Message,NOT_IN_AVIATION,N/A,N/A,Demo message not in aviation
+App.js,此页面仅为展示,This page is for demonstration only,Info Message,NOT_IN_AVIATION,N/A,N/A,Demo message not in aviation
+App.js,✈ 文本证据分析系统,Text Evidence Analysis System,Header,NOT_IN_AVIATION,N/A,N/A,Different app header in aviation
+App.js,DMS,DMS (collapsed),Header,NOT_IN_AVIATION,N/A,N/A,Different app header in aviation
+App.js,文档分析管理,Document Analysis Management,Page Header,NOT_IN_AVIATION,N/A,N/A,Page header not in aviation scope
+DocumentAnalysis.js,Excel文件为空或格式不正确,Excel file is empty or incorrect format,Error Message,GAP,N/A,N/A,Missing - need to add to aviation toast
+DocumentAnalysis.js,成功导入 X 条事件记录,Successfully imported X event records,Toast,COVERED,i18n/locales/zh.json,aviation.toast.upload_success,上传完成：已创建 {{count}} 个事件
+DocumentAnalysis.js,Excel文件解析失败请检查文件格式,Excel file parsing failed please check format,Error Message,GAP,N/A,aviation.toast.upload_error,Only has generic upload_error
+DocumentAnalysis.js,请先上传Excel文件,Please upload Excel file first,Warning,GAP,N/A,N/A,Missing - need warning for no file
+DocumentAnalysis.js,标注已保存到内存,Annotation saved to memory,Toast,DIFFERENT,i18n/locales/zh.json,aviation.toast.save_success,Aviation uses 保存成功
+DocumentAnalysis.js,提交成功,Submission successful,Toast,COVERED,i18n/locales/zh.json,aviation.toast.submit_success,已提交审核
+DocumentAnalysis.js,当前事件标注已提交审核,Current event annotation submitted for review,Toast,COVERED,i18n/locales/zh.json,aviation.toast.submit_success,已提交审核
+DocumentAnalysis.js,上传文档,Upload Document,Button,COVERED,i18n/locales/zh.json,aviation.common.upload,上传
+DocumentAnalysis.js,上一条,Previous,Button,DIFFERENT,i18n/locales/zh.json,aviation.navigation.prev_event,Aviation uses 上一事件
+DocumentAnalysis.js,第 X / Y 条,Item X / Y,Navigation,COVERED,i18n/locales/zh.json,aviation.navigation.event_counter,{{current}} / {{total}}
+DocumentAnalysis.js,下一条,Next,Button,DIFFERENT,i18n/locales/zh.json,aviation.navigation.next_event,Aviation uses 下一事件
+DocumentAnalysis.js,保存标注,Save Annotation,Button,DIFFERENT,i18n/locales/zh.json,aviation.common.save,Aviation uses 保存
+DocumentAnalysis.js,提交审核,Submit for Review,Button,COVERED,i18n/locales/zh.json,aviation.toolbar.submit_for_review,提交审核
+DocumentAnalysis.js,请上传Excel文件开始标注,Upload Excel file to start annotation,Placeholder,GAP,N/A,N/A,Missing empty state for no file
+DocumentAnalysis.js,支持.xlsx格式文件,Supports .xlsx format files,Hint,GAP,N/A,N/A,Missing file format hint
+BasicInfoModule.js,事件描述,Event Description,Card Title,COVERED,i18n/locales/zh.json,aviation.event.description,事件描述
+BasicInfoModule.js,报告单位,Reporting Unit,Field Label,COVERED,i18n/locales/zh.json,aviation.event.company,报告单位
+BasicInfoModule.js,未知单位,Unknown Unit,Default Value,GAP,N/A,N/A,Missing default value
+BasicInfoModule.js,事件详细描述...,Detailed event description...,Placeholder,GAP,N/A,N/A,Missing placeholder for description
+BasicInfoModule.js,基本信息,Basic Information,Card Title,COVERED,i18n/locales/zh.json,aviation.basic_info.title,基本信息
+BasicInfoModule.js,日期,Date,Field Label,COVERED,i18n/locales/zh.json,aviation.basic_info.date,日期
+BasicInfoModule.js,时间,Time,Field Label,COVERED,i18n/locales/zh.json,aviation.basic_info.time,时间
+BasicInfoModule.js,机型,Aircraft Type,Field Label,COVERED,i18n/locales/zh.json,aviation.basic_info.aircraft_type,机型
+BasicInfoModule.js,选择机型,Select Aircraft Type,Placeholder,GAP,N/A,N/A,Missing select placeholder
+BasicInfoModule.js,起飞机场,Departure Airport,Field Label,COVERED,i18n/locales/zh.json,aviation.basic_info.departure_airport,起飞机场
+BasicInfoModule.js,起飞,Takeoff,Placeholder,GAP,N/A,N/A,Missing input placeholder
+BasicInfoModule.js,落地机场,Landing Airport,Field Label,COVERED,i18n/locales/zh.json,aviation.basic_info.landing_airport,落地机场
+BasicInfoModule.js,落地,Landing,Placeholder,GAP,N/A,N/A,Missing input placeholder
+BasicInfoModule.js,实际降落,Actual Landing,Field Label,COVERED,i18n/locales/zh.json,aviation.basic_info.actual_landing,实际降落
+BasicInfoModule.js,备降,Alternate Landing,Placeholder,GAP,N/A,N/A,Missing alternate landing placeholder
+BasicInfoModule.js,备注,Remarks,Field Label,COVERED,i18n/locales/zh.json,aviation.basic_info.remarks,备注
+BasicInfoModule.js,请输入备注信息,Please enter remarks,Placeholder,COVERED,i18n/locales/zh.json,aviation.basic_info.enter_remarks,请输入备注信息
+ResultPerformanceList.js,结果绩效模块,Result Performance Module,Card Title,DIFFERENT,i18n/locales/zh.json,aviation.result_performance.title,Aviation uses 结果绩效
+ResultPerformanceList.js,添加结果,Add Result,Button,DIFFERENT,Hardcoded,components/annotation/result-performance/ResultPerformancePanel.tsx,Aviation uses + 添加
+ResultPerformanceList.js,暂无结果绩效请点击右上角添加,No result performance please click to add,Empty State,DIFFERENT,i18n/locales/zh.json,aviation.empty.no_results,暂无结果，点击添加创建
+ResultPerformanceList.js,结果绩效,Result Performance,Item Title,COVERED,i18n/locales/zh.json,aviation.result_performance.title,结果绩效
+ResultPerformanceList.js,未选择类型,Unselected Type,Default Value,COVERED,i18n/locales/zh.json,aviation.result_performance.no_type,未选择类型
+ResultPerformanceList.js,事件类型,Event Type,Field Label,COVERED,i18n/locales/zh.json,aviation.result_performance.event_type,事件类型
+ResultPerformanceList.js,选择事件类型,Select Event Type,Placeholder,GAP,N/A,N/A,Missing select placeholder
+ResultPerformanceList.js,飞行阶段,Flight Phase,Field Label,COVERED,i18n/locales/zh.json,aviation.result_performance.flight_phase,飞行阶段
+ResultPerformanceList.js,选择飞行阶段,Select Flight Phase,Placeholder,GAP,N/A,N/A,Missing select placeholder
+ResultPerformanceList.js,可能性,Likelihood,Field Label,COVERED,i18n/locales/zh.json,aviation.result_performance.likelihood,可能性
+ResultPerformanceList.js,严重程度,Severity,Field Label,COVERED,i18n/locales/zh.json,aviation.result_performance.severity,严重程度
+ResultPerformanceList.js,训练效果,Training Effect,Field Label,COVERED,i18n/locales/zh.json,aviation.result_performance.training_effect,训练效果
+ResultPerformanceList.js,训练方案设想,Training Plan Proposal,Field Label,COVERED,i18n/locales/zh.json,aviation.result_performance.training_plan,训练方案设想
+ResultPerformanceList.js,输入设想训练方案,Enter proposed training plan,Placeholder,GAP,N/A,N/A,Missing input placeholder
+ResultPerformanceList.js,训练主题,Training Topics,Field Label,COVERED,i18n/locales/zh.json,aviation.result_performance.training_topics,训练主题
+ResultPerformanceList.js,选择训练主题,Select Training Topics,Placeholder,COVERED,i18n/locales/zh.json,aviation.result_performance.select_training_topics,选择训练主题
+ResultPerformanceList.js,所需达到的目标,Required Target/Goal,Field Label,COVERED,i18n/locales/zh.json,aviation.result_performance.objectives,所需达到的目标
+ResultPerformanceList.js,输入所需达到的目标,Enter required goal,Placeholder,GAP,N/A,N/A,Missing input placeholder
+ResultPerformanceList.js,自动汇总区域,Auto Summary Area,Section Title,DIFFERENT,i18n/locales/zh.json,aviation.result_performance.auto_summary,Aviation uses 自动汇总
+ResultPerformanceList.js,威胁汇总,Threat Summary,Summary Label,COVERED,i18n/locales/zh.json,aviation.result_performance.threat_summary,威胁汇总
+ResultPerformanceList.js,差错汇总,Error Summary,Summary Label,COVERED,i18n/locales/zh.json,aviation.result_performance.error_summary,差错汇总
+ResultPerformanceList.js,胜任力汇总,Competency Summary,Summary Label,COVERED,i18n/locales/zh.json,aviation.result_performance.competency_summary,胜任力汇总
+LabelingList.js,标签标注模块,Labeling and Annotation Module,Card Title,DIFFERENT,i18n/locales/zh.json,aviation.labeling.title,Aviation uses 标签标注
+LabelingList.js,添加标注,Add Annotation,Button,COVERED,i18n/locales/zh.json,aviation.common.add,添加
+LabelingList.js,暂无标注请点击右上角添加,No annotations please click to add,Empty State,DIFFERENT,i18n/locales/zh.json,aviation.empty.no_annotations,暂无标注，点击添加创建
+LabelingList.js,标注,Annotation,Item Title,COVERED,i18n/locales/zh.json,aviation.labeling.annotation_item,标注 {{index}}
+LabelingList.js,关联,Linked to,Item Title,COVERED,i18n/locales/zh.json,aviation.labeling.linked_to,已关联: {{type}}
+LabelingList.js,未关联,Not Linked,Item Title,COVERED,i18n/locales/zh.json,aviation.labeling.not_linked,未关联
+LabelingList.js,未命名,Unnamed,Default Value,GAP,N/A,N/A,Missing default value for unnamed items
+LabelingList.js,威胁类型,Threat Type,Tag,COVERED,i18n/locales/zh.json,aviation.recognition.threat.type,威胁类型
+LabelingList.js,差错类型,Error Type,Tag,COVERED,i18n/locales/zh.json,aviation.recognition.error.type,差错类型
+LabelingList.js,UAS类型,UAS Type,Tag,COVERED,i18n/locales/zh.json,aviation.recognition.uas.type,UAS类型
+LabelingList.js,关联事件类型,Associated Event Type,Field Label,COVERED,i18n/locales/zh.json,aviation.labeling.link_event_type,关联事件类型
+LabelingList.js,请选择关联的结果绩效,Please select associated result performance,Placeholder,GAP,N/A,N/A,Missing select placeholder
+LabelingList.js,未命名类型,Unnamed Type,Placeholder,GAP,N/A,N/A,Missing default value for dropdown
+LabelingList.js,未选阶段,Phase Not Selected,Placeholder,GAP,N/A,N/A,Missing default value for dropdown
+LabelingList.js,可补充该事件结束状态的文字说明,Can supplement ending status description,Placeholder,GAP,N/A,N/A,Missing ending status placeholder
+ThreatModule.js,威胁识别,Threat Identification,Card Title,COVERED,i18n/locales/zh.json,aviation.recognition.threat.title,威胁识别
+ThreatModule.js,威胁类型,Threat Type,Section Label,COVERED,i18n/locales/zh.json,aviation.recognition.threat.type,威胁类型
+ThreatModule.js,一级,Level 1,Placeholder,COVERED,i18n/locales/zh.json,aviation.recognition.threat.level1,一级
+ThreatModule.js,二级,Level 2,Placeholder,COVERED,i18n/locales/zh.json,aviation.recognition.threat.level2,二级
+ThreatModule.js,三级,Level 3,Placeholder,COVERED,i18n/locales/zh.json,aviation.recognition.threat.level3,三级
+ThreatModule.js,管理,Management,Field Label,COVERED,i18n/locales/zh.json,aviation.recognition.management,管理
+ThreatModule.js,选择管理,Select Management,Placeholder,COVERED,i18n/locales/zh.json,aviation.recognition.select_management,选择管理
+ThreatModule.js,影响,Impact,Field Label,COVERED,i18n/locales/zh.json,aviation.recognition.impact,影响
+ThreatModule.js,选择影响,Select Impact,Placeholder,COVERED,i18n/locales/zh.json,aviation.recognition.select_impact,选择影响
+ThreatModule.js,应对能力,Response/Coping Ability,Field Label,COVERED,i18n/locales/zh.json,aviation.recognition.coping_ability,应对能力
+ThreatModule.js,选择应对能力,Select Response Ability,Placeholder,COVERED,i18n/locales/zh.json,aviation.recognition.select_coping,选择应对能力
+ThreatModule.js,描述,Description,Field Label,COVERED,i18n/locales/zh.json,aviation.recognition.description,描述
+ThreatModule.js,可补充该威胁的描述,Can supplement threat description,Placeholder,DIFFERENT,i18n/locales/zh.json,aviation.recognition.enter_description,Aviation uses 可补充描述
+ErrorModule.js,差错识别,Error Identification,Card Title,COVERED,i18n/locales/zh.json,aviation.recognition.error.title,差错识别
+ErrorModule.js,差错类型,Error Type,Section Label,COVERED,i18n/locales/zh.json,aviation.recognition.error.type,差错类型
+ErrorModule.js,一级,Level 1,Placeholder,COVERED,i18n/locales/zh.json,aviation.recognition.error.level1,一级
+ErrorModule.js,二级,Level 2,Placeholder,COVERED,i18n/locales/zh.json,aviation.recognition.error.level2,二级
+ErrorModule.js,三级,Level 3,Placeholder,COVERED,i18n/locales/zh.json,aviation.recognition.error.level3,三级
+ErrorModule.js,管理,Management,Field Label,COVERED,i18n/locales/zh.json,aviation.recognition.management,管理
+ErrorModule.js,选择管理,Select Management,Placeholder,COVERED,i18n/locales/zh.json,aviation.recognition.select_management,选择管理
+ErrorModule.js,影响,Impact,Field Label,COVERED,i18n/locales/zh.json,aviation.recognition.impact,影响
+ErrorModule.js,选择影响,Select Impact,Placeholder,COVERED,i18n/locales/zh.json,aviation.recognition.select_impact,选择影响
+ErrorModule.js,应对能力,Response/Coping Ability,Field Label,COVERED,i18n/locales/zh.json,aviation.recognition.coping_ability,应对能力
+ErrorModule.js,选择应对能力,Select Response Ability,Placeholder,COVERED,i18n/locales/zh.json,aviation.recognition.select_coping,选择应对能力
+ErrorModule.js,描述,Description,Field Label,COVERED,i18n/locales/zh.json,aviation.recognition.description,描述
+ErrorModule.js,可补充该差错的描述,Can supplement error description,Placeholder,DIFFERENT,i18n/locales/zh.json,aviation.recognition.enter_description,Aviation uses 可补充描述
+UASModule.js,UAS识别,UAS Identification,Card Title,COVERED,i18n/locales/zh.json,aviation.recognition.uas.title,UAS识别
+UASModule.js,根据相关性当前不需要填写UAS识别,Based on relevance UAS identification not needed,Info Message,DIFFERENT,i18n/locales/zh.json,aviation.recognition.uas.not_required,根据相关性判断，无需填写UAS
+UASModule.js,UAS类型,UAS Type,Section Label,COVERED,i18n/locales/zh.json,aviation.recognition.uas.type,UAS类型
+UASModule.js,一级,Level 1,Placeholder,COVERED,i18n/locales/zh.json,aviation.recognition.uas.level1,一级
+UASModule.js,二级,Level 2,Placeholder,COVERED,i18n/locales/zh.json,aviation.recognition.uas.level2,二级
+UASModule.js,三级,Level 3,Placeholder,COVERED,i18n/locales/zh.json,aviation.recognition.uas.level3,三级
+UASModule.js,管理,Management,Field Label,COVERED,i18n/locales/zh.json,aviation.recognition.management,管理
+UASModule.js,选择管理,Select Management,Placeholder,COVERED,i18n/locales/zh.json,aviation.recognition.select_management,选择管理
+UASModule.js,应对能力,Response/Coping Ability,Field Label,COVERED,i18n/locales/zh.json,aviation.recognition.coping_ability,应对能力
+UASModule.js,选择应对能力,Select Response Ability,Placeholder,COVERED,i18n/locales/zh.json,aviation.recognition.select_coping,选择应对能力
+UASModule.js,描述,Description,Field Label,COVERED,i18n/locales/zh.json,aviation.recognition.description,描述
+UASModule.js,可补充该 UAS 事件的描述,Can supplement UAS event description,Placeholder,DIFFERENT,i18n/locales/zh.json,aviation.recognition.enter_description,Aviation uses 可补充描述
+TrainingTopicModule.js,训练主题,Training Topics,Card Title,COVERED,i18n/locales/zh.json,aviation.training_topics.title,训练主题
+TrainingTopicModule.js,自动带入,Auto-populated,Tag,DIFFERENT,i18n/locales/zh.json,aviation.training_topics.auto_filled,Aviation uses 自动填充
+TrainingTopicModule.js,选择威胁/差错/UAS标签后自动生成训练主题,Auto-generated training topics after selection,Empty State,DIFFERENT,i18n/locales/zh.json,aviation.training_topics.auto_generated,选择标签后自动生成
+TrainingTopicModule.js,威胁相关,Threat-Related,Category Label,COVERED,i18n/locales/zh.json,aviation.training_topics.threat_related,威胁相关
+TrainingTopicModule.js,差错相关,Error-Related,Category Label,COVERED,i18n/locales/zh.json,aviation.training_topics.error_related,差错相关
+TrainingTopicModule.js,UAS相关,UAS-Related,Category Label,COVERED,i18n/locales/zh.json,aviation.training_topics.uas_related,UAS相关
+FilterPanel.js,筛选条件,Filter Criteria,Card Title,NOT_IN_AVIATION,N/A,N/A,Data analysis feature not in aviation scope
+FilterPanel.js,共筛选出 X 条事件,Filtered X events in total,Info Text,NOT_IN_AVIATION,N/A,N/A,Data analysis feature not in aviation scope
+FilterPanel.js,重置筛选,Reset Filters,Button,NOT_IN_AVIATION,N/A,N/A,Data analysis feature not in aviation scope
+FilterPanel.js,时间范围,Time Range,Field Label,NOT_IN_AVIATION,N/A,N/A,Data analysis feature not in aviation scope
+FilterPanel.js,机型,Aircraft Type,Field Label,NOT_IN_AVIATION,N/A,N/A,Data analysis feature not in aviation scope
+FilterPanel.js,全部,All,Placeholder,NOT_IN_AVIATION,N/A,N/A,Data analysis feature not in aviation scope
+FilterPanel.js,机场 (起飞/落地/实际降落),Airport (Departure/Landing/Actual),Field Label,NOT_IN_AVIATION,N/A,N/A,Data analysis feature not in aviation scope
+FilterPanel.js,事件类型,Event Type,Field Label,NOT_IN_AVIATION,N/A,N/A,Data analysis feature not in aviation scope
+FilterPanel.js,飞行阶段,Flight Phase,Field Label,NOT_IN_AVIATION,N/A,N/A,Data analysis feature not in aviation scope
+FilterPanel.js,涉及威胁类型,Involved Threat Type,Field Label,NOT_IN_AVIATION,N/A,N/A,Data analysis feature not in aviation scope
+FilterPanel.js,涉及差错类型,Involved Error Type,Field Label,NOT_IN_AVIATION,N/A,N/A,Data analysis feature not in aviation scope
+FilterPanel.js,涉及UAS类型,Involved UAS Type,Field Label,NOT_IN_AVIATION,N/A,N/A,Data analysis feature not in aviation scope
+FilterPanel.js,包含训练主题,Contains Training Topic,Field Label,NOT_IN_AVIATION,N/A,N/A,Data analysis feature not in aviation scope
+FilterPanel.js,涉及胜任力,Involved Competency,Field Label,NOT_IN_AVIATION,N/A,N/A,Data analysis feature not in aviation scope
+VisualizationDashboard.js,风险演化路径 (威胁 -> 差错 -> UAS -> 事件),Risk Evolution Path (Threat -> Error -> UAS -> Event),Chart Title,NOT_IN_AVIATION,N/A,N/A,Visualization feature not in aviation scope
+VisualizationDashboard.js,暂无数据请调整筛选条件,No data please adjust filter criteria,Empty State,NOT_IN_AVIATION,N/A,N/A,Visualization feature not in aviation scope
+EventList.js,事件编号,Event ID,Table Column,NOT_IN_AVIATION,N/A,N/A,Event list table not in aviation scope
+EventList.js,日期,Date,Table Column,NOT_IN_AVIATION,N/A,N/A,Event list table not in aviation scope
+EventList.js,机型,Aircraft Type,Table Column,NOT_IN_AVIATION,N/A,N/A,Event list table not in aviation scope
+EventList.js,事件类型,Event Type,Table Column,NOT_IN_AVIATION,N/A,N/A,Event list table not in aviation scope
+EventList.js,涉及威胁,Involved Threats,Table Column,NOT_IN_AVIATION,N/A,N/A,Event list table not in aviation scope
+EventList.js,涉及差错,Involved Errors,Table Column,NOT_IN_AVIATION,N/A,N/A,Event list table not in aviation scope
+EventList.js,训练主题,Training Topics,Table Column,NOT_IN_AVIATION,N/A,N/A,Event list table not in aviation scope
+EventList.js,操作,Actions,Table Column,NOT_IN_AVIATION,N/A,N/A,Event list table not in aviation scope
+EventList.js,详情,Details,Button,NOT_IN_AVIATION,N/A,N/A,Event list table not in aviation scope
+EventList.js,事件列表,Event List,Card Title,NOT_IN_AVIATION,N/A,N/A,Event list table not in aviation scope
+EventList.js,事件详情,Event Details,Modal Title,NOT_IN_AVIATION,N/A,N/A,Event detail modal not in aviation scope
+EventList.js,基本信息,Basic Information,Descriptions Title,NOT_IN_AVIATION,N/A,N/A,Event detail modal not in aviation scope
+EventList.js,事件描述,Event Description,Text Label,NOT_IN_AVIATION,N/A,N/A,Event detail modal not in aviation scope
+EventList.js,结果绩效列表,Result Performance List,Text Label,NOT_IN_AVIATION,N/A,N/A,Event detail modal not in aviation scope
+EventList.js,可能性,Likelihood,Field Label,NOT_IN_AVIATION,N/A,N/A,Event detail modal not in aviation scope
+EventList.js,严重程度,Severity,Field Label,NOT_IN_AVIATION,N/A,N/A,Event detail modal not in aviation scope
+EventList.js,训练效果,Training Effect,Field Label,NOT_IN_AVIATION,N/A,N/A,Event detail modal not in aviation scope
+EventList.js,训练方案设想,Training Plan Proposal,Field Label,NOT_IN_AVIATION,N/A,N/A,Event detail modal not in aviation scope
+EventList.js,所需达到的目标,Required Target/Goal,Field Label,NOT_IN_AVIATION,N/A,N/A,Event detail modal not in aviation scope
+EventList.js,标签标注列表,Labeling Annotation List,Text Label,NOT_IN_AVIATION,N/A,N/A,Event detail modal not in aviation scope
+EventList.js,威胁,Threat,Descriptions Label,NOT_IN_AVIATION,N/A,N/A,Event detail modal not in aviation scope
+EventList.js,差错,Error,Descriptions Label,NOT_IN_AVIATION,N/A,N/A,Event detail modal not in aviation scope
+EventList.js,UAS,UAS,Descriptions Label,NOT_IN_AVIATION,N/A,N/A,Event detail modal not in aviation scope
+EventList.js,无,None,Default Value,NOT_IN_AVIATION,N/A,N/A,Event detail modal not in aviation scope
+EventList.js,结束状态,Ending Status,Descriptions Label,NOT_IN_AVIATION,N/A,N/A,Event detail modal not in aviation scope

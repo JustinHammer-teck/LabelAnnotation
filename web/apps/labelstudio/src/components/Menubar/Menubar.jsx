@@ -253,6 +253,15 @@ export const Menubar = ({
                   data-external
                   exact
                 />
+                {isManagerOrResearcher && (
+                  <Menu.Item
+                    label="Data Analysis"
+                    to="/label"
+                    icon={<IconDocument />}
+                    data-external
+                    exact
+                  />
+                )}
                 <Menu.Divider />
                 <Menu.Item
                   label="Organization"

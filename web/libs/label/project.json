@@ -1,0 +1,25 @@
+{
+  "name": "label",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/label/src",
+  "projectType": "library",
+  "tags": ["scope:label", "type:feature"],
+  "targets": {
+    "build": {
+      "executor": "@nx/webpack:webpack",
+      "options": {
+        "compiler": "babel",
+        "outputPath": "dist/libs/label",
+        "tsConfig": "libs/label/tsconfig.lib.json",
+        "main": "libs/label/src/index.ts"
+      }
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "options": {
+        "jestConfig": "libs/label/jest.config.ts",
+        "passWithNoTests": true
+      }
+    }
+  }
+}

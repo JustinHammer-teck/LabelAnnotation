@@ -1,0 +1,167 @@
+Component,Chinese_Label,English_Translation,Type,Line_Number
+App.js,首页,Home,Menu Item,27
+App.js,文档管理,Document Management,Menu Item,32
+App.js,文档分析管理,Document Analysis Management,Menu Item,37
+App.js,任务管理,Task Management,Menu Item,42
+App.js,数据分析及可视化展示,Data Analysis & Visualization,Menu Item,47
+App.js,标签管理,Label Management,Menu Item,52
+App.js,系统管理,System Management,Menu Item,57
+App.js,此功能仅为展示,This function is for demonstration only,Info Message,64
+App.js,此页面仅为展示,This page is for demonstration only,Info Message,79
+App.js,✈ 文本证据分析系统,Text Evidence Analysis System,Header,107
+App.js,DMS,DMS (collapsed),Header,107
+App.js,文档分析管理,Document Analysis Management,Page Header,129
+DocumentAnalysis.js,Excel文件为空或格式不正确,Excel file is empty or incorrect format,Error Message,61
+DocumentAnalysis.js,成功导入 X 条事件记录,Successfully imported X event records,Toast,89
+DocumentAnalysis.js,Excel文件解析失败，请检查文件格式,Excel file parsing failed please check format,Error Message,92
+DocumentAnalysis.js,请先上传Excel文件,Please upload Excel file first,Warning,125
+DocumentAnalysis.js,标注已保存到内存,Annotation saved to memory,Toast,132
+DocumentAnalysis.js,提交成功,Submission successful,Toast,143
+DocumentAnalysis.js,当前事件标注已提交审核,Current event annotation submitted for review,Toast,144
+DocumentAnalysis.js,上传文档,Upload Document,Button,169
+DocumentAnalysis.js,上一条,Previous,Button,180
+DocumentAnalysis.js,第 X / Y 条,Item X / Y,Navigation,183
+DocumentAnalysis.js,下一条,Next,Button,190
+DocumentAnalysis.js,保存标注,Save Annotation,Button,205
+DocumentAnalysis.js,提交审核,Submit for Review,Button,213
+DocumentAnalysis.js,请上传Excel文件开始标注,Upload Excel file to start annotation,Placeholder,223
+DocumentAnalysis.js,支持.xlsx格式文件,Supports .xlsx format files,Hint,224
+BasicInfoModule.js,事件描述,Event Description,Card Title,33
+BasicInfoModule.js,报告单位,Reporting Unit,Field Label,43
+BasicInfoModule.js,未知单位,Unknown Unit,Default Value,43
+BasicInfoModule.js,事件详细描述...,Detailed event description...,Placeholder,51
+BasicInfoModule.js,基本信息,Basic Information,Card Title,58
+BasicInfoModule.js,日期,Date,Field Label,65
+BasicInfoModule.js,时间,Time,Field Label,74
+BasicInfoModule.js,机型,Aircraft Type,Field Label,84
+BasicInfoModule.js,选择机型,Select Aircraft Type,Placeholder,89
+BasicInfoModule.js,起飞机场,Departure Airport,Field Label,99
+BasicInfoModule.js,起飞,Takeoff,Placeholder,104
+BasicInfoModule.js,落地机场,Landing Airport,Field Label,111
+BasicInfoModule.js,落地,Landing,Placeholder,116
+BasicInfoModule.js,实际降落,Actual Landing,Field Label,123
+BasicInfoModule.js,备降,Alternate Landing,Placeholder,128
+BasicInfoModule.js,备注,Remarks,Field Label,136
+BasicInfoModule.js,请输入备注信息,Please enter remarks,Placeholder,140
+ResultPerformanceList.js,结果绩效模块,Result Performance Module,Card Title,117
+ResultPerformanceList.js,添加结果,Add Result,Button,122
+ResultPerformanceList.js,暂无结果绩效，请点击右上角添加,No result performance please click to add,Empty State,129
+ResultPerformanceList.js,结果绩效,Result Performance,Item Title,140
+ResultPerformanceList.js,未选择类型,Unselected Type,Default Value,140
+ResultPerformanceList.js,事件类型,Event Type,Field Label,154
+ResultPerformanceList.js,选择事件类型,Select Event Type,Placeholder,158
+ResultPerformanceList.js,飞行阶段,Flight Phase,Field Label,165
+ResultPerformanceList.js,选择飞行阶段,Select Flight Phase,Placeholder,169
+ResultPerformanceList.js,可能性,Likelihood,Field Label,179
+ResultPerformanceList.js,严重程度,Severity,Field Label,189
+ResultPerformanceList.js,训练效果,Training Effect,Field Label,199
+ResultPerformanceList.js,训练方案设想,Training Plan Proposal,Field Label,210
+ResultPerformanceList.js,输入设想训练方案,Enter proposed training plan,Placeholder,212
+ResultPerformanceList.js,训练主题,Training Topics,Field Label,219
+ResultPerformanceList.js,选择训练主题,Select Training Topics,Placeholder,224
+ResultPerformanceList.js,所需达到的目标,Required Target/Goal,Field Label,230
+ResultPerformanceList.js,输入所需达到的目标,Enter required goal,Placeholder,232
+ResultPerformanceList.js,自动汇总区域,Auto Summary Area,Section Title,240
+ResultPerformanceList.js,威胁汇总,Threat Summary,Summary Label,243
+ResultPerformanceList.js,差错汇总,Error Summary,Summary Label,255
+ResultPerformanceList.js,胜任力汇总,Competency Summary,Summary Label,267
+LabelingList.js,标签标注模块,Labeling and Annotation Module,Card Title,84
+LabelingList.js,添加标注,Add Annotation,Button,89
+LabelingList.js,暂无标注，请点击右上角添加,No annotations please click to add,Empty State,96
+LabelingList.js,标注,Annotation,Item Title,103
+LabelingList.js,关联,Linked to,Item Title,103
+LabelingList.js,未关联,Not Linked,Item Title,104
+LabelingList.js,未命名,Unnamed,Default Value,103
+LabelingList.js,威胁类型,Threat Type,Tag,108
+LabelingList.js,差错类型,Error Type,Tag,111
+LabelingList.js,UAS类型,UAS Type,Tag,114
+LabelingList.js,关联事件类型,Associated Event Type,Field Label,143
+LabelingList.js,请选择关联的结果绩效,Please select associated result performance,Placeholder,147
+LabelingList.js,未命名类型,Unnamed Type,Placeholder,151
+LabelingList.js,未选阶段,Phase Not Selected,Placeholder,151
+LabelingList.js,可补充该事件结束状态的文字说明,Can supplement ending status description,Placeholder,193
+ThreatModule.js,威胁识别,Threat Identification,Card Title,82
+ThreatModule.js,威胁类型,Threat Type,Section Label,84
+ThreatModule.js,一级,Level 1,Placeholder,90
+ThreatModule.js,二级,Level 2,Placeholder,100
+ThreatModule.js,三级,Level 3,Placeholder,111
+ThreatModule.js,管理,Management,Field Label,123
+ThreatModule.js,选择管理,Select Management,Placeholder,127
+ThreatModule.js,影响,Impact,Field Label,134
+ThreatModule.js,选择影响,Select Impact,Placeholder,138
+ThreatModule.js,应对能力,Response/Coping Ability,Field Label,145
+ThreatModule.js,选择应对能力,Select Response Ability,Placeholder,153
+ThreatModule.js,描述,Description,Field Label,159
+ThreatModule.js,可补充该威胁的描述,Can supplement threat description,Placeholder,164
+ErrorModule.js,差错识别,Error Identification,Card Title,77
+ErrorModule.js,差错类型,Error Type,Section Label,79
+ErrorModule.js,一级,Level 1,Placeholder,85
+ErrorModule.js,二级,Level 2,Placeholder,95
+ErrorModule.js,三级,Level 3,Placeholder,106
+ErrorModule.js,管理,Management,Field Label,118
+ErrorModule.js,选择管理,Select Management,Placeholder,122
+ErrorModule.js,影响,Impact,Field Label,129
+ErrorModule.js,选择影响,Select Impact,Placeholder,135
+ErrorModule.js,应对能力,Response/Coping Ability,Field Label,140
+ErrorModule.js,选择应对能力,Select Response Ability,Placeholder,148
+ErrorModule.js,描述,Description,Field Label,154
+ErrorModule.js,可补充该差错的描述,Can supplement error description,Placeholder,159
+UASModule.js,UAS识别,UAS Identification,Card Title,68
+UASModule.js,根据相关性，当前不需要填写UAS识别,Based on relevance UAS identification not needed,Info Message,72
+UASModule.js,UAS类型,UAS Type,Section Label,75
+UASModule.js,一级,Level 1,Placeholder,81
+UASModule.js,二级,Level 2,Placeholder,92
+UASModule.js,三级,Level 3,Placeholder,103
+UASModule.js,管理,Management,Field Label,115
+UASModule.js,选择管理,Select Management,Placeholder,119
+UASModule.js,应对能力,Response/Coping Ability,Field Label,127
+UASModule.js,选择应对能力,Select Response Ability,Placeholder,135
+UASModule.js,描述,Description,Field Label,142
+UASModule.js,可补充该 UAS 事件的描述,Can supplement UAS event description,Placeholder,147
+TrainingTopicModule.js,训练主题,Training Topics,Card Title,40
+TrainingTopicModule.js,自动带入,Auto-populated,Tag,23
+TrainingTopicModule.js,选择威胁/差错/UAS标签后自动生成训练主题,Auto-generated training topics after selection,Empty State,50
+TrainingTopicModule.js,威胁相关,Threat-Related,Category Label,56
+TrainingTopicModule.js,差错相关,Error-Related,Category Label,57
+TrainingTopicModule.js,UAS相关,UAS-Related,Category Label,58
+FilterPanel.js,筛选条件,Filter Criteria,Card Title,74
+FilterPanel.js,共筛选出 X 条事件,Filtered X events in total,Info Text,76
+FilterPanel.js,重置筛选,Reset Filters,Button,84
+FilterPanel.js,时间范围,Time Range,Field Label,96
+FilterPanel.js,机型,Aircraft Type,Field Label,101
+FilterPanel.js,全部,All,Placeholder,102
+FilterPanel.js,机场 (起飞/落地/实际降落),Airport (Departure/Landing/Actual),Field Label,108
+FilterPanel.js,事件类型,Event Type,Field Label,115
+FilterPanel.js,飞行阶段,Flight Phase,Field Label,125
+FilterPanel.js,涉及威胁类型,Involved Threat Type,Field Label,132
+FilterPanel.js,涉及差错类型,Involved Error Type,Field Label,144
+FilterPanel.js,涉及UAS类型,Involved UAS Type,Field Label,156
+FilterPanel.js,包含训练主题,Contains Training Topic,Field Label,171
+FilterPanel.js,涉及胜任力,Involved Competency,Field Label,178
+VisualizationDashboard.js,风险演化路径 (威胁 -> 差错 -> UAS -> 事件),Risk Evolution Path (Threat -> Error -> UAS -> Event),Chart Title,73
+VisualizationDashboard.js,暂无数据，请调整筛选条件,No data please adjust filter criteria,Empty State,92
+EventList.js,事件编号,Event ID,Table Column,23
+EventList.js,日期,Date,Table Column,29
+EventList.js,机型,Aircraft Type,Table Column,35
+EventList.js,事件类型,Event Type,Table Column,41
+EventList.js,涉及威胁,Involved Threats,Table Column,50
+EventList.js,涉及差错,Involved Errors,Table Column,61
+EventList.js,训练主题,Training Topics,Table Column,72
+EventList.js,操作,Actions,Table Column,87
+EventList.js,详情,Details,Button,92
+EventList.js,事件列表,Event List,Card Title,99
+EventList.js,事件详情,Event Details,Modal Title,109
+EventList.js,基本信息,Basic Information,Descriptions Title,117
+EventList.js,事件描述,Event Description,Text Label,130
+EventList.js,结果绩效列表,Result Performance List,Text Label,138
+EventList.js,可能性,Likelihood,Field Label,144
+EventList.js,严重程度,Severity,Field Label,145
+EventList.js,训练效果,Training Effect,Field Label,146
+EventList.js,训练方案设想,Training Plan Proposal,Field Label,150
+EventList.js,所需达到的目标,Required Target/Goal,Field Label,151
+EventList.js,标签标注列表,Labeling Annotation List,Text Label,158
+EventList.js,威胁,Threat,Descriptions Label,162
+EventList.js,差错,Error,Descriptions Label,171
+EventList.js,UAS,UAS,Descriptions Label,180
+EventList.js,无,None,Default Value,169
+EventList.js,结束状态,Ending Status,Descriptions Label,190
