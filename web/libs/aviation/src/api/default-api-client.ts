@@ -19,10 +19,15 @@ import type {
   ReviewHistoryResponse,
   AviationProjectAssignment,
   ToggleAssignmentPayload,
+  AnalyticsFilters,
+  PaginatedAnalyticsResponse,
+  AnalyticsFilterOptions,
 } from '../types';
 
 const BASE_URL = '/api/aviation';
-const isDevelopment = process.env.NODE_ENV === 'development';
+// Set to true to enable API request/response logging in development
+const DEBUG_API_LOGS = false;
+const isDevelopment = DEBUG_API_LOGS && process.env.NODE_ENV === 'development';
 
 export type ApiErrorCode =
   | 'VALIDATION_ERROR'
@@ -601,4 +606,132 @@ export const createDefaultApiClient = (): AviationApiClient => ({
       body: JSON.stringify(payload),
     });
   },
+
+  // Analytics endpoints
+  async getEventsAnalytics(
+    projectId: number,
+    filters?: AnalyticsFilters,
+    page = 1,
+    pageSize = 50
+  ): Promise<PaginatedAnalyticsResponse> {
+    const params = buildFilterQueryParams(filters, page, pageSize);
+    return request<PaginatedAnalyticsResponse>(
+      `${BASE_URL}/projects/${projectId}/events/analytics/?${params}`
+    );
+  },
+
+  async getFilterOptions(projectId: number): Promise<AnalyticsFilterOptions> {
+    return request<AnalyticsFilterOptions>(
+      `${BASE_URL}/projects/${projectId}/filter-options/`
+    );
+  },
+
+  // Organization-wide analytics endpoints
+  async getAllEventsAnalytics(
+    filters?: AnalyticsFilters,
+    page = 1,
+    pageSize = 50
+  ): Promise<PaginatedAnalyticsResponse> {
+    const params = buildFilterQueryParams(filters, page, pageSize);
+    return request<PaginatedAnalyticsResponse>(
+      `${BASE_URL}/events/analytics/?${params}`
+    );
+  },
+
+  async getAllFilterOptions(): Promise<AnalyticsFilterOptions> {
+    return request<AnalyticsFilterOptions>(
+      `${BASE_URL}/filter-options/`
+    );
+  },
 });
+
+/**
+ * Build query string from analytics filters.
+ * Converts AnalyticsFilters object to URL query parameters.
+ *
+ * @param filters - Optional filter parameters
+ * @param page - Page number (default: 1)
+ * @param pageSize - Number of results per page (default: 50)
+ * @returns Query string for API request
+ */
+export function buildFilterQueryParams(
+  filters?: AnalyticsFilters,
+  page = 1,
+  pageSize = 50
+): string {
+  const params = new URLSearchParams();
+
+  // Pagination params
+  params.set('page', String(page));
+  params.set('page_size', String(pageSize));
+
+  if (!filters) {
+    return params.toString();
+  }
+
+  // Date range filter
+  if (filters.dateRange?.length === 2) {
+    params.set('date_start', filters.dateRange[0]);
+    params.set('date_end', filters.dateRange[1]);
+  }
+
+  // Aircraft filter (multi-select -> comma-separated)
+  if (filters.aircraft?.length) {
+    params.set('aircraft', filters.aircraft.join(','));
+  }
+
+  // Airport filter (single select)
+  if (filters.airport) {
+    params.set('airport', filters.airport);
+  }
+
+  // Event type filter (multi-select -> comma-separated)
+  if (filters.eventType?.length) {
+    params.set('event_types', filters.eventType.join(','));
+  }
+
+  // Flight phase filter (multi-select -> comma-separated)
+  if (filters.flightPhase?.length) {
+    params.set('flight_phases', filters.flightPhase.join(','));
+  }
+
+  // Threat type cascader (array of up to 3 levels)
+  if (filters.threatType?.length) {
+    if (filters.threatType[0]) params.set('threat_l1', filters.threatType[0]);
+    if (filters.threatType[1]) params.set('threat_l2', filters.threatType[1]);
+    if (filters.threatType[2]) params.set('threat_l3', filters.threatType[2]);
+  }
+
+  // Error type cascader (array of up to 3 levels)
+  if (filters.errorType?.length) {
+    if (filters.errorType[0]) params.set('error_l1', filters.errorType[0]);
+    if (filters.errorType[1]) params.set('error_l2', filters.errorType[1]);
+    if (filters.errorType[2]) params.set('error_l3', filters.errorType[2]);
+  }
+
+  // UAS type cascader (array of up to 3 levels)
+  if (filters.uasType?.length) {
+    if (filters.uasType[0]) params.set('uas_l1', filters.uasType[0]);
+    if (filters.uasType[1]) params.set('uas_l2', filters.uasType[1]);
+    if (filters.uasType[2]) params.set('uas_l3', filters.uasType[2]);
+  }
+
+  // Training topic filter (multi-select -> comma-separated)
+  if (filters.trainingTopic?.length) {
+    params.set('training_topics', filters.trainingTopic.join(','));
+  }
+
+  // Competency filter (multi-select cascader)
+  // Each selection is an array like ['category'] or ['category', 'item']
+  // Extract the last element from each selection (most specific value)
+  if (filters.competency?.length) {
+    const flatCompetencies = filters.competency
+      .map(selection => selection[selection.length - 1])
+      .filter(Boolean);
+    if (flatCompetencies.length) {
+      params.set('competencies', flatCompetencies.join(','));
+    }
+  }
+
+  return params.toString();
+}

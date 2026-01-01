@@ -1,0 +1,100 @@
+{
+  "name": "Label Component Color Theme",
+  "description": "Extracted color theme from web/libs/label component",
+  "colors": {
+    "primary": {
+      "main": "#1a5490",
+      "secondary": "#2d6aa8",
+      "gradient": "linear-gradient(135deg, #1a5490 0%, #2d6aa8 100%)"
+    },
+    "background": {
+      "white": "#fff",
+      "lightGray": "#f0f2f5",
+      "contentArea": "#f0f4f8",
+      "offWhite": "#f9f9f9",
+      "summaryArea": "#f0f4f8"
+    },
+    "text": {
+      "primary": "#1a5490",
+      "secondary": "#999",
+      "white": "#fff"
+    },
+    "border": {
+      "default": "#e8e8e8",
+      "light": "#d9d9d9",
+      "medium": "#e0e8f0"
+    },
+    "modules": {
+      "competency": {
+        "background": "#e8f4fc",
+        "border": "#b3d4ea",
+        "description": "Light blue theme for competency module"
+      },
+      "trainingTopic": {
+        "background": "#f0f7ed",
+        "border": "#c5ddb8",
+        "description": "Light green theme for training topic module"
+      },
+      "threat": {
+        "background": "#fef6f0",
+        "border": "#e8cfc0",
+        "description": "Light orange theme for threat module"
+      },
+      "error": {
+        "background": "#fef4f3",
+        "border": "#e8c8c5",
+        "description": "Light red/pink theme for error module"
+      },
+      "uas": {
+        "background": "#f7f3fc",
+        "border": "#d4c8e8",
+        "description": "Light purple theme for UAS module"
+      },
+      "result": {
+        "background": "#f0f7fa",
+        "border": "#b8d8e8",
+        "description": "Light cyan theme for result module"
+      },
+      "labeling": {
+        "background": "#f5f8fc",
+        "border": "#ccd9e8",
+        "description": "Light blue-gray theme for labeling module"
+      }
+    },
+    "semantic": {
+      "threat": "orange",
+      "error": "red",
+      "uas": "purple",
+      "description": "Ant Design color names used for training topic tags"
+    },
+    "cards": {
+      "background": "#f9f9f9",
+      "border": "#d9d9d9"
+    }
+  },
+  "cssVariables": {
+    "--color-primary": "#1a5490",
+    "--color-primary-secondary": "#2d6aa8",
+    "--color-bg-white": "#fff",
+    "--color-bg-light": "#f0f2f5",
+    "--color-bg-content": "#f0f4f8",
+    "--color-text-primary": "#1a5490",
+    "--color-text-secondary": "#999",
+    "--color-border-default": "#e8e8e8",
+    "--color-border-light": "#d9d9d9",
+    "--color-competency-bg": "#e8f4fc",
+    "--color-competency-border": "#b3d4ea",
+    "--color-training-bg": "#f0f7ed",
+    "--color-training-border": "#c5ddb8",
+    "--color-threat-bg": "#fef6f0",
+    "--color-threat-border": "#e8cfc0",
+    "--color-error-bg": "#fef4f3",
+    "--color-error-border": "#e8c8c5",
+    "--color-uas-bg": "#f7f3fc",
+    "--color-uas-border": "#d4c8e8",
+    "--color-result-bg": "#f0f7fa",
+    "--color-result-border": "#b8d8e8",
+    "--color-labeling-bg": "#f5f8fc",
+    "--color-labeling-border": "#ccd9e8"
+  }
+}

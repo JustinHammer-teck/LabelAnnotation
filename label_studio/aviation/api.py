@@ -1,16 +1,19 @@
-from datetime import datetime
+import logging
+from datetime import date, datetime
 from io import BytesIO
 
 from django.db import transaction
 from django.db.models import Prefetch, Q
-from django.http import HttpResponse
+from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from openpyxl import load_workbook
 from rest_framework import generics, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -43,11 +46,16 @@ from .models import (
     ReviewDecision,
     TypeHierarchy,
 )
+from .analytics import get_aviation_project_analytics
+from .filters import apply_all_filters
 from .serializers import (
+    AnalyticsEventSerializer,
     ApproveRequestSerializer,
     AviationEventSerializer,
+    AviationProjectAnalyticsSerializer,
     AviationProjectSerializer,
     CreateAviationProjectSerializer,
+    FilterOptionsSerializer,
     LabelingItemPerformanceSerializer,
     LabelingItemSerializer,
     LinkItemsSerializer,
@@ -59,6 +67,9 @@ from .serializers import (
     RevisionRequestSerializer,
     TypeHierarchySerializer,
 )
+
+
+logger = logging.getLogger(__name__)
 
 
 # Constants for role-based filtering
@@ -1223,3 +1234,867 @@ class AviationProjectAssignmentAPI(APIView):
             action_type='revoke',
             source=f'aviation_project:{aviation_project.id}'
         )
+
+
+# =============================================================================
+# Analytics API Views
+# =============================================================================
+
+
+class AviationProjectAnalyticsAPI(generics.GenericAPIView):
+    """
+    GET /api/aviation/projects/<pk>/analytics/
+
+    Retrieve analytics and metrics for an aviation project.
+
+    Returns event completion statistics, labeling item status breakdown,
+    and overall project progress metrics.
+
+    Authentication:
+        Requires authenticated user with access to the project's organization.
+
+    Response:
+        - project_id: Aviation project ID (AviationProject.id)
+        - project_type: "aviation"
+        - total_events: Total number of events
+        - events_by_status: Breakdown of in_progress vs completed events
+        - labeling_items: Total count and status breakdown
+
+    Event Status Logic:
+        - "completed": ALL labeling items are approved
+        - "in_progress": Has ANY non-approved labeling item
+        - Events without labeling items are not counted as in_progress or completed
+    """
+    permission_classes = (IsAuthenticated,)
+    serializer_class = AviationProjectAnalyticsSerializer
+
+    def get_object(self):
+        """Get aviation project with organization access check."""
+        aviation_project = get_object_or_404(
+            AviationProject.objects.select_related('project', 'project__organization'),
+            pk=self.kwargs['pk']
+        )
+
+        # Verify organization access
+        if aviation_project.project.organization != self.request.user.active_organization:
+            from django.http import Http404
+            raise Http404("Aviation project not found")
+
+        return aviation_project
+
+    @swagger_auto_schema(
+        tags=['Aviation Analytics'],
+        operation_summary='Get aviation project analytics',
+        operation_description="""
+        Retrieve comprehensive analytics for an aviation project.
+
+        Returns:
+        - Total event count
+        - Event status breakdown (in_progress vs completed)
+        - Labeling item status breakdown (draft, submitted, reviewed, approved)
+
+        Event Status Logic:
+        - "completed": ALL labeling items are approved
+        - "in_progress": Has ANY non-approved labeling item
+
+        Requires authentication and organization membership.
+        """,
+        responses={
+            200: AviationProjectAnalyticsSerializer,
+            401: 'Unauthorized - Authentication required',
+            404: 'Aviation project not found or not accessible'
+        }
+    )
+    def get(self, request, pk):
+        """Retrieve analytics for the aviation project."""
+        aviation_project = self.get_object()
+
+        # Get analytics data from Phase 1 function
+        analytics_data = get_aviation_project_analytics(aviation_project.id)
+
+        if analytics_data is None:
+            from django.http import Http404
+            raise Http404("Analytics data not available")
+
+        # Serialize and return
+        serializer = self.get_serializer(analytics_data)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+# =============================================================================
+# Events Analytics Pagination and API View (Phase 2)
+# =============================================================================
+
+
+class AviationEventsAnalyticsPagination(PageNumberPagination):
+    """
+    Pagination class for events analytics endpoint.
+
+    Default: 50 items per page
+    Max: 100 items per page
+    """
+    page_size = 50
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+
+
+class AviationProjectEventsAnalyticsAPI(generics.ListAPIView):
+    """
+    GET /api/aviation/projects/<pk>/events/analytics/
+
+    Retrieve paginated event data for analytics/Sankey visualization.
+
+    Returns events with nested labeling items and result performances,
+    using Chinese field names for frontend compatibility. Supports all
+    10 filter types from Phase 1 via query parameters.
+
+    Query Parameters (Filters):
+        - date_start: Start date (YYYY-MM-DD, inclusive)
+        - date_end: End date (YYYY-MM-DD, inclusive)
+        - aircraft: Aircraft types (comma-separated for multiple)
+        - airport: Airport code (matches departure/arrival/actual_landing)
+        - event_type: Event types (comma-separated for multiple)
+        - flight_phase: Flight phases (comma-separated for multiple)
+        - threat_l1/l2/l3: Threat hierarchy codes
+        - error_l1/l2/l3: Error hierarchy codes
+        - uas_l1/l2/l3: UAS hierarchy codes
+        - training_topic: Training topics (comma-separated)
+        - competency: Competency codes (comma-separated)
+
+    Query Parameters (Pagination):
+        - page: Page number (default: 1)
+        - page_size: Items per page (default: 50, max: 100)
+
+    Authentication:
+        Requires authenticated user with access to the project's organization.
+
+    Response:
+        - count: Total number of events matching filters
+        - next: URL to next page (or null)
+        - previous: URL to previous page (or null)
+        - results: Array of event objects with Chinese field names
+    """
+    permission_classes = (IsAuthenticated,)
+    serializer_class = AnalyticsEventSerializer
+    pagination_class = AviationEventsAnalyticsPagination
+
+    def get_aviation_project(self):
+        """Get aviation project with organization access check."""
+        aviation_project = get_object_or_404(
+            AviationProject.objects.select_related('project', 'project__organization'),
+            pk=self.kwargs['pk']
+        )
+
+        # Verify organization access
+        if aviation_project.project.organization != self.request.user.active_organization:
+            raise Http404("Aviation project not found")
+
+        return aviation_project
+
+    def get_queryset(self):
+        """Build filtered and prefetched queryset for events."""
+        aviation_project = self.get_aviation_project()
+
+        # Build base queryset with optimized prefetching
+        queryset = AviationEvent.objects.filter(
+            task__project=aviation_project.project
+        ).prefetch_related(
+            Prefetch(
+                'labeling_items',
+                queryset=LabelingItem.objects.select_related(
+                    'threat_type_l1', 'threat_type_l2', 'threat_type_l3',
+                    'error_type_l1', 'error_type_l2', 'error_type_l3',
+                    'uas_type_l1', 'uas_type_l2', 'uas_type_l3',
+                    'linked_result',
+                )
+            ),
+            'result_performances',
+        ).order_by('-date', '-id')
+
+        # Parse query params into filter dict
+        filter_params = self._parse_filter_params()
+
+        # Apply Phase 1 filters
+        queryset = apply_all_filters(queryset, filter_params)
+
+        return queryset
+
+    def _parse_filter_params(self):
+        """Parse query parameters into filter dictionary."""
+        params = self.request.query_params
+        filter_dict = {}
+
+        # Date filters
+        date_start = params.get('date_start')
+        if date_start:
+            try:
+                filter_dict['date_start'] = date.fromisoformat(date_start)
+            except ValueError:
+                pass
+
+        date_end = params.get('date_end')
+        if date_end:
+            try:
+                filter_dict['date_end'] = date.fromisoformat(date_end)
+            except ValueError:
+                pass
+
+        # Aircraft filter (comma-separated)
+        aircraft = params.get('aircraft')
+        if aircraft:
+            filter_dict['aircraft'] = [a.strip() for a in aircraft.split(',')]
+
+        # Airport filter (single value)
+        airport = params.get('airport')
+        if airport:
+            filter_dict['airport'] = airport
+
+        # Event type filter (comma-separated)
+        event_type = params.get('event_type')
+        if event_type:
+            filter_dict['event_types'] = [e.strip() for e in event_type.split(',')]
+
+        # Flight phase filter (comma-separated)
+        flight_phase = params.get('flight_phase')
+        if flight_phase:
+            filter_dict['flight_phases'] = [f.strip() for f in flight_phase.split(',')]
+
+        # Hierarchy filters
+        for prefix in ['threat', 'error', 'uas']:
+            for level in ['l1', 'l2', 'l3']:
+                key = f'{prefix}_{level}'
+                value = params.get(key)
+                if value:
+                    filter_dict[key] = value
+
+        # Training topic filter (comma-separated)
+        training_topic = params.get('training_topic')
+        if training_topic:
+            filter_dict['training_topics'] = [t.strip() for t in training_topic.split(',')]
+
+        # Competency filter (comma-separated)
+        competency = params.get('competency')
+        if competency:
+            filter_dict['competencies'] = [c.strip() for c in competency.split(',')]
+
+        return filter_dict
+
+    @swagger_auto_schema(
+        tags=['Aviation Analytics'],
+        operation_summary='Get paginated events analytics',
+        operation_description="""
+        Retrieve paginated event data for analytics visualization.
+
+        Returns events with nested labeling items and result performances,
+        using Chinese field names for frontend compatibility. Supports
+        filtering via query parameters.
+
+        Requires authentication and organization membership.
+        """,
+        manual_parameters=[
+            openapi.Parameter(
+                'date_start', openapi.IN_QUERY, type=openapi.TYPE_STRING,
+                description='Start date (YYYY-MM-DD, inclusive)'
+            ),
+            openapi.Parameter(
+                'date_end', openapi.IN_QUERY, type=openapi.TYPE_STRING,
+                description='End date (YYYY-MM-DD, inclusive)'
+            ),
+            openapi.Parameter(
+                'aircraft', openapi.IN_QUERY, type=openapi.TYPE_STRING,
+                description='Aircraft types (comma-separated)'
+            ),
+            openapi.Parameter(
+                'airport', openapi.IN_QUERY, type=openapi.TYPE_STRING,
+                description='Airport code'
+            ),
+            openapi.Parameter(
+                'event_type', openapi.IN_QUERY, type=openapi.TYPE_STRING,
+                description='Event types (comma-separated)'
+            ),
+            openapi.Parameter(
+                'flight_phase', openapi.IN_QUERY, type=openapi.TYPE_STRING,
+                description='Flight phases (comma-separated)'
+            ),
+            openapi.Parameter(
+                'threat_l1', openapi.IN_QUERY, type=openapi.TYPE_STRING,
+                description='Threat level 1 code'
+            ),
+            openapi.Parameter(
+                'threat_l2', openapi.IN_QUERY, type=openapi.TYPE_STRING,
+                description='Threat level 2 code'
+            ),
+            openapi.Parameter(
+                'threat_l3', openapi.IN_QUERY, type=openapi.TYPE_STRING,
+                description='Threat level 3 code'
+            ),
+            openapi.Parameter(
+                'error_l1', openapi.IN_QUERY, type=openapi.TYPE_STRING,
+                description='Error level 1 code'
+            ),
+            openapi.Parameter(
+                'error_l2', openapi.IN_QUERY, type=openapi.TYPE_STRING,
+                description='Error level 2 code'
+            ),
+            openapi.Parameter(
+                'error_l3', openapi.IN_QUERY, type=openapi.TYPE_STRING,
+                description='Error level 3 code'
+            ),
+            openapi.Parameter(
+                'uas_l1', openapi.IN_QUERY, type=openapi.TYPE_STRING,
+                description='UAS level 1 code'
+            ),
+            openapi.Parameter(
+                'uas_l2', openapi.IN_QUERY, type=openapi.TYPE_STRING,
+                description='UAS level 2 code'
+            ),
+            openapi.Parameter(
+                'uas_l3', openapi.IN_QUERY, type=openapi.TYPE_STRING,
+                description='UAS level 3 code'
+            ),
+            openapi.Parameter(
+                'page', openapi.IN_QUERY, type=openapi.TYPE_INTEGER,
+                description='Page number'
+            ),
+            openapi.Parameter(
+                'page_size', openapi.IN_QUERY, type=openapi.TYPE_INTEGER,
+                description='Items per page (default: 50, max: 100)'
+            ),
+        ],
+        responses={
+            200: AnalyticsEventSerializer(many=True),
+            401: 'Unauthorized - Authentication required',
+            404: 'Aviation project not found or not accessible'
+        }
+    )
+    def get(self, request, *args, **kwargs):
+        """Handle GET request."""
+        return super().get(request, *args, **kwargs)
+
+
+# =============================================================================
+# Filter Options API View (Phase 1 - Filter Integration)
+# =============================================================================
+
+
+class FilterOptionsAPI(generics.GenericAPIView):
+    """
+    GET /api/aviation/projects/<pk>/filter-options/
+
+    Retrieve distinct filter options for aviation analytics dashboard.
+
+    Returns arrays of unique values for dropdown filters:
+    - aircraft: Aircraft types from events
+    - airports: Airport codes (departure/arrival/actual_landing merged)
+    - eventTypes: Event types from result performances
+    - flightPhases: Flight phases from events
+    - trainingTopics: Training topics from result performances (flattened from JSONField arrays)
+
+    Authentication:
+        Requires authenticated user with access to the project's organization.
+
+    Response:
+        JSON object with 5 arrays, all sorted alphabetically with duplicates removed.
+    """
+    permission_classes = (IsAuthenticated,)
+    serializer_class = FilterOptionsSerializer
+
+    def get_object(self):
+        """Get aviation project with organization check."""
+        aviation_project = get_object_or_404(
+            AviationProject.objects.select_related('project', 'project__organization'),
+            pk=self.kwargs['pk']
+        )
+
+        # Verify organization access - return 404 to hide project existence
+        if aviation_project.project.organization != self.request.user.active_organization:
+            raise Http404("Aviation project not found")
+
+        return aviation_project
+
+    def _get_distinct_aircraft(self, aviation_project):
+        """Get distinct aircraft types for project."""
+        return list(
+            AviationEvent.objects.filter(
+                task__project=aviation_project.project,
+                aircraft_type__isnull=False
+            ).exclude(
+                aircraft_type=''
+            ).values_list('aircraft_type', flat=True).distinct().order_by('aircraft_type')
+        )
+
+    def _get_distinct_airports(self, aviation_project):
+        """Get distinct airports (merged from departure/arrival/actual_landing)."""
+        events = AviationEvent.objects.filter(
+            task__project=aviation_project.project
+        ).values_list('departure_airport', 'arrival_airport', 'actual_landing_airport')
+
+        airport_set = set()
+        for dep, arr, actual in events:
+            if dep:
+                airport_set.add(dep)
+            if arr:
+                airport_set.add(arr)
+            if actual:
+                airport_set.add(actual)
+        return sorted(list(airport_set))
+
+    def _get_distinct_event_types(self, aviation_project):
+        """Get distinct event types from result performances."""
+        return list(
+            ResultPerformance.objects.filter(
+                aviation_project=aviation_project,
+                event_type__isnull=False
+            ).exclude(
+                event_type=''
+            ).values_list('event_type', flat=True).distinct().order_by('event_type')
+        )
+
+    def _get_distinct_flight_phases(self, aviation_project):
+        """Get distinct flight phases from events."""
+        return list(
+            AviationEvent.objects.filter(
+                task__project=aviation_project.project,
+                flight_phase__isnull=False
+            ).exclude(
+                flight_phase=''
+            ).values_list('flight_phase', flat=True).distinct().order_by('flight_phase')
+        )
+
+    def _get_distinct_training_topics(self, aviation_project):
+        """Get distinct training topics from result performances (flattened from JSONField arrays)."""
+        performances = ResultPerformance.objects.filter(
+            aviation_project=aviation_project
+        ).values_list('training_topics', flat=True)
+
+        topic_set = set()
+        for topics in performances:
+            if isinstance(topics, list):
+                topic_set.update(t for t in topics if t)
+        return sorted(list(topic_set))
+
+    @swagger_auto_schema(
+        tags=['Aviation Analytics'],
+        operation_summary='Get filter options for analytics',
+        operation_description='''
+        Retrieve distinct filter option arrays for aviation analytics dashboard.
+
+        Returns unique values for:
+        - aircraft: Aircraft types from events
+        - airports: Airport codes (departure/arrival/actual_landing merged)
+        - eventTypes: Event types from result performances
+        - flightPhases: Flight phases from events
+        - trainingTopics: Training topics from result performances
+
+        All arrays are sorted alphabetically with duplicates removed.
+        ''',
+        responses={
+            200: FilterOptionsSerializer,
+            401: 'Unauthorized - Authentication required',
+            404: 'Aviation project not found or not accessible'
+        }
+    )
+    def get(self, request, pk):
+        """Retrieve filter options."""
+        aviation_project = self.get_object()
+
+        data = {
+            'aircraft': self._get_distinct_aircraft(aviation_project),
+            'airports': self._get_distinct_airports(aviation_project),
+            'eventTypes': self._get_distinct_event_types(aviation_project),
+            'flightPhases': self._get_distinct_flight_phases(aviation_project),
+            'trainingTopics': self._get_distinct_training_topics(aviation_project),
+        }
+
+        logger.debug(
+            "FilterOptionsAPI: project=%s, aircraft=%d, airports=%d, "
+            "eventTypes=%d, flightPhases=%d, trainingTopics=%d",
+            aviation_project.id,
+            len(data['aircraft']),
+            len(data['airports']),
+            len(data['eventTypes']),
+            len(data['flightPhases']),
+            len(data['trainingTopics']),
+        )
+
+        serializer = self.get_serializer(data)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+# =============================================================================
+# Organization-Wide Analytics API Views (All Projects)
+# =============================================================================
+
+
+class AllEventsAnalyticsAPI(generics.ListAPIView):
+    """
+    GET /api/aviation/events/analytics/
+
+    Retrieve paginated event data for analytics across ALL aviation projects
+    in the user's organization.
+
+    Returns events with nested labeling items and result performances,
+    using Chinese field names for frontend compatibility. Supports all
+    10 filter types from Phase 1 via query parameters.
+
+    Query Parameters (Filters):
+        - date_start: Start date (YYYY-MM-DD, inclusive)
+        - date_end: End date (YYYY-MM-DD, inclusive)
+        - aircraft: Aircraft types (comma-separated for multiple)
+        - airport: Airport code (matches departure/arrival/actual_landing)
+        - event_type: Event types (comma-separated for multiple)
+        - flight_phase: Flight phases (comma-separated for multiple)
+        - threat_l1/l2/l3: Threat hierarchy codes
+        - error_l1/l2/l3: Error hierarchy codes
+        - uas_l1/l2/l3: UAS hierarchy codes
+        - training_topic: Training topics (comma-separated)
+        - competency: Competency codes (comma-separated)
+
+    Query Parameters (Pagination):
+        - page: Page number (default: 1)
+        - page_size: Items per page (default: 50, max: 100)
+
+    Authentication:
+        Requires authenticated user with organization membership.
+
+    Response:
+        - count: Total number of events matching filters
+        - next: URL to next page (or null)
+        - previous: URL to previous page (or null)
+        - results: Array of event objects with Chinese field names
+    """
+    permission_classes = (IsAuthenticated,)
+    serializer_class = AnalyticsEventSerializer
+    pagination_class = AviationEventsAnalyticsPagination
+
+    def get_queryset(self):
+        """Build filtered and prefetched queryset for events across all org projects."""
+        org = self.request.user.active_organization
+
+        # Get all aviation project IDs in the organization
+        aviation_project_ids = AviationProject.objects.filter(
+            project__organization=org
+        ).values_list('project_id', flat=True)
+
+        # Build base queryset with optimized prefetching
+        queryset = AviationEvent.objects.filter(
+            task__project_id__in=aviation_project_ids
+        ).prefetch_related(
+            Prefetch(
+                'labeling_items',
+                queryset=LabelingItem.objects.select_related(
+                    'threat_type_l1', 'threat_type_l2', 'threat_type_l3',
+                    'error_type_l1', 'error_type_l2', 'error_type_l3',
+                    'uas_type_l1', 'uas_type_l2', 'uas_type_l3',
+                    'linked_result',
+                )
+            ),
+            'result_performances',
+        ).order_by('-date', '-id')
+
+        # Parse query params into filter dict
+        filter_params = self._parse_filter_params()
+
+        # Apply Phase 1 filters
+        queryset = apply_all_filters(queryset, filter_params)
+
+        return queryset
+
+    def _parse_filter_params(self):
+        """Parse query parameters into filter dictionary."""
+        params = self.request.query_params
+        filter_dict = {}
+
+        # Date filters
+        date_start = params.get('date_start')
+        if date_start:
+            try:
+                filter_dict['date_start'] = date.fromisoformat(date_start)
+            except ValueError:
+                pass
+
+        date_end = params.get('date_end')
+        if date_end:
+            try:
+                filter_dict['date_end'] = date.fromisoformat(date_end)
+            except ValueError:
+                pass
+
+        # Aircraft filter (comma-separated)
+        aircraft = params.get('aircraft')
+        if aircraft:
+            filter_dict['aircraft'] = [a.strip() for a in aircraft.split(',')]
+
+        # Airport filter (single value)
+        airport = params.get('airport')
+        if airport:
+            filter_dict['airport'] = airport
+
+        # Event type filter (comma-separated)
+        event_type = params.get('event_type')
+        if event_type:
+            filter_dict['event_types'] = [e.strip() for e in event_type.split(',')]
+
+        # Flight phase filter (comma-separated)
+        flight_phase = params.get('flight_phase')
+        if flight_phase:
+            filter_dict['flight_phases'] = [f.strip() for f in flight_phase.split(',')]
+
+        # Hierarchy filters
+        for prefix in ['threat', 'error', 'uas']:
+            for level in ['l1', 'l2', 'l3']:
+                key = f'{prefix}_{level}'
+                value = params.get(key)
+                if value:
+                    filter_dict[key] = value
+
+        # Training topic filter (comma-separated)
+        training_topic = params.get('training_topic')
+        if training_topic:
+            filter_dict['training_topics'] = [t.strip() for t in training_topic.split(',')]
+
+        # Competency filter (comma-separated)
+        competency = params.get('competency')
+        if competency:
+            filter_dict['competencies'] = [c.strip() for c in competency.split(',')]
+
+        return filter_dict
+
+    @swagger_auto_schema(
+        tags=['Aviation Analytics'],
+        operation_summary='Get paginated events analytics across all projects',
+        operation_description="""
+        Retrieve paginated event data for analytics visualization across ALL
+        aviation projects in the user's organization.
+
+        Returns events with nested labeling items and result performances,
+        using Chinese field names for frontend compatibility. Supports
+        filtering via query parameters.
+
+        Requires authentication and organization membership.
+        """,
+        manual_parameters=[
+            openapi.Parameter(
+                'date_start', openapi.IN_QUERY, type=openapi.TYPE_STRING,
+                description='Start date (YYYY-MM-DD, inclusive)'
+            ),
+            openapi.Parameter(
+                'date_end', openapi.IN_QUERY, type=openapi.TYPE_STRING,
+                description='End date (YYYY-MM-DD, inclusive)'
+            ),
+            openapi.Parameter(
+                'aircraft', openapi.IN_QUERY, type=openapi.TYPE_STRING,
+                description='Aircraft types (comma-separated)'
+            ),
+            openapi.Parameter(
+                'airport', openapi.IN_QUERY, type=openapi.TYPE_STRING,
+                description='Airport code'
+            ),
+            openapi.Parameter(
+                'event_type', openapi.IN_QUERY, type=openapi.TYPE_STRING,
+                description='Event types (comma-separated)'
+            ),
+            openapi.Parameter(
+                'flight_phase', openapi.IN_QUERY, type=openapi.TYPE_STRING,
+                description='Flight phases (comma-separated)'
+            ),
+            openapi.Parameter(
+                'threat_l1', openapi.IN_QUERY, type=openapi.TYPE_STRING,
+                description='Threat level 1 code'
+            ),
+            openapi.Parameter(
+                'threat_l2', openapi.IN_QUERY, type=openapi.TYPE_STRING,
+                description='Threat level 2 code'
+            ),
+            openapi.Parameter(
+                'threat_l3', openapi.IN_QUERY, type=openapi.TYPE_STRING,
+                description='Threat level 3 code'
+            ),
+            openapi.Parameter(
+                'error_l1', openapi.IN_QUERY, type=openapi.TYPE_STRING,
+                description='Error level 1 code'
+            ),
+            openapi.Parameter(
+                'error_l2', openapi.IN_QUERY, type=openapi.TYPE_STRING,
+                description='Error level 2 code'
+            ),
+            openapi.Parameter(
+                'error_l3', openapi.IN_QUERY, type=openapi.TYPE_STRING,
+                description='Error level 3 code'
+            ),
+            openapi.Parameter(
+                'uas_l1', openapi.IN_QUERY, type=openapi.TYPE_STRING,
+                description='UAS level 1 code'
+            ),
+            openapi.Parameter(
+                'uas_l2', openapi.IN_QUERY, type=openapi.TYPE_STRING,
+                description='UAS level 2 code'
+            ),
+            openapi.Parameter(
+                'uas_l3', openapi.IN_QUERY, type=openapi.TYPE_STRING,
+                description='UAS level 3 code'
+            ),
+            openapi.Parameter(
+                'page', openapi.IN_QUERY, type=openapi.TYPE_INTEGER,
+                description='Page number'
+            ),
+            openapi.Parameter(
+                'page_size', openapi.IN_QUERY, type=openapi.TYPE_INTEGER,
+                description='Items per page (default: 50, max: 100)'
+            ),
+        ],
+        responses={
+            200: AnalyticsEventSerializer(many=True),
+            401: 'Unauthorized - Authentication required',
+        }
+    )
+    def get(self, request, *args, **kwargs):
+        """Handle GET request."""
+        return super().get(request, *args, **kwargs)
+
+
+class AllFilterOptionsAPI(generics.GenericAPIView):
+    """
+    GET /api/aviation/filter-options/
+
+    Retrieve distinct filter options aggregated across ALL aviation projects
+    in the user's organization for the analytics dashboard.
+
+    Returns arrays of unique values for dropdown filters:
+    - aircraft: Aircraft types from events across all projects
+    - airports: Airport codes (departure/arrival/actual_landing merged)
+    - eventTypes: Event types from result performances
+    - flightPhases: Flight phases from events
+    - trainingTopics: Training topics from result performances (flattened from JSONField arrays)
+
+    Authentication:
+        Requires authenticated user with organization membership.
+
+    Response:
+        JSON object with 5 arrays, all sorted alphabetically with duplicates removed.
+    """
+    permission_classes = (IsAuthenticated,)
+    serializer_class = FilterOptionsSerializer
+
+    def _get_org_aviation_project_ids(self):
+        """Get all aviation project Label Studio project IDs in user's organization."""
+        org = self.request.user.active_organization
+        return list(
+            AviationProject.objects.filter(
+                project__organization=org
+            ).values_list('project_id', flat=True)
+        )
+
+    def _get_org_aviation_projects(self):
+        """Get all aviation projects in user's organization."""
+        org = self.request.user.active_organization
+        return AviationProject.objects.filter(project__organization=org)
+
+    def _get_distinct_aircraft(self, project_ids):
+        """Get distinct aircraft types across all org projects."""
+        return list(
+            AviationEvent.objects.filter(
+                task__project_id__in=project_ids,
+                aircraft_type__isnull=False
+            ).exclude(
+                aircraft_type=''
+            ).values_list('aircraft_type', flat=True).distinct().order_by('aircraft_type')
+        )
+
+    def _get_distinct_airports(self, project_ids):
+        """Get distinct airports (merged from departure/arrival/actual_landing)."""
+        events = AviationEvent.objects.filter(
+            task__project_id__in=project_ids
+        ).values_list('departure_airport', 'arrival_airport', 'actual_landing_airport')
+
+        airport_set = set()
+        for dep, arr, actual in events:
+            if dep:
+                airport_set.add(dep)
+            if arr:
+                airport_set.add(arr)
+            if actual:
+                airport_set.add(actual)
+        return sorted(list(airport_set))
+
+    def _get_distinct_event_types(self, aviation_projects):
+        """Get distinct event types from result performances across all projects."""
+        return list(
+            ResultPerformance.objects.filter(
+                aviation_project__in=aviation_projects,
+                event_type__isnull=False
+            ).exclude(
+                event_type=''
+            ).values_list('event_type', flat=True).distinct().order_by('event_type')
+        )
+
+    def _get_distinct_flight_phases(self, project_ids):
+        """Get distinct flight phases from events across all projects."""
+        return list(
+            AviationEvent.objects.filter(
+                task__project_id__in=project_ids,
+                flight_phase__isnull=False
+            ).exclude(
+                flight_phase=''
+            ).values_list('flight_phase', flat=True).distinct().order_by('flight_phase')
+        )
+
+    def _get_distinct_training_topics(self, aviation_projects):
+        """Get distinct training topics from result performances (flattened from JSONField arrays)."""
+        performances = ResultPerformance.objects.filter(
+            aviation_project__in=aviation_projects
+        ).values_list('training_topics', flat=True)
+
+        topic_set = set()
+        for topics in performances:
+            if isinstance(topics, list):
+                topic_set.update(t for t in topics if t)
+        return sorted(list(topic_set))
+
+    @swagger_auto_schema(
+        tags=['Aviation Analytics'],
+        operation_summary='Get filter options for analytics across all projects',
+        operation_description='''
+        Retrieve distinct filter option arrays aggregated across ALL aviation
+        projects in the user's organization for the analytics dashboard.
+
+        Returns unique values for:
+        - aircraft: Aircraft types from events
+        - airports: Airport codes (departure/arrival/actual_landing merged)
+        - eventTypes: Event types from result performances
+        - flightPhases: Flight phases from events
+        - trainingTopics: Training topics from result performances
+
+        All arrays are sorted alphabetically with duplicates removed.
+        ''',
+        responses={
+            200: FilterOptionsSerializer,
+            401: 'Unauthorized - Authentication required',
+        }
+    )
+    def get(self, request):
+        """Retrieve aggregated filter options across all organization projects."""
+        project_ids = self._get_org_aviation_project_ids()
+        aviation_projects = self._get_org_aviation_projects()
+
+        data = {
+            'aircraft': self._get_distinct_aircraft(project_ids),
+            'airports': self._get_distinct_airports(project_ids),
+            'eventTypes': self._get_distinct_event_types(aviation_projects),
+            'flightPhases': self._get_distinct_flight_phases(project_ids),
+            'trainingTopics': self._get_distinct_training_topics(aviation_projects),
+        }
+
+        logger.debug(
+            "AllFilterOptionsAPI: org=%s, aircraft=%d, airports=%d, "
+            "eventTypes=%d, flightPhases=%d, trainingTopics=%d",
+            self.request.user.active_organization.id,
+            len(data['aircraft']),
+            len(data['airports']),
+            len(data['eventTypes']),
+            len(data['flightPhases']),
+            len(data['trainingTopics']),
+        )
+
+        serializer = self.get_serializer(data)
+        return Response(serializer.data, status=status.HTTP_200_OK)

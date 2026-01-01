@@ -148,7 +148,11 @@ export const API_CONFIG = {
     aviationProject: '/aviation/projects/:pk',
     createAviationProject: 'POST:/aviation/projects',
     updateAviationProject: 'PATCH:/aviation/projects/:pk',
-    deleteAviationProject: 'DELETE:/aviation/projects/:pk'
+    deleteAviationProject: 'DELETE:/aviation/projects/:pk',
+
+    // Aviation Analytics (web/libs/aviation uses its own API client)
+    aviationEventsAnalytics: '/aviation/projects/:pk/events/analytics/',
+    aviationFilterOptions: '/aviation/projects/:pk/filter-options/',
   },
   alwaysExpectJSON: false
 };

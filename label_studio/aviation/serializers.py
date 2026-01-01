@@ -501,3 +501,273 @@ class AviationAssignmentToggleSerializer(serializers.Serializer):
         child=serializers.DictField(),
         help_text='List of user assignment changes with user_id and has_permission'
     )
+
+
+# =============================================================================
+# Analytics Serializers
+# =============================================================================
+
+
+class EventsByStatusSerializer(serializers.Serializer):
+    """Serializer for events by status breakdown."""
+    in_progress = serializers.IntegerField(read_only=True)
+    completed = serializers.IntegerField(read_only=True)
+
+
+class LabelingItemsByStatusSerializer(serializers.Serializer):
+    """Serializer for labeling items by status breakdown."""
+    draft = serializers.IntegerField(read_only=True)
+    submitted = serializers.IntegerField(read_only=True)
+    reviewed = serializers.IntegerField(read_only=True)
+    approved = serializers.IntegerField(read_only=True)
+
+
+class LabelingItemsAnalyticsSerializer(serializers.Serializer):
+    """Serializer for labeling items analytics."""
+    total = serializers.IntegerField(read_only=True)
+    by_status = LabelingItemsByStatusSerializer(read_only=True)
+
+
+class AviationProjectAnalyticsSerializer(serializers.Serializer):
+    """
+    Serializer for aviation project analytics response.
+
+    Read-only serializer that formats analytics data for API responses.
+    Does not create or update any models.
+
+    Response structure:
+    {
+        "project_id": 1,
+        "project_type": "aviation",
+        "total_events": 10,
+        "events_by_status": {
+            "in_progress": 3,
+            "completed": 7
+        },
+        "labeling_items": {
+            "total": 25,
+            "by_status": {
+                "draft": 5,
+                "submitted": 3,
+                "reviewed": 2,
+                "approved": 15
+            }
+        }
+    }
+    """
+    project_id = serializers.IntegerField(
+        read_only=True,
+        help_text='Aviation project ID'
+    )
+    project_type = serializers.CharField(
+        read_only=True,
+        help_text='Project type (always "aviation" for this endpoint)'
+    )
+    total_events = serializers.IntegerField(
+        read_only=True,
+        help_text='Total number of events in the project'
+    )
+    events_by_status = EventsByStatusSerializer(
+        read_only=True,
+        help_text='Event completion status breakdown'
+    )
+    labeling_items = LabelingItemsAnalyticsSerializer(
+        read_only=True,
+        help_text='Labeling items analytics with status breakdown'
+    )
+
+
+# =============================================================================
+# Events Analytics Serializers (Phase 2)
+# =============================================================================
+
+
+class AnalyticsBasicInfoSerializer(serializers.Serializer):
+    """
+    Serializer for event basic information with Chinese field names.
+
+    Maps AviationEvent fields to Chinese labels expected by the frontend.
+    Used for the '基本信息' section of the analytics response.
+    """
+    事件编号 = serializers.CharField(source='event_number')
+    日期 = serializers.DateField(source='date', format='%Y-%m-%d')
+    时间 = serializers.TimeField(source='time', format='%H:%M:%S', allow_null=True)
+    机型 = serializers.CharField(source='aircraft_type', allow_blank=True)
+    起飞机场 = serializers.CharField(source='departure_airport', allow_blank=True)
+    落地机场 = serializers.CharField(source='arrival_airport', allow_blank=True)
+    实际降落 = serializers.CharField(source='actual_landing_airport', allow_blank=True)
+    报告单位 = serializers.CharField(source='location', allow_blank=True)
+    备注 = serializers.CharField(source='weather_conditions', allow_blank=True)
+
+
+class AnalyticsResultPerformanceSerializer(serializers.Serializer):
+    """
+    Serializer for result performance with Chinese field names.
+
+    Used for the '结果绩效列表' section of the analytics response.
+    """
+    id = serializers.IntegerField()
+    事件类型 = serializers.CharField(source='event_type', allow_blank=True)
+    飞行阶段 = serializers.CharField(source='flight_phase', allow_blank=True)
+    可能性 = serializers.CharField(source='likelihood', allow_blank=True)
+    严重程度 = serializers.CharField(source='severity', allow_blank=True)
+    训练效果 = serializers.CharField(source='training_effect', allow_blank=True)
+    训练方案设想 = serializers.CharField(source='training_plan', allow_blank=True)
+    训练主题 = serializers.JSONField(source='training_topics')
+    所需达到的目标 = serializers.CharField(source='training_goals', allow_blank=True)
+
+
+class AnalyticsHierarchyListSerializer(serializers.Serializer):
+    """
+    Serializer for hierarchy type list (threat/error/UAS).
+
+    Serializes the three-level hierarchy with management, impact, and coping abilities.
+    """
+    level1 = serializers.SerializerMethodField()
+    level2 = serializers.SerializerMethodField()
+    level3 = serializers.SerializerMethodField()
+    管理 = serializers.JSONField()
+    影响 = serializers.JSONField()
+    应对能力 = serializers.JSONField()
+    描述 = serializers.CharField(allow_blank=True)
+
+    def __init__(self, *args, prefix='threat', **kwargs):
+        """
+        Initialize with hierarchy prefix.
+
+        Args:
+            prefix: One of 'threat', 'error', or 'uas'
+        """
+        self.prefix = prefix
+        super().__init__(*args, **kwargs)
+
+    def get_level1(self, obj):
+        type_obj = getattr(obj, f'{self.prefix}_type_l1', None)
+        if type_obj:
+            return type_obj.label_zh or type_obj.label
+        return None
+
+    def get_level2(self, obj):
+        type_obj = getattr(obj, f'{self.prefix}_type_l2', None)
+        if type_obj:
+            return type_obj.label_zh or type_obj.label
+        return None
+
+    def get_level3(self, obj):
+        type_obj = getattr(obj, f'{self.prefix}_type_l3', None)
+        if type_obj:
+            return type_obj.label_zh or type_obj.label
+        return None
+
+    def to_representation(self, instance):
+        """Build representation for hierarchy list."""
+        return {
+            'level1': self.get_level1(instance),
+            'level2': self.get_level2(instance),
+            'level3': self.get_level3(instance),
+            '管理': getattr(instance, f'{self.prefix}_management', {}),
+            '影响': getattr(instance, f'{self.prefix}_impact', {}),
+            '应对能力': getattr(instance, f'{self.prefix}_coping_abilities', {}),
+            '描述': getattr(instance, f'{self.prefix}_description', ''),
+        }
+
+
+class AnalyticsLabelingItemSerializer(serializers.Serializer):
+    """
+    Serializer for labeling items with Chinese field names.
+
+    Used for the '标签标注列表' section of the analytics response.
+    """
+    id = serializers.IntegerField()
+    关联事件类型ID = serializers.SerializerMethodField()
+    威胁列表 = serializers.SerializerMethodField()
+    差错列表 = serializers.SerializerMethodField()
+    UAS列表 = serializers.SerializerMethodField()
+    结束状态描述 = serializers.CharField(source='notes', allow_blank=True)
+
+    def get_关联事件类型ID(self, obj):
+        """Get linked result performance ID."""
+        if obj.linked_result:
+            return obj.linked_result_id
+        return None
+
+    def get_威胁列表(self, obj):
+        """Serialize threat hierarchy list."""
+        serializer = AnalyticsHierarchyListSerializer(obj, prefix='threat')
+        return serializer.data
+
+    def get_差错列表(self, obj):
+        """Serialize error hierarchy list."""
+        serializer = AnalyticsHierarchyListSerializer(obj, prefix='error')
+        return serializer.data
+
+    def get_UAS列表(self, obj):
+        """Serialize UAS hierarchy list."""
+        serializer = AnalyticsHierarchyListSerializer(obj, prefix='uas')
+        return serializer.data
+
+
+class AnalyticsEventSerializer(serializers.Serializer):
+    """
+    Serializer for aviation events in analytics response.
+
+    Provides the full event structure with nested labeling items and
+    result performances, using Chinese field names for frontend compatibility.
+    """
+    eventId = serializers.CharField(source='event_number')
+    基本信息 = AnalyticsBasicInfoSerializer(source='*')
+    事件描述 = serializers.CharField(source='event_description', allow_blank=True)
+    结果绩效列表 = serializers.SerializerMethodField()
+    标签标注列表 = serializers.SerializerMethodField()
+
+    def get_结果绩效列表(self, obj):
+        """Serialize nested result performances."""
+        return AnalyticsResultPerformanceSerializer(
+            obj.result_performances.all(), many=True
+        ).data
+
+    def get_标签标注列表(self, obj):
+        """Serialize nested labeling items."""
+        return AnalyticsLabelingItemSerializer(
+            obj.labeling_items.all(), many=True
+        ).data
+
+
+# =============================================================================
+# Filter Options Serializers (Phase 1 - Filter Integration)
+# =============================================================================
+
+
+class FilterOptionsSerializer(serializers.Serializer):
+    """
+    Serializer for filter options arrays.
+
+    Returns distinct filter option values for analytics dashboard dropdowns:
+    - aircraft: Aircraft types from events
+    - airports: Airport codes (departure/arrival/actual_landing merged)
+    - eventTypes: Event types from result performances
+    - flightPhases: Flight phases from events
+    - trainingTopics: Training topics from result performances (flattened from JSONField arrays)
+
+    All arrays are returned sorted alphabetically with duplicates removed.
+    """
+    aircraft = serializers.ListField(
+        child=serializers.CharField(),
+        help_text='Distinct aircraft types from events'
+    )
+    airports = serializers.ListField(
+        child=serializers.CharField(),
+        help_text='Distinct airport codes from departure/arrival/actual_landing fields'
+    )
+    eventTypes = serializers.ListField(
+        child=serializers.CharField(),
+        help_text='Distinct event types from result performances'
+    )
+    flightPhases = serializers.ListField(
+        child=serializers.CharField(),
+        help_text='Distinct flight phases from events'
+    )
+    trainingTopics = serializers.ListField(
+        child=serializers.CharField(),
+        help_text='Distinct training topics from result performances (flattened from arrays)'
+    )

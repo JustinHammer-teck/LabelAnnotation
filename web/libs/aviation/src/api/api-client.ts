@@ -18,6 +18,9 @@ import type {
   ReviewHistoryResponse,
   AviationProjectAssignment,
   ToggleAssignmentPayload,
+  AnalyticsFilters,
+  PaginatedAnalyticsResponse,
+  AnalyticsFilterOptions,
 } from '../types';
 
 export interface AviationApiClient {
@@ -90,4 +93,62 @@ export interface AviationApiClient {
     projectId: number,
     payload: ToggleAssignmentPayload
   ): Promise<void>;
+
+  // Analytics endpoints
+  /**
+   * Get paginated analytics events with optional filters.
+   * Supports server-side filtering for date range, aircraft, airport,
+   * event type, flight phase, threat/error/UAS types, training topics,
+   * and competency.
+   *
+   * @param projectId - Aviation project ID
+   * @param filters - Optional filter parameters
+   * @param page - Page number (default: 1)
+   * @param pageSize - Number of results per page (default: 50)
+   * @returns Paginated analytics response with filtered events
+   */
+  getEventsAnalytics(
+    projectId: number,
+    filters?: AnalyticsFilters,
+    page?: number,
+    pageSize?: number
+  ): Promise<PaginatedAnalyticsResponse>;
+
+  /**
+   * Get available filter options for the analytics endpoint.
+   * Returns distinct values for aircraft, airports, event types,
+   * flight phases, and training topics.
+   *
+   * @param projectId - Aviation project ID
+   * @returns Filter options with available values for each filter type
+   */
+  getFilterOptions(projectId: number): Promise<AnalyticsFilterOptions>;
+
+  // Organization-wide analytics endpoints (no projectId required)
+
+  /**
+   * Get paginated analytics events across all projects in the organization.
+   * Supports server-side filtering for date range, aircraft, airport,
+   * event type, flight phase, threat/error/UAS types, training topics,
+   * and competency.
+   *
+   * @param filters - Optional filter parameters
+   * @param page - Page number (default: 1)
+   * @param pageSize - Number of results per page (default: 50)
+   * @returns Paginated analytics response with filtered events
+   */
+  getAllEventsAnalytics(
+    filters?: AnalyticsFilters,
+    page?: number,
+    pageSize?: number
+  ): Promise<PaginatedAnalyticsResponse>;
+
+  /**
+   * Get available filter options for organization-wide analytics.
+   * Returns distinct values for aircraft, airports, event types,
+   * flight phases, and training topics across all projects.
+   *
+   * @returns Filter options with available values for each filter type
+   */
+  getAllFilterOptions(): Promise<AnalyticsFilterOptions>;
 }

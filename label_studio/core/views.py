@@ -18,6 +18,7 @@ from core.utils.common import collect_versions
 from core.utils.io import find_file
 from django.conf import settings
 from django.contrib.auth import logout
+from django.contrib.auth.decorators import login_required
 from django.db.models import CharField, F, Value
 from django.http import (
     HttpResponse,
@@ -40,6 +41,12 @@ logger = logging.getLogger(__name__)
 
 
 _PARAGRAPH_SAMPLE = None
+
+
+@login_required
+def label_page(request):
+    """Serve the label/data analysis React SPA page"""
+    return render(request, 'base.html')
 
 
 def main(request):

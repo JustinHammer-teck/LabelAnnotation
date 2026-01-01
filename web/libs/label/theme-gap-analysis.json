@@ -1,0 +1,249 @@
+{
+  "title": "Theme Gap Analysis: Label Component vs LabelStudio App",
+  "description": "Mapping and discrepancy analysis between label component colors and main application theme",
+  "generatedAt": "2025-12-25",
+
+  "summary": {
+    "totalGaps": 12,
+    "criticalGaps": 3,
+    "moderateGaps": 5,
+    "minorGaps": 4,
+    "recommendation": "Label component uses hardcoded hex values instead of LabelStudio CSS variables. Migration to CSS custom properties recommended for theme consistency."
+  },
+
+  "colorMapping": {
+    "primary": {
+      "labelComponent": {
+        "main": "#1a5490",
+        "secondary": "#2d6aa8"
+      },
+      "labelStudio": {
+        "variable": "--color-primary-content, --grape_500",
+        "aviationPrimary": "#1890ff"
+      },
+      "gap": "CRITICAL",
+      "analysis": "Label uses custom blue (#1a5490) while LabelStudio uses grape/purple tones and aviation uses Ant Design blue (#1890ff). No alignment.",
+      "recommendation": "Use --color-primary-content or define --label-primary variable"
+    },
+
+    "text": {
+      "primary": {
+        "labelComponent": "#1a5490",
+        "labelStudio": "--color-neutral-content, aviation: #333",
+        "gap": "CRITICAL",
+        "analysis": "Label uses blue for primary text, LabelStudio uses neutral grays",
+        "recommendation": "Use --color-neutral-content for text"
+      },
+      "secondary": {
+        "labelComponent": "#999",
+        "labelStudio": "--color-neutral-content-subtle, aviation: #666, #999",
+        "gap": "MINOR",
+        "analysis": "Similar gray values, but label uses hardcoded hex",
+        "recommendation": "Use --color-neutral-content-subtle"
+      },
+      "muted": {
+        "labelComponent": "NOT DEFINED",
+        "labelStudio": "aviation: #999",
+        "gap": "NONE",
+        "analysis": "Label's secondary (#999) matches aviation muted"
+      }
+    },
+
+    "background": {
+      "white": {
+        "labelComponent": "#fff",
+        "labelStudio": "--surface-surface, --color-surface-default",
+        "gap": "MINOR",
+        "analysis": "Same value but label uses hardcoded hex",
+        "recommendation": "Use --color-surface-default"
+      },
+      "light": {
+        "labelComponent": "#f0f2f5",
+        "labelStudio": "--surface-background, aviation: #f5f5f5",
+        "gap": "MINOR",
+        "analysis": "Similar light gray values",
+        "recommendation": "Use --color-surface-subtle or --surface-background"
+      },
+      "content": {
+        "labelComponent": "#f0f4f8",
+        "labelStudio": "NOT DIRECTLY MAPPED",
+        "gap": "MODERATE",
+        "analysis": "Label uses blue-tinted light gray, no direct equivalent in LabelStudio",
+        "recommendation": "Define --label-surface-content variable"
+      },
+      "hover": {
+        "labelComponent": "NOT DEFINED",
+        "labelStudio": "--color-primary-surface-hover, aviation: #f5f5f5",
+        "gap": "MODERATE",
+        "analysis": "Label missing hover states",
+        "recommendation": "Add hover background using --color-surface-hover"
+      },
+      "selected": {
+        "labelComponent": "NOT DEFINED",
+        "labelStudio": "aviation: #e6f7ff",
+        "gap": "MODERATE",
+        "analysis": "Label missing selected states",
+        "recommendation": "Add selected background using --color-primary-surface"
+      }
+    },
+
+    "border": {
+      "default": {
+        "labelComponent": "#e8e8e8",
+        "labelStudio": "--color-neutral-border, --surface-outline-outline, aviation: #d9d9d9",
+        "gap": "MINOR",
+        "analysis": "Similar gray border values",
+        "recommendation": "Use --color-neutral-border"
+      },
+      "light": {
+        "labelComponent": "#d9d9d9",
+        "labelStudio": "aviation: #d9d9d9 (exact match)",
+        "gap": "NONE",
+        "analysis": "Matches aviation border color"
+      }
+    },
+
+    "semantic": {
+      "success": {
+        "labelComponent": "NOT DEFINED",
+        "labelStudio": "--success_color, --kale_400, aviation: #52c41a",
+        "gap": "MODERATE",
+        "analysis": "Label missing success color",
+        "recommendation": "Use --color-positive-content"
+      },
+      "warning": {
+        "labelComponent": "orange (Ant Design name)",
+        "labelStudio": "--color-warning-icon, aviation: #faad14",
+        "gap": "NONE",
+        "analysis": "Both use Ant Design orange/warning"
+      },
+      "error": {
+        "labelComponent": "red (Ant Design name), module: #fef4f3/#e8c8c5",
+        "labelStudio": "--danger_color (#CF1322), --red_7, aviation: #ff4d4f",
+        "gap": "MODERATE",
+        "analysis": "Different red values used",
+        "recommendation": "Use --color-negative-content for error states"
+      }
+    },
+
+    "moduleSpecific": {
+      "competency": {
+        "labelComponent": { "bg": "#e8f4fc", "border": "#b3d4ea" },
+        "labelStudio": "NO EQUIVALENT",
+        "gap": "NONE - UNIQUE",
+        "analysis": "Module-specific color, acceptable as unique identifier"
+      },
+      "trainingTopic": {
+        "labelComponent": { "bg": "#f0f7ed", "border": "#c5ddb8" },
+        "labelStudio": "Similar to --kale tones",
+        "gap": "NONE - UNIQUE",
+        "analysis": "Green theme aligns with kale palette concept"
+      },
+      "threat": {
+        "labelComponent": { "bg": "#fef6f0", "border": "#e8cfc0" },
+        "labelStudio": "Similar to --persimmon/--canteloupe tones",
+        "gap": "NONE - UNIQUE",
+        "analysis": "Orange theme aligns with persimmon palette concept"
+      },
+      "error": {
+        "labelComponent": { "bg": "#fef4f3", "border": "#e8c8c5" },
+        "labelStudio": "--red_1 (#FFF1F0), --red_3 (#FFCCC7)",
+        "gap": "CRITICAL",
+        "analysis": "Very similar to LabelStudio red palette but not using variables",
+        "recommendation": "Use --danger_color--faded or --color-negative-surface"
+      },
+      "uas": {
+        "labelComponent": { "bg": "#f7f3fc", "border": "#d4c8e8" },
+        "labelStudio": "Similar to --grape/--plum tones",
+        "gap": "NONE - UNIQUE",
+        "analysis": "Purple theme aligns with grape/plum palette concept"
+      },
+      "result": {
+        "labelComponent": { "bg": "#f0f7fa", "border": "#b8d8e8" },
+        "labelStudio": "NO DIRECT EQUIVALENT",
+        "gap": "NONE - UNIQUE",
+        "analysis": "Cyan theme, unique to label component"
+      },
+      "labeling": {
+        "labelComponent": { "bg": "#f5f8fc", "border": "#ccd9e8" },
+        "labelStudio": "NO DIRECT EQUIVALENT",
+        "gap": "NONE - UNIQUE",
+        "analysis": "Blue-gray theme, unique to label component"
+      }
+    }
+  },
+
+  "cssVariableMigration": {
+    "required": [
+      {
+        "current": "#1a5490 (primary)",
+        "target": "--color-primary-content OR define --label-color-primary",
+        "priority": "HIGH"
+      },
+      {
+        "current": "#1a5490 (text)",
+        "target": "--color-neutral-content",
+        "priority": "HIGH"
+      },
+      {
+        "current": "#fff (background)",
+        "target": "--color-surface-default",
+        "priority": "MEDIUM"
+      },
+      {
+        "current": "#e8e8e8 (border)",
+        "target": "--color-neutral-border",
+        "priority": "MEDIUM"
+      },
+      {
+        "current": "#999 (secondary text)",
+        "target": "--color-neutral-content-subtle",
+        "priority": "LOW"
+      }
+    ],
+    "newVariablesNeeded": [
+      "--label-color-primary: #1a5490",
+      "--label-color-primary-secondary: #2d6aa8",
+      "--label-surface-content: #f0f4f8",
+      "--label-module-competency-bg: #e8f4fc",
+      "--label-module-competency-border: #b3d4ea",
+      "--label-module-training-bg: #f0f7ed",
+      "--label-module-training-border: #c5ddb8",
+      "--label-module-threat-bg: #fef6f0",
+      "--label-module-threat-border: #e8cfc0",
+      "--label-module-error-bg: #fef4f3",
+      "--label-module-error-border: #e8c8c5",
+      "--label-module-uas-bg: #f7f3fc",
+      "--label-module-uas-border: #d4c8e8",
+      "--label-module-result-bg: #f0f7fa",
+      "--label-module-result-border: #b8d8e8",
+      "--label-module-labeling-bg: #f5f8fc",
+      "--label-module-labeling-border: #ccd9e8"
+    ]
+  },
+
+  "recommendations": {
+    "immediate": [
+      "Replace hardcoded text color #1a5490 with --color-neutral-content for body text",
+      "Use --color-neutral-border instead of hardcoded #e8e8e8",
+      "Align error module colors with LabelStudio's --red_1 and --red_3 variables"
+    ],
+    "shortTerm": [
+      "Create label-specific CSS variables in a shared theme file",
+      "Import @humansignal/ui color tokens for consistency",
+      "Add dark mode support using [data-color-scheme='dark'] selectors"
+    ],
+    "longTerm": [
+      "Migrate all module colors to CSS custom properties",
+      "Consider aligning primary blue with either aviation (#1890ff) or grape palette",
+      "Implement theme provider for dynamic theme switching"
+    ]
+  },
+
+  "darkModeGaps": {
+    "labelComponent": "NO DARK MODE SUPPORT",
+    "labelStudio": "Supports [data-color-scheme='dark'] with --shadow-intensity adjustments",
+    "gap": "CRITICAL",
+    "recommendation": "Add dark mode variants for all label component colors"
+  }
+}
