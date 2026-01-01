@@ -25,7 +25,9 @@ import type {
 } from '../types';
 
 const BASE_URL = '/api/aviation';
-const isDevelopment = process.env.NODE_ENV === 'development';
+// Set to true to enable API request/response logging in development
+const DEBUG_API_LOGS = false;
+const isDevelopment = DEBUG_API_LOGS && process.env.NODE_ENV === 'development';
 
 export type ApiErrorCode =
   | 'VALIDATION_ERROR'
