@@ -1,6 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, Table, Button, Modal, Descriptions, Tag, Typography } from 'antd';
 import { EyeOutlined, LoadingOutlined } from '@ant-design/icons';
+
+// Generate unique row keys for table data that may have duplicate eventIds
+const generateRowKey = (record, index) => {
+    const base = record.id || record.eventId || record.基本信息?.事件编号 || '';
+    const date = record.基本信息?.日期 || '';
+    const time = record.基本信息?.时间 || '';
+    return `${base}-${date}-${time}-${index}`;
+};
 
 const { Text } = Typography;
 
@@ -38,6 +46,15 @@ const safeValue = (value) => {
 const EventList = ({ filteredEvents, hasMore, loadMore, loading }) => {
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [currentEvent, setCurrentEvent] = useState(null);
+
+    // Add unique _rowKey to each record to handle duplicate eventIds
+    const eventsWithKeys = useMemo(() =>
+        (filteredEvents || []).map((event, index) => ({
+            ...event,
+            _rowKey: generateRowKey(event, index)
+        })),
+        [filteredEvents]
+    );
 
     const showDetail = (record) => {
         setCurrentEvent(record);
@@ -132,9 +149,9 @@ const EventList = ({ filteredEvents, hasMore, loadMore, loading }) => {
     return (
         <Card title="事件列表" size="small">
             <Table
-                dataSource={filteredEvents}
+                dataSource={eventsWithKeys}
                 columns={columns}
-                rowKey={(record) => record.id || record.eventId || record.基本信息?.事件编号}
+                rowKey="_rowKey"
                 size="small"
                 pagination={isServerSideMode ? false : { pageSize: 10 }}
             />
